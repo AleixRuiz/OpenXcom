@@ -109,7 +109,7 @@ crafts:
       split: connected        # connected (each separate group of tiles is a vehicle) | rects | whole
       pieces: []              # rectangles [x, y, width, length] in map tiles, for split: rects
       driverSeats: [[2, 4, 0]] # map tiles a unit must stand on to drive; empty = any tile of the vehicle
-      drivers: []             # unit types or armors allowed to drive; empty = any unit of the owner's side
+      drivers: []             # armor types allowed to drive; empty = any unit of the owner's side that can walk
       tuPerTile: 4            # driver time units per tile (diagonal x1.5)
       tuPerTurn: 8            # driver time units per quarter turn
       crushArmor: 100         # terrain parts with this armor or less are crushed
@@ -122,7 +122,7 @@ ufos:
   - type: STR_TRAITOR_CHIMERA
     battleVehicle:
       split: connected
-      drivers: [STR_TRAITOR_CHIMERA_TURRET]
+      drivers: [STR_TRAITOR_CHIMERA_TURRET_ARMOR]   # the turret drives; it is listed because it can't walk
       tuPerTile: 4
       front: 2
 ```
@@ -143,7 +143,7 @@ Any crew member standing on a driver seat can drive, using a drive mode they swi
 
 **Who drives**
 
-- A unit of the vehicle's side on one of its `driverSeats` (or anywhere on board if it has none), and allowed by `drivers`.
+- A unit of the vehicle's side on one of its `driverSeats` (or anywhere on board if it has none), whose armor is in `drivers`. With `drivers` empty, any unit that can walk drives; mounted guns drive only when their armor is listed.
 - No eligible crew on board means the vehicle can't move: an empty APC stays parked, and killing the driver stops it.
 
 **How the player drives**
@@ -241,7 +241,7 @@ Games that don't use vehicles save, load and run exactly as before; the cost of 
 
 **Saves.** The battle save gets a `vehicles` list: rule type, position, orientation, the layout as loaded, and the terrain each tile covers. A save without it has no vehicles, so older saves load unchanged. Prototype saves are not supported.
 
-**Mod validation at load.** Seats and pieces must lie inside the map, `front` must be 0, 2, 4 or 6, and `drivers` must name existing units or armors. Errors are reported like any other ruleset error.
+**Mod validation at load.** Seats and pieces must lie inside the map, `front` must be 0, 2, 4 or 6, and `drivers` must name existing armors. Errors are reported like any other ruleset error.
 
 **Engine cost**
 
