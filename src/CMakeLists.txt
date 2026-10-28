@@ -361,6 +361,7 @@ set ( savegame_src
   Savegame/BaseFacility.cpp
   Savegame/BattleItem.cpp
   Savegame/BattleUnit.cpp
+  Savegame/BattleVehicle.cpp
   Savegame/Country.cpp
   Savegame/Craft.cpp
   Savegame/CraftWeapon.cpp

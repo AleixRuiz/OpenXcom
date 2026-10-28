@@ -27,6 +27,7 @@
 #include "Tile.h"
 #include "HitLog.h"
 #include "Node.h"
+#include "BattleVehicle.h"
 #include "../Mod/MapDataSet.h"
 #include "../Battlescape/Pathfinding.h"
 #include "../Battlescape/TileEngine.h"
@@ -99,6 +100,10 @@ SavedBattleGame::~SavedBattleGame()
 	for (auto* node : _nodes)
 	{
 		delete node;
+	}
+	for (auto* vehicle : _vehicles)
+	{
+		delete vehicle;
 	}
 	for (auto* bu : _units)
 	{
@@ -237,6 +242,12 @@ void SavedBattleGame::load(const YAML::YamlNodeReader& node, Mod *mod, SavedGame
 		Node *n = new Node();
 		n->load(nodeConfig);
 		_nodes.push_back(n);
+	}
+	for (const auto& vehicleReader : reader["vehicles"].children())
+	{
+		BattleVehicle *vehicle = new BattleVehicle();
+		vehicle->load(vehicleReader);
+		_vehicles.push_back(vehicle);
 	}
 
 	//always reserve the sizes of your collections if you can
@@ -584,6 +595,12 @@ void SavedBattleGame::save(YAML::YamlNodeWriter writer) const
 	writer.write("nodes", _nodes,
 		[](YAML::YamlNodeWriter& w, Node* n)
 		{ n->save(w.write()); });
+	if (!_vehicles.empty())
+	{
+		writer.write("vehicles", _vehicles,
+			[](YAML::YamlNodeWriter& w, BattleVehicle* v)
+			{ v->save(w.write()); });
+	}
 	if (_missionType == "STR_BASE_DEFENSE")
 		writer.write("moduleMap", _baseModules);
 	writer.write("units", _units,
@@ -636,6 +653,12 @@ void SavedBattleGame::initMap(int mapsize_x, int mapsize_y, int mapsize_z, bool 
 	}
 
 	_nodes.clear();
+
+	for (auto* vehicle : _vehicles)
+	{
+		delete vehicle;
+	}
+	_vehicles.clear();
 
 	if (resetTerrain)
 	{

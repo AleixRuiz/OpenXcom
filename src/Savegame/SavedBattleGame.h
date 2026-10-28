@@ -47,6 +47,7 @@ class ItemContainer;
 class Craft;
 class RuleItem;
 class HitLog;
+class BattleVehicle;
 enum HitLogEntryType : int;
 struct BattlescapeTally;
 
@@ -78,6 +79,7 @@ private:
 	std::vector<Tile> _tiles;
 	BattleUnit *_selectedUnit, *_undoUnit, *_lastSelectedUnit;
 	std::vector<Node*> _nodes;
+	std::vector<BattleVehicle*> _vehicles;
 	std::vector<BattleUnit*> _units;
 	std::vector<BattleItem*> _items, _deleted;
 	Pathfinding *_pathfinding;
@@ -219,6 +221,8 @@ public:
 	int getGlobalShade() const;
 	/// Gets a pointer to the list of nodes.
 	std::vector<Node*> *getNodes();
+	/// Gets a pointer to the list of vehicles (craft map pieces that drive).
+	std::vector<BattleVehicle*> *getVehicles() { return &_vehicles; }
 	/// Gets a pointer to the list of items.
 	std::vector<BattleItem*> *getItems();
 	/// Gets a pointer to the list of units.

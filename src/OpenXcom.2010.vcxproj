@@ -688,6 +688,7 @@
     <ClCompile Include="Savegame\BaseFacility.cpp" />
     <ClCompile Include="Savegame\BattleItem.cpp" />
     <ClCompile Include="Savegame\BattleUnit.cpp" />
+    <ClCompile Include="Savegame\BattleVehicle.cpp" />
     <ClCompile Include="Savegame\Country.cpp" />
     <ClCompile Include="Savegame\Craft.cpp" />
     <ClCompile Include="Savegame\CraftWeapon.cpp" />
@@ -1187,6 +1188,7 @@
     <ClInclude Include="Savegame\BattleItem.h" />
     <ClInclude Include="Savegame\BattleUnit.h" />
     <ClInclude Include="Savegame\BattleUnitStatistics.h" />
+    <ClInclude Include="Savegame\BattleVehicle.h" />
     <ClInclude Include="Savegame\Country.h" />
     <ClInclude Include="Savegame\Craft.h" />
     <ClInclude Include="Savegame\CraftWeapon.h" />

@@ -146,6 +146,9 @@
     <ClCompile Include="Menu\NewGameState.cpp">
       <Filter>Menu</Filter>
     </ClCompile>
+    <ClCompile Include="Savegame\BattleVehicle.cpp">
+      <Filter>Savegame</Filter>
+    </ClCompile>
     <ClCompile Include="Savegame\SavedGame.cpp">
       <Filter>Savegame</Filter>
     </ClCompile>
@@ -1387,6 +1390,9 @@
     </ClInclude>
     <ClInclude Include="Menu\MainMenuState.h">
       <Filter>Menu</Filter>
+    </ClInclude>
+    <ClInclude Include="Savegame\BattleVehicle.h">
+      <Filter>Savegame</Filter>
     </ClInclude>
     <ClInclude Include="Savegame\SavedGame.h">
       <Filter>Savegame</Filter>

@@ -35,6 +35,7 @@
 #include "../Savegame/Ufo.h"
 #include "../Savegame/Craft.h"
 #include "../Savegame/Node.h"
+#include "../Savegame/BattleVehicle.h"
 #include "../Savegame/Vehicle.h"
 #include "../Savegame/MissionSite.h"
 #include "../Savegame/AlienBase.h"
@@ -48,6 +49,7 @@
 #include "../Mod/MapBlock.h"
 #include "../Mod/MapDataSet.h"
 #include "../Mod/RuleUfo.h"
+#include "../Mod/RuleBattleVehicle.h"
 #include "../Mod/RuleCraft.h"
 #include "../Mod/RuleInventory.h"
 #include "../Mod/Mod.h"
@@ -3308,8 +3310,23 @@ void BattlescapeGenerator::generateMap(const std::vector<MapScript*> *script, co
 			mds->loadData(_game->getMod()->getMCDPatch(mds->getName()));
 			_save->getMapDataSets()->push_back(mds);
 		}
+		// a craft that drives in battle: remember the terrain under its map, to tell its tile parts apart afterwards
+		const RuleBattleVehicle *vehicleRule = _craftRules->getBattleVehicle();
+		BattleVehicle::Placement vehiclePlacement;
+		if (vehicleRule)
+		{
+			vehiclePlacement.begin(_save, Position(_craftPos.x * 10, _craftPos.y * 10, 0), Position(craftMap->getSizeX(), craftMap->getSizeY(), _mapsize_z));
+		}
 		loadMAP(craftMap, _craftPos.x * 10, _craftPos.y * 10, _craftZ, _craftRules->getBattlescapeTerrainData(), mapDataSetIDOffset + craftDataSetIDOffset, _craftRules->isMapVisible(), true);
 		loadRMP(craftMap, _craftPos.x * 10, _craftPos.y * 10, _craftZ, Node::CRAFTSEGMENT);
+		if (vehicleRule)
+		{
+			const Position origin(_craftPos.x * 10, _craftPos.y * 10, _craftZ);
+			for (auto* vehicle : vehiclePlacement.finish(_save, *vehicleRule, _craftRules->getType(), FACTION_PLAYER, mapDataSetIDOffset + craftDataSetIDOffset, (int)_save->getMapDataSets()->size(), origin))
+			{
+				_save->getVehicles()->push_back(vehicle);
+			}
+		}
 		for (int i = 0; i < craftMap->getSizeX() / 10; ++i)
 		{
 			for (int j = 0; j < craftMap->getSizeY() / 10; j++)
