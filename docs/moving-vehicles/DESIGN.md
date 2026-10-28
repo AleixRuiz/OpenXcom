@@ -55,8 +55,8 @@ We offer OXCE a small core first and keep everything else as separate follow-ups
 
 | Tier | Contents | Where it lives |
 | --- | --- | --- |
-| Core | Craft and UFO maps that move with what's on board, driving by a crew member, route preview, terrain that blocks or is crushed, saves | Pitched to OXCE first |
-| Follow-ups | Running over units, reaction fire rules, AI driving, turning, flying, choosing where drop pods land | Pitched one by one after the core |
+| Core | Craft maps that move with what's on board, driving by a crew member, route preview, terrain that blocks or is crushed, saves (see [MVP](MVP.md)) | Pitched to OXCE first |
+| Follow-ups | Running over units, reaction fire rules, UFO vehicles with AI driving, turning, flying, choosing where drop pods land | Pitched one by one after the core |
 | Mod side | Rosigma vehicles, showcase missions, any art-specific tricks | Rosigma rulesets, never in the engine |
 
 If OXCE declines or reshapes the core, the fork keeps working and Rosigma can ship it as a custom build. That choice belongs to the Rosigma team.
