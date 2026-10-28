@@ -180,7 +180,8 @@ bool BattleActionCost::spendTU(std::string *message)
 BattlescapeGame::BattlescapeGame(SavedBattleGame *save, BattlescapeState *parentState) :
 	_save(save), _parentState(parentState),
 	_playerPanicHandled(true), _AIActionCounter(0), _AISecondMove(false), _playedAggroSound(false),
-	_endTurnRequested(false), _endConfirmationHandled(false), _allEnemiesNeutralized(false)
+	_endTurnRequested(false), _endConfirmationHandled(false), _allEnemiesNeutralized(false),
+	_driveMode(false), _driveUnit(nullptr), _driveVehicle(nullptr)
 {
 	if (_save->isPreview())
 	{
@@ -1953,26 +1954,9 @@ void BattlescapeGame::primaryAction(Position pos)
 				playUnitResponseSound(unit, 0); // "select unit" sound
 			}
 		}
-		else if (playableUnitSelected() && BattleVehicle::getDrivenBy(_save, _save->getSelectedUnit()))
+		else if (playableUnitSelected() && isDriveMode())
 		{
-			// temporary, until drive mode: a unit on a driver seat drives its vehicle, so that the seat ends up at the clicked tile
-			BattleUnit *driver = _save->getSelectedUnit();
-			BattleVehicle *vehicle = BattleVehicle::getDrivenBy(_save, driver);
-			const Position target = vehicle->getPosition() + Position(pos.x - driver->getPosition().x, pos.y - driver->getPosition().y, 0);
-			std::vector<Position> path;
-			std::string error;
-			if (!vehicle->findPath(_save, target, path, error))
-			{
-				_parentState->warning(error);
-				return;
-			}
-			BattleAction drive;
-			drive.actor = driver;
-			drive.type = BA_NONE;
-			drive.ignoreSpottedEnemies = _save->isShiftPressed(true);
-			getMap()->setCursorType(CT_NONE);
-			_parentState->getGame()->getCursor()->setVisible(false);
-			statePushBack(new VehicleDriveBState(this, drive, vehicle, path));
+			driveVehicle(pos, bPreviewed);
 		}
 		else if (playableUnitSelected())
 		{
@@ -2047,6 +2031,120 @@ void BattlescapeGame::secondaryAction(Position pos)
 	_currentAction.actor = _save->getSelectedUnit();
 	_currentAction.strafe = Options::strafe && _save->isCtrlPressed(true) && _save->getSelectedUnit()->getTurretType() > -1;
 	statePushBack(new UnitTurnBState(this, _currentAction));
+}
+
+/**
+ * Checks whether drive mode is on: the selected unit switched it on and can still drive,
+ * so clicks on the map drive its vehicle.
+ * @return True if drive mode is on.
+ */
+bool BattlescapeGame::isDriveMode() const
+{
+	return _driveMode && _driveUnit == _save->getSelectedUnit() && BattleVehicle::getDrivenBy(_save, _driveUnit);
+}
+
+/**
+ * Switches drive mode on or off for the selected unit. It only goes on for a unit that can drive.
+ * @param driveMode Switch it on?
+ */
+void BattlescapeGame::setDriveMode(bool driveMode)
+{
+	BattleUnit *unit = _save->getSelectedUnit();
+	_driveMode = driveMode && BattleVehicle::getDrivenBy(_save, unit);
+	_driveUnit = _driveMode ? unit : nullptr;
+	_driveVehicle = nullptr;
+	_drivePath.clear();
+	_save->getPathfinding()->removePreview();
+}
+
+/**
+ * Switches drive mode off once its unit is no longer selected or can no longer drive
+ * (another unit was selected, it left its seat, it was knocked out).
+ */
+void BattlescapeGame::checkDriveMode()
+{
+	if (_driveMode && !isDriveMode())
+	{
+		_driveMode = false;
+		_driveUnit = nullptr;
+		_driveVehicle = nullptr;
+		_drivePath.clear();
+	}
+}
+
+/**
+ * Gets the previewed drive shown on the map.
+ * @param stop Gets the vehicle position where the drive stops.
+ * @return The vehicle, or null if no drive is previewed.
+ */
+const BattleVehicle *BattlescapeGame::getDrivePreview(Position &stop) const
+{
+	if (!_driveVehicle || _drivePath.empty() || !_save->getPathfinding()->isCustomPathPreviewed())
+	{
+		return nullptr;
+	}
+	stop = _drivePath.back();
+	return _driveVehicle;
+}
+
+/**
+ * Drives the selected unit's vehicle so that the unit ends up at the clicked tile, on the vehicle's
+ * level. With path preview on, the first click shows the route of the vehicle's center, the time
+ * units left after each step and a see-through vehicle where it stops; a second click on the same
+ * tile drives. Shift drives on past newly spotted enemies, as for walking.
+ * @param pos Clicked position on the map.
+ * @param previewed Is path preview on?
+ */
+void BattlescapeGame::driveVehicle(Position pos, bool previewed)
+{
+	BattleUnit *driver = _save->getSelectedUnit();
+	BattleVehicle *vehicle = BattleVehicle::getDrivenBy(_save, driver);
+	Pathfinding *pathfinding = _save->getPathfinding();
+	const bool confirmed = previewed && pathfinding->isCustomPathPreviewed() && _driveVehicle == vehicle && _driveTarget == pos && !_drivePath.empty();
+	pathfinding->removePreview();
+	if (!confirmed)
+	{
+		_driveTarget = pos;
+		_driveVehicle = vehicle;
+		const Position target = vehicle->getPosition() + Position(pos.x - driver->getPosition().x, pos.y - driver->getPosition().y, 0);
+		std::string error;
+		if (!vehicle->findPath(_save, target, _drivePath, error))
+		{
+			_driveVehicle = nullptr;
+			_drivePath.clear();
+			_parentState->warning(error);
+			return;
+		}
+	}
+
+	if (previewed && !confirmed)
+	{
+		std::vector<Position> tiles;
+		std::vector<int> directions, tuLeft;
+		const Position center = vehicle->getCenter() - vehicle->getPosition();
+		Position previous = vehicle->getPosition();
+		int tu = driver->getTimeUnits();
+		for (size_t i = 0; i < _drivePath.size(); ++i)
+		{
+			tu -= vehicle->getStepCost(_save->getMod(), _drivePath[i] - previous);
+			tiles.push_back(_drivePath[i] + center);
+			directions.push_back(i + 1 < _drivePath.size() ? Pathfinding::vectorToDirection(_drivePath[i + 1] - _drivePath[i]) : 10);
+			tuLeft.push_back(tu);
+			previous = _drivePath[i];
+		}
+		pathfinding->previewCustomPath(tiles, directions, tuLeft);
+		return;
+	}
+
+	BattleAction drive;
+	drive.actor = driver;
+	drive.type = BA_NONE;
+	drive.ignoreSpottedEnemies = _save->isShiftPressed(true);
+	getMap()->setCursorType(CT_NONE);
+	_parentState->getGame()->getCursor()->setVisible(false);
+	statePushBack(new VehicleDriveBState(this, drive, vehicle, _drivePath));
+	_driveVehicle = nullptr;
+	_drivePath.clear();
 }
 
 /**

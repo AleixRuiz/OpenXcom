@@ -53,7 +53,10 @@ private:
 	bool _ctrlUsed = false;
 	bool _altUsed = false;
 	PathfindingCost _totalTUCost;
+	std::vector<Position> _customPreview;
 
+	/// Unmarks the tiles of a path previewed with previewCustomPath.
+	void clearCustomPreview();
 	/// Gets the node at certain position.
 	PathfindingNode *getNode(Position pos);
 
@@ -262,6 +265,10 @@ public:
 	bool removePreview();
 	/// Refresh the path preview.
 	void refreshPath();
+	/// Previews a path found elsewhere (a driving vehicle): tiles, arrow directions (10 = end) and time units left.
+	void previewCustomPath(const std::vector<Position> &tiles, const std::vector<int> &directions, const std::vector<int> &tuLeft);
+	/// Is the previewed path one given to previewCustomPath?
+	bool isCustomPathPreviewed() const { return _pathPreviewed && !_customPreview.empty(); }
 
 	/// Sets _unit in order to abuse low-level pathfinding functions from outside the class.
 	void setUnit(BattleUnit *unit);

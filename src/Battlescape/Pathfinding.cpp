@@ -1179,6 +1179,11 @@ bool Pathfinding::validateUpDown(const BattleUnit *bu, const Position& startPosi
  */
 bool Pathfinding::previewPath(bool bRemove)
 {
+	if (!_customPreview.empty())
+	{
+		clearCustomPreview();
+	}
+
 	if (_path.empty())
 		return false;
 
@@ -1210,8 +1215,57 @@ bool Pathfinding::removePreview()
 {
 	if (!_pathPreviewed)
 		return false;
+	if (!_customPreview.empty())
+	{
+		clearCustomPreview();
+		return true;
+	}
 	previewPath(true);
 	return true;
+}
+
+/**
+ * Marks the tiles of a path found elsewhere, like the route of a driving vehicle.
+ * @param tiles Tiles to mark.
+ * @param directions Arrow direction on each tile, 10 for the end of the path.
+ * @param tuLeft Time units left on each tile; negative ones are shown in red.
+ */
+void Pathfinding::previewCustomPath(const std::vector<Position> &tiles, const std::vector<int> &directions, const std::vector<int> &tuLeft)
+{
+	removePreview();
+	for (size_t i = 0; i < tiles.size(); ++i)
+	{
+		Tile *tile = _save->getTile(tiles[i]);
+		if (tile)
+		{
+			tile->setPreview(directions[i]);
+			tile->setTUMarker(std::max(0, tuLeft[i]));
+			tile->setEnergyMarker(-1);
+			tile->setMarkerColor(tuLeft[i] >= 0 ? Pathfinding::green : Pathfinding::red);
+			_customPreview.push_back(tiles[i]);
+		}
+	}
+	_pathPreviewed = !_customPreview.empty();
+}
+
+/**
+ * Unmarks the tiles of a path previewed with previewCustomPath.
+ */
+void Pathfinding::clearCustomPreview()
+{
+	for (const auto &pos : _customPreview)
+	{
+		Tile *tile = _save->getTile(pos);
+		if (tile)
+		{
+			tile->setPreview(-1);
+			tile->setTUMarker(-1);
+			tile->setEnergyMarker(-1);
+			tile->setMarkerColor(0);
+		}
+	}
+	_customPreview.clear();
+	_pathPreviewed = false;
 }
 
 /**
@@ -1219,6 +1273,10 @@ bool Pathfinding::removePreview()
  */
 void Pathfinding::refreshPath()
 {
+	if (!_customPreview.empty())
+	{
+		return; // a path previewed with previewCustomPath is marked by whoever found it
+	}
 	Position pos = _unit->getPosition();
 
 	int tus = _unit->getTimeUnits();

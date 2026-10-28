@@ -77,6 +77,7 @@
 #include "../Savegame/SavedGame.h"
 #include "../Savegame/SavedBattleGame.h"
 #include "../Savegame/Tile.h"
+#include "../Savegame/BattleVehicle.h"
 #include "../Savegame/BattleUnit.h"
 #include "../Savegame/Soldier.h"
 #include "../Savegame/BattleItem.h"
@@ -199,6 +200,8 @@ BattlescapeState::BattlescapeState() :
 	_btnSpecial->setVisible(false);
 	_btnSkills = new BattlescapeButton(32, 24, screenWidth - 32, 25); // we need screenWidth, because that is independent of the black bars on the screen
 	_btnSkills->setVisible(false);
+	_btnDrive = new BattlescapeButton(32, 24, screenWidth - 32, 25); // we need screenWidth, because that is independent of the black bars on the screen
+	_btnDrive->setVisible(false);
 
 	{
 		int posX = (screenWidth - 32);
@@ -388,6 +391,8 @@ BattlescapeState::BattlescapeState() :
 	_game->getMod()->getSurfaceSet("SPICONS.DAT")->getFrame(1)->blitNShade(_btnSpecial, 0, 0); // use psi button for default
 	add(_btnSkills);
 	_game->getMod()->getSurfaceSet("SPICONS.DAT")->getFrame(1)->blitNShade(_btnSkills, 0, 0); // use psi button for default
+	add(_btnDrive);
+	drawDriveButton();
 
 	add(_btnCtrl);
 	add(_btnAlt);
@@ -662,6 +667,13 @@ BattlescapeState::BattlescapeState() :
 
 	_btnSkills->onMouseClick((ActionHandler)&BattlescapeState::btnSkillsClick);
 	_btnSkills->onKeyboardPress((ActionHandler)&BattlescapeState::btnSkillsClick, Options::keyBattleUseSpecial);
+
+	// the drive hotkey is handled in handle(), so it also works when the button has no free slot
+	_btnDrive->onMouseClick((ActionHandler)&BattlescapeState::btnDriveClick);
+	_btnDrive->setTooltip("STR_DRIVE_VEHICLE");
+	_btnDrive->onMouseIn((ActionHandler)&BattlescapeState::txtTooltipIn);
+	_btnDrive->onMouseOut((ActionHandler)&BattlescapeState::txtTooltipOut);
+	_btnDrive->allowToggleInversion();
 
 	_btnCtrl->onMouseClick((ActionHandler)&BattlescapeState::btnCtrlClick);
 	_btnAlt->onMouseClick((ActionHandler)&BattlescapeState::btnAltClick);
@@ -1894,6 +1906,22 @@ void BattlescapeState::btnSkillsClick(Action *action)
 }
 
 /**
+ * Switches drive mode for the selected unit, when it stands on a driver seat of a vehicle.
+ * With drive mode on, clicks on the map drive the vehicle instead of walking the unit.
+ * @param action Pointer to an action.
+ */
+void BattlescapeState::btnDriveClick(Action *action)
+{
+	if (allowButtons() && playableUnitSelected() && BattleVehicle::getDrivenBy(_save, _save->getSelectedUnit()))
+	{
+		_battleGame->cancelCurrentAction();
+		_battleGame->setDriveMode(!_battleGame->isDriveMode());
+		_btnDrive->toggle(_battleGame->isDriveMode());
+	}
+	action->getDetails()->type = SDL_NOEVENT; // consume the event
+}
+
+/**
  * Reserves time units.
  * @param action Pointer to an action.
  */
@@ -2119,6 +2147,7 @@ void BattlescapeState::drawHandsItems()
 void BattlescapeState::updateSoldierInfo(bool checkFOV)
 {
 	BattleUnit *battleUnit = _save->getSelectedUnit();
+	_battleGame->checkDriveMode();
 
 	for (int i = 0; i < VISIBLE_MAX; ++i)
 	{
@@ -2438,6 +2467,14 @@ void BattlescapeState::updateUiButton(const BattleUnit *battleUnit)
 			show(_btnPsi, 1);
 		}
 	}
+	// the drive button keeps its own picture, and only shows when a slot is free (its hotkey always works)
+	if (BattleVehicle::getDrivenBy(_save, battleUnit) && offset < SPECIAL_BUTTONS_MAX)
+	{
+		_btnDrive->setVisible(true);
+		_btnDrive->setX(_posSpecialActions[offset]);
+		++offset;
+	}
+	_btnDrive->toggle(_battleGame->isDriveMode());
 }
 
 void BattlescapeState::resetUiButton()
@@ -2446,6 +2483,7 @@ void BattlescapeState::resetUiButton()
 		_btnPsi,
 		_btnSkills,
 		_btnSpecial,
+		_btnDrive,
 	};
 
 	for (auto* btn : btns)
@@ -2453,6 +2491,57 @@ void BattlescapeState::resetUiButton()
 		btn->setVisible(false);
 		btn->setX(_posSpecialActions[0]);
 	}
+}
+
+/**
+ * Draws the drive button like the other special action buttons: the frame of the psi button,
+ * with a label and a steering wheel in the colors of its own picture.
+ */
+void BattlescapeState::drawDriveButton()
+{
+	Surface *frame = _game->getMod()->getSurfaceSet("SPICONS.DAT")->getFrame(1);
+	frame->blitNShade(_btnDrive, 0, 0);
+	const Uint8 background = frame->getPixel(2, 2);
+	const Uint8 ink = frame->getPixel(12, 3);
+	// "DRIVE" in the 3x5 letters of the original buttons, over a wheel
+	static const char *label[5] = {
+		"110 110 1 101 111",
+		"101 101 1 101 100",
+		"101 110 1 101 110",
+		"101 101 1 101 100",
+		"110 101 1 010 111",
+	};
+	_btnDrive->lock();
+	for (int y = 2; y < _btnDrive->getHeight() - 2; ++y)
+	{
+		for (int x = 2; x < _btnDrive->getWidth() - 2; ++x)
+		{
+			_btnDrive->setPixel(x, y, background);
+		}
+	}
+	for (int y = 0; y < 5; ++y)
+	{
+		for (int x = 0; label[y][x] != 0; ++x)
+		{
+			if (label[y][x] == '1')
+			{
+				_btnDrive->setPixel(8 + x, 3 + y, ink);
+			}
+		}
+	}
+	for (int y = 9; y < 21; ++y)
+	{
+		for (int x = 10; x < 23; ++x)
+		{
+			const int dx = x - 16, dy = y - 15, distance = dx * dx + dy * dy;
+			if ((distance >= 12 && distance <= 30) || (dy == 0 && std::abs(dx) <= 4) || (dx == 0 && dy > 0 && dy <= 4))
+			{
+				_btnDrive->setPixel(x, y, ink);
+			}
+		}
+	}
+	_btnDrive->unlock();
+	_btnDrive->initSurfaces(); // the pressed look, while drive mode is on
 }
 
 /**
@@ -2737,6 +2826,12 @@ inline void BattlescapeState::handle(Action *action)
 					{
 						btnPrevSoldierClick(action);
 					}
+				}
+
+				// drive mode on or off
+				if (key == Options::keyBattleDrive && !ctrlPressed && !altPressed && !shiftPressed)
+				{
+					btnDriveClick(action);
 				}
 
 				// "ctrl-b" - reopen briefing
@@ -4063,7 +4158,7 @@ void BattlescapeState::resize(int &dX, int &dY)
 		{
 			continue;
 		}
-		if (surf != _map && surf != _btnPsi && surf != _btnLaunch && surf != _btnSpecial && surf != _btnSkills && surf != _txtDebug)
+		if (surf != _map && surf != _btnPsi && surf != _btnLaunch && surf != _btnSpecial && surf != _btnSkills && surf != _btnDrive && surf != _txtDebug)
 		{
 			surf->setX(surf->getX() + dX / 2);
 			surf->setY(surf->getY() + dY);

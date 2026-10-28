@@ -52,7 +52,7 @@ private:
 	Map *_map;
 	BattlescapeButton *_btnUnitUp, *_btnUnitDown, *_btnMapUp, *_btnMapDown, *_btnShowMap, *_btnKneel;
 	BattlescapeButton *_btnInventory, *_btnCenter, *_btnNextSoldier, *_btnNextStop, *_btnShowLayers, *_btnHelp;
-	BattlescapeButton *_btnEndTurn, *_btnAbort, *_btnLaunch, *_btnPsi, *_btnSpecial, *_btnSkills, *_reserve;
+	BattlescapeButton *_btnEndTurn, *_btnAbort, *_btnLaunch, *_btnPsi, *_btnSpecial, *_btnSkills, *_btnDrive, *_reserve;
 	BattlescapeButton *_btnCtrl, *_btnAlt, *_btnShift, *_btnRMB, *_btnMMB;
 	bool _touchButtonsEnabled;
 	InteractiveSurface *_btnStats;
@@ -200,6 +200,8 @@ public:
 	void btnSpecialClick(Action *action);
 	/// Handler for clicking the skills menu button.
 	void btnSkillsClick(Action *action);
+	/// Handler for clicking the drive button (or pressing its hotkey): switches drive mode.
+	void btnDriveClick(Action *action);
 	/// Handler for clicking a reserved button.
 	void btnReserveClick(Action *action);
 	/// Handler for clicking the reload button.
@@ -248,6 +250,8 @@ public:
 	void showLaunchButton(bool show);
 	/// Reset visiblity of special buttons like psi or skill.
 	void resetUiButton();
+	/// Draws the drive button.
+	void drawDriveButton();
 	/// Clears mouse-scrolling state.
 	void clearMouseScrollingState();
 	/// Returns a pointer to the battlegame, in case we need its functions.

@@ -1046,4 +1046,34 @@ const char *BattleVehicle::getMoveResultString(MoveResult result)
 	}
 }
 
+/**
+ * Gets the vehicle's own parts that would stand on a tile if the vehicle were at another
+ * position, in their current state, to draw a preview of where a drive ends.
+ * @param save Battle save.
+ * @param ghostPos Vehicle position to preview.
+ * @param tilePos The tile.
+ * @param parts Gets the parts on that tile, null where the vehicle has none.
+ * @return True if the vehicle would have a part on the tile.
+ */
+bool BattleVehicle::getGhostParts(SavedBattleGame *save, Position ghostPos, Position tilePos, const MapData *parts[O_MAX]) const
+{
+	const int i = getCellIndex(tilePos - ghostPos + _pos);
+	const Tile *current = i != -1 ? save->getTile(_pos + _cells[i].offset) : nullptr;
+	bool any = false;
+	for (int part = O_FLOOR; part < O_MAX; ++part)
+	{
+		parts[part] = nullptr;
+		if (current && (_cells[i].owned & (1 << part)))
+		{
+			const PartRef ref = getPart(current, (TilePart)part);
+			if (isOwnSet(ref.setId))
+			{
+				parts[part] = getMapData(save, ref);
+				any = any || parts[part] != nullptr;
+			}
+		}
+	}
+	return any;
+}
+
 }

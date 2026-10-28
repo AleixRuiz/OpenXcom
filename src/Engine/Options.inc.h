@@ -59,6 +59,7 @@ OPT SDLKey keyGeoDailyPilotExperience, keyGeoUfoTracker, keyGeoTechTreeViewer, k
 	keyBattleUnitUp, keyBattleUnitDown,
 	keyBattleShowLayers,
 	keyBattleUseSpecial,
+	keyBattleDrive,
 	keyBattleActionItem1, keyBattleActionItem2, keyBattleActionItem3, keyBattleActionItem4, keyBattleActionItem5,
 	keyNightVisionToggle, keyNightVisionHold, keySelectMusicTrack;
 OPT SDLKey keyBasescapeBuildNewBase, keyBasescapeBaseInfo, keyBasescapeSoldiers, keyBasescapeCrafts,

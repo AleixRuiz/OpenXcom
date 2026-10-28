@@ -270,6 +270,7 @@ en-US:
   STR_TARGET_YOURSELF: "; Target = YOURSELF"
   STR_TARGET_ON_THE_GROUND: " (on the ground)"
   STR_USE_SPECIAL_ITEM: "Use Special Item"
+  STR_DRIVE_VEHICLE: "Drive Vehicle"
   STR_NO_EXPERIENCE_YET: "No experience yet:"
 #BriefingState.cpp
   STR_OPERATION_UC: "OPERATION> {0}"

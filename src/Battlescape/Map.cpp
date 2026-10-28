@@ -25,6 +25,7 @@
 #include "Projectile.h"
 #include "Explosion.h"
 #include "BattlescapeState.h"
+#include "BattlescapeGame.h"
 #include "Particle.h"
 #include "../Mod/Mod.h"
 #include "../Engine/Action.h"
@@ -40,6 +41,7 @@
 #include "../Savegame/Tile.h"
 #include "../Savegame/BattleUnit.h"
 #include "../Savegame/BattleItem.h"
+#include "../Savegame/BattleVehicle.h"
 #include "../Ufopaedia/Ufopaedia.h"
 #include "../Mod/RuleItem.h"
 #include "../Mod/RuleInterface.h"
@@ -882,6 +884,8 @@ void Map::drawTerrain(Surface *surface)
 
 
 	bool pathfinderTurnedOn = _save->getPathfinding()->isPathPreviewed();
+	Position driveStop;
+	const BattleVehicle *driveVehicle = _save->getBattleGame() ? _save->getBattleGame()->getDrivePreview(driveStop) : nullptr;
 
 	if (!_waypoints.empty() || (pathfinderTurnedOn && (_previewSettingTu || _previewSettingEnergy)))
 	{
@@ -1313,6 +1317,25 @@ void Map::drawTerrain(Surface *surface)
 									Surface::blitRaw(surface, tmpSurface, screenPosition.x, screenPosition.y - tile->getYOffset(O_OBJECT), obstacleShade, false, _nvColor);
 								else
 									Surface::blitRaw(surface, tmpSurface, screenPosition.x, screenPosition.y - tile->getYOffset(O_OBJECT), tileShade, false, _nvColor);
+							}
+						}
+					}
+					// Draw the see-through vehicle where a previewed drive stops
+					if (driveVehicle)
+					{
+						const MapData *ghostParts[O_MAX];
+						if (driveVehicle->getGhostParts(_save, driveStop, mapPosition, ghostParts))
+						{
+							for (int part = O_FLOOR; part < O_MAX; ++part)
+							{
+								if (ghostParts[part])
+								{
+									tmpSurface = ghostParts[part]->getDataset()->getSurfaceset()->getFrame(ghostParts[part]->getSprite(0));
+									if (tmpSurface)
+									{
+										Surface::blitRaw(surface, tmpSurface, screenPosition.x, screenPosition.y - ghostParts[part]->getYOffset(), tileShade, true, _nvColor);
+									}
+								}
 							}
 						}
 					}

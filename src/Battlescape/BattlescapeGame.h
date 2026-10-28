@@ -28,6 +28,7 @@ namespace OpenXcom
 {
 
 class BattleUnit;
+class BattleVehicle;
 class SavedBattleGame;
 class BattleItem;
 class BattleState;
@@ -147,6 +148,13 @@ private:
 	helper::SingleRun _endTurnProcessed;
 	helper::SingleRun _triggerProcessed;
 
+	// drive mode: map clicks drive the vehicle of the unit that switched it on
+	bool _driveMode;
+	BattleUnit *_driveUnit;
+	BattleVehicle *_driveVehicle;
+	Position _driveTarget;
+	std::vector<Position> _drivePath;
+
 	/// Ends the turn.
 	void endTurn();
 	/// Picks the first soldier that is panicking.
@@ -155,6 +163,8 @@ private:
 	bool handlePanickingUnit(BattleUnit *unit);
 	/// Determines whether there are any actions pending for the given unit.
 	bool noActionsPending(BattleUnit *bu);
+	/// Previews, or starts, a drive of the selected unit's vehicle to a tile.
+	void driveVehicle(Position pos, bool previewed);
 	std::vector<InfoboxOKState*> _infoboxQueue;
 	/// Shows the infoboxes in the queue (if any).
 	void showInfoBoxQueue();
@@ -222,6 +232,14 @@ public:
 	void primaryAction(Position pos);
 	/// Activates secondary action (right click).
 	void secondaryAction(Position pos);
+	/// Is drive mode on for the selected unit (map clicks drive its vehicle)?
+	bool isDriveMode() const;
+	/// Switches drive mode on or off for the selected unit.
+	void setDriveMode(bool driveMode);
+	/// Switches drive mode off when its unit is no longer selected or can no longer drive.
+	void checkDriveMode();
+	/// Gets the vehicle whose previewed drive is shown, and where it stops; null if none.
+	const BattleVehicle *getDrivePreview(Position &stop) const;
 	/// Handler for the blaster launcher button.
 	void launchAction();
 	/// Handler for the psi button.

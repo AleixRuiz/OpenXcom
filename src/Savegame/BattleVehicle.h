@@ -159,6 +159,8 @@ public:
 	bool findPath(SavedBattleGame *save, Position target, std::vector<Position> &path, std::string &error) const;
 	/// Gets the message (a string ID) telling why a step failed.
 	static const char *getMoveResultString(MoveResult result);
+	/// Gets the vehicle's parts that would stand on a tile if the vehicle were at another position, to preview a drive.
+	bool getGhostParts(SavedBattleGame *save, Position ghostPos, Position tilePos, const MapData *parts[O_MAX]) const;
 };
 
 }
