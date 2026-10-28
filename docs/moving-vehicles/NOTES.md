@@ -1,6 +1,6 @@
 # Moving Vehicles — Findings and ideas
 
-A running log of what we learn about the engine while building the feature, and ideas that could make it better. Newest entries at the top of each section; each finding says what it changes in the plan.
+A running log of what we learn about the engine while building the feature, and ideas that could make it better. Newest entries at the top of each section; each finding says what it changes in the plan. Game design choices and their reasons go to [GAME_DESIGN_DECISIONS.md](GAME_DESIGN_DECISIONS.md).
 
 ## How OXCE is tested and reviewed
 

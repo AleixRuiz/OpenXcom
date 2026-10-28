@@ -2,6 +2,8 @@
 
 Last updated 2026-10-28 · Aleix Ruiz Sorribes
 
+Why each game design choice was made, and what we turned down, is logged in [GAME_DESIGN_DECISIONS.md](GAME_DESIGN_DECISIONS.md).
+
 ## Summary
 
 Moving vehicles lets a mod mark parts of a battle map, such as a craft, a UFO or a convoy, as vehicles that drive during the battle, carrying the units and items on board. A vehicle stays ordinary terrain, built from the map art mods already have, so soldiers walk inside it, shoot out of it, take cover in it and blow holes in it.
