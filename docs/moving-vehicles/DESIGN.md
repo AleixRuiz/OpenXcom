@@ -137,6 +137,32 @@ ufos:
 
 Every key gets an entry in the OXCE ruleset reference on the wiki, with the Rosigma Chimera and a vanilla craft as examples.
 
+### Ruleset reference (MVP)
+
+What the MVP build reads, ready for the wiki. All keys are optional; a craft without a `battleVehicle` block never drives. Keys of later milestones (`tuPerTurn`, `runOverDamage`, `front`, `fly` and so on) are not read yet.
+
+| Key | Type | Default | Meaning |
+| --- | --- | --- | --- |
+| `split` | `connected`, `rects` or `whole` | `connected` | How the craft map becomes vehicles: each separate group of touching tiles (also diagonally or on another level), the rectangles in `pieces` (tiles outside them make one more vehicle), or the whole map as one vehicle. |
+| `pieces` | list of `[x, y, width, length]` | none | Rectangles in craft map tiles, for `split: rects`. Each must fit inside every map block of the craft. |
+| `driverSeats` | list of `[x, y, z]` | none | Craft map tiles a unit must stand on to drive the vehicle they belong to. Without seats, any unit on board can drive. Seats outside every vehicle are ignored with a warning in the log. |
+| `drivers` | list of armor types | none | Armors allowed to drive. Without it, any unit of the vehicle's side that can walk drives; units that can't walk (mounted guns) only drive when their armor is listed. |
+| `tuPerTile` | integer | 4 | Driver time units per straight step; a diagonal step costs half as much again. |
+| `crushArmor` | integer | 0 | Terrain parts with this armor or less are destroyed when the vehicle drives through them, with whatever they turn into. Indestructible (255), explosive, lift, exit, start and mission objective parts always block. |
+
+Example, the vanilla Skyranger:
+
+```yaml
+crafts:
+  - type: STR_SKYRANGER
+    battleVehicle:
+      driverSeats: [[4, 9, 1]]   # front tile of the cabin
+      tuPerTile: 4
+      crushArmor: 30             # fences, bushes and trees
+```
+
+The drive hotkey is the `keyBattleDrive` option (**D** by default), under Battlescape in the controls options.
+
 ## Driving and controls
 
 Any crew member standing on a driver seat can drive, using a drive mode they switch on and off, so the same soldier can drive, then climb out and fight. This replaces the prototype's spawned skull unit.

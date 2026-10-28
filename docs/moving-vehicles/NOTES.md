@@ -25,6 +25,12 @@ From the [OpenXcom coding style](https://www.ufopaedia.org/index.php/Coding_Styl
 
 | Date | Finding | What it changes |
 | --- | --- | --- |
+| 2026-10-28 | A finished battle state's `action.result` is shown by `BattlescapeGame::popState` as a translated warning to the player. | The drive state only sets a string ID when it stops; no message code of its own. |
+| 2026-10-28 | A hidden surface ignores every event, key presses included (`InteractiveSurface::handle`). | The drive hotkey is handled in `BattlescapeState::handle`, so it works when the Drive button has no free slot. |
+| 2026-10-28 | `State::add` builds a battle button's pressed picture before the button's icon is drawn. | The Drive button calls `initSurfaces()` again after drawing its icon. |
+| 2026-10-28 | Vanilla `SPICONS.DAT` has only two frames (launch and psi). | The Drive icon is drawn in code from the psi frame's colors, in the original 3x5 lettering. |
+| 2026-10-28 | Options are declared in `Options.inc.h`, which nearly every file includes. | Adding the drive hotkey rebuilt the whole game; later option changes should be batched together. |
+| 2026-10-28 | The Skyranger's troop compartment is level 1 of its map (it stands on landing gear, the ramp leads down). | Vanilla seats can sit on level 1; the demo's seat is `[4, 9, 1]`. |
 | 2026-10-28 | A map block's height is only known once its MAP file is read (`MapBlock` defaults to 4 levels until then). | Seats are checked for x and y when the mod loads, and for their level when the battle starts. |
 | 2026-10-28 | Placing a craft or UFO part on a tile also removes the terrain object there (`BattlescapeGenerator::loadMAP`). | Every vehicle tile owns its object slot, so the terrain object comes back when the vehicle leaves. |
 | 2026-10-28 | The game takes `-user`, `-cfg` and `-load <save>` on the command line. | Scripted test launches use their own profile and never touch the player's saves or mod list. |
@@ -44,9 +50,11 @@ From the [OpenXcom coding style](https://www.ufopaedia.org/index.php/Coding_Styl
 
 | Idea | Why it could help | When |
 | --- | --- | --- |
-| Mounted guns (units that can't walk) never drive unless `drivers` names their armor | Avoids a turret on a seat taking the wheel by accident | MVP, Phase 1 |
-| Show how far the vehicle can still go (time units / `tuPerTile`) on the Drive button or in the route preview | Players plan drives without trial and error | Phase 4 |
-| Shift+click drives on past newly spotted enemies, as it already does for walking (`ignoreSpottedEnemies`) | Same control as walking, no new rule | Phase 4 |
+| A ruleset key for the Drive button's picture (a `SPICONS.DAT` frame), like special weapons have | Mods can give the button art that fits them | After the MVP |
+| Show the drive hotkey in the Drive button's tooltip | Players learn the hotkey without opening the options | After the MVP |
+| Mounted guns (units that can't walk) never drive unless `drivers` names their armor | Avoids a turret on a seat taking the wheel by accident | Done in Phase 1 (`RuleBattleVehicle::canDrive`) |
+| Show how far the vehicle can still go (time units / `tuPerTile`) on the Drive button or in the route preview | Players plan drives without trial and error | After the MVP; the route preview already shows the time units left per step |
+| Shift+click drives on past newly spotted enemies, as it already does for walking (`ignoreSpottedEnemies`) | Same control as walking, no new rule | Done in Phase 4 |
 | In OXCE debug mode, outline each vehicle and show its id on the map | Replaces the prototype's debug keys with something useful to testers | After the MVP |
 | Check `battleVehicle` blocks in the existing test screen (seats and pieces against each map block) | Modders find broken blocks without starting a battle | After the MVP |
 | Smooth motion between tiles (draw the vehicle shifted while it moves) | Driving looks like driving instead of jumping a tile | After the MVP |

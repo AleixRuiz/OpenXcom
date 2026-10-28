@@ -1,0 +1,24 @@
+# Rosigma vehicles that drive during the battle. A soldier on a driver seat switches on
+# drive mode with the Drive button or the drive hotkey (D), then clicks where to go: the
+# first click previews the route, the second drives. Turrets can't drive (they can't walk).
+# Rosigma terrain is tough: most of its walls have 50 to 100 armor.
+crafts:
+  # Three Chimeras on one craft map, each a vehicle of its own. Each driver seat is the
+  # front-left tile of its troop bay (the front is the south end of the map).
+  - type: STR_CHIMERA
+    battleVehicle:
+      driverSeats: [[1, 6, 0], [7, 10, 0], [2, 17, 0]]
+      tuPerTile: 4
+      crushArmor: 100
+  - type: STR_CHIMERASL
+    battleVehicle:
+      driverSeats: [[1, 6, 0], [7, 10, 0], [2, 17, 0]]
+      tuPerTile: 4
+      crushArmor: 100
+  # The Baneblade is one big vehicle (the trailer at the back is part of it). Its driver
+  # seats are the small command post beside the turret basket, on level 1.
+  - type: STR_BANEBLADE
+    battleVehicle:
+      driverSeats: [[5, 8, 1], [4, 8, 1]]
+      tuPerTile: 6
+      crushArmor: 254

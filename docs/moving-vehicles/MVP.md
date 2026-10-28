@@ -50,15 +50,17 @@ The MVP is milestone M1 of the [design](DESIGN.md#roadmap): the player drives cr
 
 ## Demo mods
 
+Both are in [mods](mods/README.md); [TESTING.md](TESTING.md) has the in-game checks.
+
 - **Vanilla:** a small mod that marks a vanilla UFO Defense craft map as a vehicle, to show the feature is not Rosigma-specific.
 - **Rosigma:** the Chimera and Baneblade converted from the prototype's test mod to the `battleVehicle` keys.
 
 ## Done when
 
-- [ ] The game builds with no new warnings on Windows, and the CMake build still lists every new file.
+- [x] The game builds with no new warnings on Windows, and the CMake build still lists every new file.
 - [ ] Vanilla UFO and TFTD battles with no `battleVehicle` play and save exactly as before.
 - [ ] The vanilla demo craft and the Rosigma Chimera both drive, crush light terrain and are blocked by heavy terrain and units.
 - [ ] Soldiers ride along, walk out in drive mode off, and items left on board ride along too.
 - [ ] A battle saved mid-drive and loaded again keeps every vehicle, crew member, item and crushed tile where it was.
-- [ ] A broken `battleVehicle` block (seat outside the map, unknown driver armor) is reported when the mod loads.
-- [ ] Every new ruleset key is described in the design document, ready for the OXCE wiki.
+- [x] A broken `battleVehicle` block (seat outside the map, unknown driver armor) is reported when the mod loads.
+- [x] Every new ruleset key is described in the design document, ready for the OXCE wiki.

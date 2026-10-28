@@ -1,0 +1,10 @@
+# The Skyranger drives during the battle. A soldier on the front tile of the cabin
+# (level 1, the raised troop compartment) switches on drive mode with the Drive button
+# or the drive hotkey (D), then clicks where to go: the first click previews the route,
+# the second drives. Fences, bushes and trees (armor up to 30) are crushed on the way.
+crafts:
+  - type: STR_SKYRANGER
+    battleVehicle:
+      driverSeats: [[4, 9, 1]]
+      tuPerTile: 4
+      crushArmor: 30

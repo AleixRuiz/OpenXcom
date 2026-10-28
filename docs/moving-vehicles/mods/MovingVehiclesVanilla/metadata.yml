@@ -1,0 +1,7 @@
+name: "Moving vehicles: Skyranger"
+version: "1.0"
+author: "Aleix Ruiz Sorribes"
+description: "Demo of moving vehicles on vanilla UFO Defense: the Skyranger drives during battles. Needs an OpenXcom Extended build with battleVehicle support."
+id: moving_vehicles_vanilla
+master: xcom1
+isMaster: false

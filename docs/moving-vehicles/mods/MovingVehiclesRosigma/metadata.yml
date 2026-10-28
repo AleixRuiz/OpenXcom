@@ -1,0 +1,7 @@
+name: "Moving vehicles: Rosigma"
+version: "1.0"
+author: "Aleix Ruiz Sorribes"
+description: "Rosigma's Chimeras and Baneblade drive during battles. Needs an OpenXcom Extended build with battleVehicle support, and Rosigma."
+id: moving_vehicles_rosigma
+master: 40k
+isMaster: false

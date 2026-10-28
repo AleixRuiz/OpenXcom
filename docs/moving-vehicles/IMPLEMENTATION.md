@@ -2,15 +2,17 @@
 
 Last updated 2026-10-28 · Aleix Ruiz Sorribes
 
-The [MVP](MVP.md) is built in five phases on the `moving-vehicles` branch. Each phase builds cleanly, is tested in game, and lands as its own commit (pushed to the fork), so the history reads as a series of reviewable steps. Findings and ideas met on the way go to [NOTES.md](NOTES.md).
+The [MVP](MVP.md) is built in five phases on the `moving-vehicles` branch. Each phase builds cleanly and lands as its own commit (pushed to the fork), so the history reads as a series of reviewable steps that can be rolled back one by one. Findings and ideas met on the way go to [NOTES.md](NOTES.md); the in-game checks are collected in [TESTING.md](TESTING.md).
 
-| Phase | Delivers | Playable result |
-| --- | --- | --- |
-| 1. Rules | The `battleVehicle` block, read and checked | Mods with the block load; broken blocks are reported |
-| 2. Vehicles exist | Vehicles created from craft maps, kept in saves | Nothing moves yet; vehicles survive save and load |
-| 3. Driving engine | The drive step, route search and the drive state | A crew member on a seat drives by clicking a tile |
-| 4. Controls | Drive mode, Drive button and hotkey, route preview and ghost | The full MVP driving experience |
-| 5. Finish | Messages, validation polish, demo mods, ruleset reference | The MVP "Done when" list is ticked |
+All five phases are written, built and committed. Everything that can be checked without playing passed; the in-game checks are still to do.
+
+| Phase | Delivers | Playable result | Commit |
+| --- | --- | --- | --- |
+| 1. Rules | The `battleVehicle` block, read and checked | Mods with the block load; broken blocks are reported | `d94045336` |
+| 2. Vehicles exist | Vehicles created from craft maps, kept in saves | Nothing moves yet; vehicles survive save and load | `f39a33a9f` |
+| 3. Driving engine | The drive step, route search and the drive state | A crew member on a seat drives by clicking a tile | `587225250` |
+| 4. Controls | Drive mode, Drive button and hotkey, route preview and ghost | The full MVP driving experience | `38139c20f` |
+| 5. Finish | Messages, demo mods, ruleset reference, test plan | The MVP "Done when" list is ticked | the commit that adds this table |
 
 Rules for every phase:
 
@@ -33,9 +35,9 @@ Rules for every phase:
 
 **Checks**
 
-- [ ] Vanilla UFO Defense loads with no new messages (TFTD data isn't installed here; it is checked once before the pitch).
-- [ ] A test mod with a valid block on the Skyranger (map `PLANE`, 10x20) loads.
-- [ ] Each broken case (seat outside the map, unknown armor, negative cost, empty rectangles) is reported once, naming the craft.
+- [x] Vanilla UFO Defense loads with no new messages (TFTD data isn't installed here; it is checked once before the pitch).
+- [x] A test mod with a valid block on the Skyranger (map `PLANE`, 10x20) loads.
+- [x] Each broken case (seat outside the map, unknown armor, negative cost, empty rectangles) is reported once, naming the craft.
 
 **Commit:** `Moving vehicles: battleVehicle ruleset`
 
@@ -54,6 +56,7 @@ Rules for every phase:
 - [ ] The Rosigma Chimera craft gives three vehicles; the Skyranger test mod gives one.
 - [ ] Saving and loading keeps the `vehicles` list identical (compared in the save file).
 - [ ] A battle without `battleVehicle` writes no `vehicles` key.
+- [x] A battle save from before vehicles (no `vehicles` key) still opens.
 
 **Commit:** `Moving vehicles: create vehicles from craft maps and save them`
 
@@ -97,14 +100,16 @@ Rules for every phase:
 
 **Approach**
 
-- Every message ("the way is blocked", "not enough time units" and so on) becomes a translatable string in `bin/common/Language/OXCE/en-US.yml` and `en-GB.yml`.
+- Every message ("the way is blocked", "not enough time units" and so on) is a translatable string in `bin/common/Language/OXCE/en-US.yml` and `en-GB.yml`; they were added with the code that uses them, in Phases 3 and 4.
 - Validation messages and edge cases found while testing (for example, seats under a spawned turret) are tidied.
 - Demo mods in `docs/moving-vehicles/mods/`: a vanilla one on the Skyranger, and the Rosigma Chimera and Baneblade converted from the prototype's test mod. They live outside the engine code, so they are easy to leave out of an upstream proposal.
 - `DESIGN.md` gets a ruleset reference section, ready to copy to the OXCE wiki.
+- [TESTING.md](TESTING.md) collects every in-game check of the MVP as one plan to tick.
 - The MVP "Done when" list is run end to end.
 
 **Checks**
 
+- [x] Both demo mods load with no validation messages (the Rosigma seats are checked against the real Chimera, Steel Legion Chimera and Baneblade maps).
 - [ ] Every item of the MVP "Done when" list is ticked.
 
 **Commit:** `Moving vehicles: messages, demo mods and ruleset reference` (one or more commits, then the MVP is ready to pitch)
