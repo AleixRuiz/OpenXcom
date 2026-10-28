@@ -594,6 +594,14 @@ en-GB:
   STR_TESTS_FINISHED: "Finished."
   STR_DETAILED_INFO_IN_LOG_FILE: "Detailed info has been saved into openxcom.log"
 #=================== Savegame ===================
+#BattleVehicle.cpp
+  STR_VEHICLE_ALREADY_THERE: "The vehicle is already there!"
+  STR_VEHICLE_DOES_NOT_FIT_THERE: "The vehicle does not fit there!"
+  STR_VEHICLE_NO_ROUTE: "No route for the vehicle!"
+  STR_VEHICLE_BLOCKED_BY_MAP_EDGE: "The vehicle can't leave the map!"
+  STR_VEHICLE_BLOCKED_BY_VEHICLE: "Another vehicle is in the way!"
+  STR_VEHICLE_BLOCKED_BY_UNIT: "A unit is in the way!"
+  STR_VEHICLE_BLOCKED_BY_TERRAIN: "Terrain is in the way!"
 #Soldier.cpp
   STR_RANK_NONE: "-"
 #=================== Ufopaedia ===================

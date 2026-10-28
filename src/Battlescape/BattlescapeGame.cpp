@@ -25,6 +25,7 @@
 #include "BattleState.h"
 #include "UnitTurnBState.h"
 #include "UnitWalkBState.h"
+#include "VehicleDriveBState.h"
 #include "ProjectileFlyBState.h"
 #include "MeleeAttackBState.h"
 #include "PsiAttackBState.h"
@@ -44,6 +45,7 @@
 #include "../Savegame/SavedGame.h"
 #include "../Savegame/SavedBattleGame.h"
 #include "../Savegame/Tile.h"
+#include "../Savegame/BattleVehicle.h"
 #include "../Savegame/BattleUnit.h"
 #include "../Savegame/BattleItem.h"
 #include "../Mod/RuleItem.h"
@@ -1950,6 +1952,27 @@ void BattlescapeGame::primaryAction(Position pos)
 				_currentAction.actor = unit;
 				playUnitResponseSound(unit, 0); // "select unit" sound
 			}
+		}
+		else if (playableUnitSelected() && BattleVehicle::getDrivenBy(_save, _save->getSelectedUnit()))
+		{
+			// temporary, until drive mode: a unit on a driver seat drives its vehicle, so that the seat ends up at the clicked tile
+			BattleUnit *driver = _save->getSelectedUnit();
+			BattleVehicle *vehicle = BattleVehicle::getDrivenBy(_save, driver);
+			const Position target = vehicle->getPosition() + Position(pos.x - driver->getPosition().x, pos.y - driver->getPosition().y, 0);
+			std::vector<Position> path;
+			std::string error;
+			if (!vehicle->findPath(_save, target, path, error))
+			{
+				_parentState->warning(error);
+				return;
+			}
+			BattleAction drive;
+			drive.actor = driver;
+			drive.type = BA_NONE;
+			drive.ignoreSpottedEnemies = _save->isShiftPressed(true);
+			getMap()->setCursorType(CT_NONE);
+			_parentState->getGame()->getCursor()->setVisible(false);
+			statePushBack(new VehicleDriveBState(this, drive, vehicle, path));
 		}
 		else if (playableUnitSelected())
 		{

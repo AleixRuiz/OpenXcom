@@ -18,6 +18,7 @@
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <string>
+#include <utility>
 #include <vector>
 #include "../Battlescape/Position.h"
 #include "../Mod/MapData.h"
@@ -26,6 +27,7 @@
 namespace OpenXcom
 {
 
+class BattleUnit;
 class Mod;
 class RuleBattleVehicle;
 class SavedBattleGame;
@@ -56,6 +58,8 @@ public:
 		/// Terrain covered by the vehicle, only meaningful for owned parts.
 		PartRef under[O_MAX];
 	};
+	/// What happened to a step of the vehicle.
+	enum MoveResult { MOVE_OK, MOVE_BLOCKED_EDGE, MOVE_BLOCKED_VEHICLE, MOVE_BLOCKED_UNIT, MOVE_BLOCKED_TERRAIN };
 
 	/**
 	 * Finds the vehicles a craft map holds: remembers the terrain of the area before
@@ -81,9 +85,36 @@ private:
 	std::vector<Cell> _cells;
 	std::vector<Position> _seats;
 	std::vector<int> _nodeIds;
+	// cell index for each offset in the vehicle's bounding box, -1 where it has no tile
+	Position _size;
+	std::vector<int> _cellAt;
 
 	/// Is the tileset one of the vehicle's?
 	bool isOwnSet(int setId) const { return setId >= _firstSetId && setId < _lastSetId; }
+	/// Rebuilds the lookup of cells by offset, after the cells change.
+	void buildLookup();
+	/// Gets the index of the cell at a map position for the current vehicle position, -1 if none.
+	int getCellIndex(Position pos) const;
+	/// Gets the map data reference of a tile part.
+	static PartRef getPart(const Tile *tile, TilePart part);
+	/// Sets the map data of a tile part.
+	static void setPart(SavedBattleGame *save, Tile *tile, TilePart part, PartRef ref);
+	/// Gets the map data of a part reference.
+	static const MapData *getMapData(SavedBattleGame *save, PartRef ref);
+	/// Does terrain block the vehicle?
+	static bool isSolid(const MapData *md);
+	/// Can the vehicle destroy a terrain part?
+	static bool canDestroy(const MapData *md, SavedBattleGame *save, int crushArmor);
+	/// Can the vehicle crush its way through a terrain part (and whatever it turns into)?
+	static bool canCrush(const MapData *md, SavedBattleGame *save, int crushArmor);
+	/// Gets the strongest terrain armor the vehicle crushes.
+	int getCrushArmor(const Mod *mod) const;
+	/// Puts the covered terrain back, keeping the vehicle's own parts aside.
+	void lift(SavedBattleGame *save, std::vector<PartRef> &carried, std::vector<char> &discovered) const;
+	/// Sets the vehicle down at a position, remembering the terrain under it.
+	void place(SavedBattleGame *save, Position pos, const std::vector<PartRef> &carried, const std::vector<char> &discovered);
+	/// Checks whether the lifted vehicle can be set down at a position, and what it must crush there.
+	MoveResult checkPlace(SavedBattleGame *save, Position pos, const std::vector<PartRef> &carried, const std::vector<BattleUnit*> &passengers, int crushArmor, std::vector<std::pair<Tile*, TilePart> > &toCrush) const;
 
 public:
 	/// Creates an empty vehicle, to be loaded from a save.
@@ -105,10 +136,29 @@ public:
 	int getFaction() const { return _faction; }
 	/// Gets the position of the vehicle's lowest corner.
 	Position getPosition() const { return _pos; }
+	/// Gets the center of the vehicle, on its lowest level.
+	Position getCenter() const;
 	/// Gets the tiles covered by the vehicle.
 	const std::vector<Cell> &getCells() const { return _cells; }
 	/// Does the vehicle cover a tile?
-	bool covers(Position pos) const;
+	bool covers(Position pos) const { return getCellIndex(pos) != -1; }
+	/// Does a unit standing at a position stand on one of the vehicle's floors?
+	bool isOnBoard(SavedBattleGame *save, Position pos) const;
+	/// Gets the units carried by the vehicle.
+	std::vector<BattleUnit*> getPassengers(SavedBattleGame *save) const;
+
+	/// Can a unit drive the vehicle right now?
+	bool canDrive(SavedBattleGame *save, const BattleUnit *unit) const;
+	/// Gets the vehicle a unit can drive, if any.
+	static BattleVehicle *getDrivenBy(SavedBattleGame *save, const BattleUnit *unit);
+	/// Gets the driver's time unit cost of a step.
+	int getStepCost(const Mod *mod, Position delta) const;
+	/// Moves the vehicle by one step, with everything on board.
+	MoveResult move(SavedBattleGame *save, Position delta);
+	/// Finds the steps that take the vehicle to a new position on its level.
+	bool findPath(SavedBattleGame *save, Position target, std::vector<Position> &path, std::string &error) const;
+	/// Gets the message (a string ID) telling why a step failed.
+	static const char *getMoveResultString(MoveResult result);
 };
 
 }

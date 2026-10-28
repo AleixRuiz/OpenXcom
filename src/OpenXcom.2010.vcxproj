@@ -472,6 +472,7 @@
     <ClCompile Include="Battlescape\UnitTurnBState.cpp" />
     <ClCompile Include="Battlescape\UnitWalkBState.cpp" />
     <ClCompile Include="Battlescape\Particle.cpp" />
+    <ClCompile Include="Battlescape\VehicleDriveBState.cpp" />
     <ClCompile Include="Battlescape\WarningMessage.cpp" />
     <ClCompile Include="Engine\Action.cpp" />
     <ClCompile Include="Engine\AdlibMusic.cpp" />
@@ -953,6 +954,7 @@
     <ClInclude Include="Battlescape\UnitTurnBState.h" />
     <ClInclude Include="Battlescape\UnitWalkBState.h" />
     <ClInclude Include="Battlescape\Particle.h" />
+    <ClInclude Include="Battlescape\VehicleDriveBState.h" />
     <ClInclude Include="Battlescape\WarningMessage.h" />
     <ClInclude Include="Engine\Action.h" />
     <ClInclude Include="Engine\AdlibMusic.h" />

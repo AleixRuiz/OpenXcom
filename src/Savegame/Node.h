@@ -69,6 +69,8 @@ public:
 	int getPriority() const;
 	/// Gets the node's position.
 	Position getPosition() const;
+	/// Sets the node's position (when the vehicle it lies on moves).
+	void setPosition(Position pos) { _pos = pos; }
 	/// Gets the node's segment.
 	int getSegment() const;
 	/// Gets the node's type.
