@@ -6,8 +6,6 @@ Last updated 2026-10-28 · Aleix Ruiz Sorribes
 
 Moving vehicles lets a mod mark parts of a battle map, such as a craft, a UFO or a convoy, as vehicles that drive during the battle, carrying the units and items on board. A vehicle stays ordinary terrain, built from the map art mods already have, so soldiers walk inside it, shoot out of it, take cover in it and blow holes in it.
 
-The pitch to OXCE in one line: an opt-in ruleset feature that turns existing craft and UFO maps into drivable vehicles, with no change to games that don't use it.
-
 **Goals**
 
 - Works with existing map art: no new sprites needed to make a craft map move.
