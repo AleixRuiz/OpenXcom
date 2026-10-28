@@ -2,9 +2,9 @@
 
 Last updated 2026-10-28 · Aleix Ruiz Sorribes
 
-The [MVP](MVP.md) is built in five phases on the `moving-vehicles` branch. Each phase builds cleanly and lands as its own commit (pushed to the fork), so the history reads as a series of reviewable steps that can be rolled back one by one. Findings and ideas met on the way go to [NOTES.md](NOTES.md); the in-game checks are collected in [TESTING.md](TESTING.md).
+The [MVP](MVP.md) is built in phases on the `moving-vehicles` branch. Each phase builds cleanly and lands as its own commit (pushed to the fork), so the history reads as a series of reviewable steps that can be rolled back one by one. Findings and ideas met on the way go to [NOTES.md](NOTES.md); the in-game checks are collected in [TESTING.md](TESTING.md).
 
-All five phases are written, built and committed. Everything that can be checked without playing passed; the in-game checks are still to do.
+All six phases are written, built and committed. Everything that can be checked without playing passed; the in-game checks are still to do. Phase 6 was added after the first five, when testing showed that swapping drivers let a vehicle drive without limit.
 
 | Phase | Delivers | Playable result | Commit |
 | --- | --- | --- | --- |
@@ -12,7 +12,8 @@ All five phases are written, built and committed. Everything that can be checked
 | 2. Vehicles exist | Vehicles created from craft maps, kept in saves | Nothing moves yet; vehicles survive save and load | `f39a33a9f` |
 | 3. Driving engine | The drive step, route search and the drive state | A crew member on a seat drives by clicking a tile | `587225250` |
 | 4. Controls | Drive mode, Drive button and hotkey, route preview and ghost | The full MVP driving experience | `38139c20f` |
-| 5. Finish | Messages, demo mods, ruleset reference, test plan | The MVP "Done when" list is ticked | the commit that adds this table |
+| 5. Finish | Messages, demo mods, ruleset reference, test plan | The MVP "Done when" list is ticked | `c9b3a4e4d` |
+| 6. Vehicle time units | The vehicle's own `timeUnits` per turn, paid with the driver's | Swapping drivers no longer takes a vehicle further | the commit that adds this row |
 
 Rules for every phase:
 
@@ -113,3 +114,26 @@ Rules for every phase:
 - [ ] Every item of the MVP "Done when" list is ticked.
 
 **Commit:** `Moving vehicles: messages, demo mods and ruleset reference` (one or more commits, then the MVP is ready to pitch)
+
+## Phase 6: Vehicle time units
+
+Decided in [GD-16](GAME_DESIGN_DECISIONS.md#gd-16--vehicles-have-their-own-time-units-per-turn): only the driver paid for driving, so crew taking turns at the wheel drove a vehicle without limit.
+
+**Approach**
+
+- `RuleBattleVehicle` reads `timeUnits`; left out, it is 10 straight tiles' worth (`10 × tuPerTile`).
+- `BattleVehicle` keeps the time units it has left: full when the battle starts, saved as `timeUnits`, and full again when loading a save made before this phase.
+- `SavedBattleGame::endTurn` fills them up for the side whose turn starts, next to where its units get theirs back.
+- `VehicleDriveBState` charges each step to both the driver and the vehicle, and stops with `STR_VEHICLE_OUT_OF_TIME_UNITS` when the vehicle can't pay (checked first, since another driver wouldn't help).
+- The route preview counts down the lower of the two.
+- The step cost stays in one function (`BattleVehicle::getStepCost`), where driver skill ([GD-17](GAME_DESIGN_DECISIONS.md#gd-17--skilled-and-dedicated-drivers-make-a-vehicle-go-further)) will plug in.
+- Demo values: Skyranger 40 (10 tiles), Chimeras 48 (12 tiles), Baneblade 48 (8 tiles at 6 per tile).
+
+**Checks**
+
+- [x] Builds with no new warnings.
+- [x] Both demo mods load with no messages.
+- [x] A battle save made before this phase (vehicles without `timeUnits`) loads.
+- [ ] The in-game checks under "Vehicle time units" in [TESTING.md](TESTING.md).
+
+**Commit:** `Moving vehicles: vehicles have their own time units per turn`

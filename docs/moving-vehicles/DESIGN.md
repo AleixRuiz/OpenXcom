@@ -112,8 +112,9 @@ crafts:
       pieces: []              # rectangles [x, y, width, length] in map tiles, for split: rects
       driverSeats: [[2, 4, 0]] # map tiles a unit must stand on to drive; empty = any tile of the vehicle
       drivers: []             # armor types allowed to drive; empty = any unit of the owner's side that can walk
-      tuPerTile: 4            # driver time units per tile (diagonal x1.5)
-      tuPerTurn: 8            # driver time units per quarter turn
+      tuPerTile: 4            # time units per tile, paid by the vehicle and its driver (diagonal x1.5)
+      timeUnits: 48           # the vehicle's own time units per turn; default 10 x tuPerTile
+      tuPerQuarterTurn: 8     # time units per quarter turn
       crushArmor: 100         # terrain parts with this armor or less are crushed
       runOverDamage: 150      # damage to units driven onto; 0 = units block the vehicle
       runOverDamageType: 8    # damage type, melee by default
@@ -141,7 +142,7 @@ Every key gets an entry in the OXCE ruleset reference on the wiki, with the Rosi
 
 ### Ruleset reference (MVP)
 
-What the MVP build reads, ready for the wiki. All keys are optional; a craft without a `battleVehicle` block never drives. Keys of later milestones (`tuPerTurn`, `runOverDamage`, `front`, `fly` and so on) are not read yet.
+What the MVP build reads, ready for the wiki. All keys are optional; a craft without a `battleVehicle` block never drives. Keys of later milestones (`tuPerQuarterTurn`, `runOverDamage`, `front`, `fly` and so on) are not read yet.
 
 | Key | Type | Default | Meaning |
 | --- | --- | --- | --- |
@@ -149,7 +150,8 @@ What the MVP build reads, ready for the wiki. All keys are optional; a craft wit
 | `pieces` | list of `[x, y, width, length]` | none | Rectangles in craft map tiles, for `split: rects`. Each must fit inside every map block of the craft. |
 | `driverSeats` | list of `[x, y, z]` | none | Craft map tiles a unit must stand on to drive the vehicle they belong to. Without seats, any unit on board can drive. Seats outside every vehicle are ignored with a warning in the log. |
 | `drivers` | list of armor types | none | Armors allowed to drive. Without it, any unit of the vehicle's side that can walk drives; units that can't walk (mounted guns) only drive when their armor is listed. |
-| `tuPerTile` | integer | 4 | Driver time units per straight step; a diagonal step costs half as much again. |
+| `tuPerTile` | integer | 4 | Time units per straight step, paid by both the vehicle and its driver; a diagonal step costs half as much again. |
+| `timeUnits` | integer | 10 × `tuPerTile` | The vehicle's own time units per turn, filled up at the start of its side's turn. However many crew take turns driving, the vehicle never goes further than this in one turn. |
 | `crushArmor` | integer | 0 | Terrain parts with this armor or less are destroyed when the vehicle drives through them, with whatever they turn into. Indestructible (255), explosive, lift, exit, start and mission objective parts always block. |
 
 Example, the vanilla Skyranger:
@@ -160,6 +162,7 @@ crafts:
     battleVehicle:
       driverSeats: [[4, 9, 1]]   # front tile of the cabin
       tuPerTile: 4
+      timeUnits: 40              # up to 10 tiles a turn
       crushArmor: 30             # fences, bushes and trees
 ```
 
@@ -184,8 +187,10 @@ Any crew member standing on a driver seat can drive, using a drive mode they swi
 
 **Time units and interruptions**
 
-- The driver pays `tuPerTile` per tile (x1.5 diagonal) and `tuPerTurn` per quarter turn.
-- Driving stops like walking does: out of time units, a new enemy spotted, reaction fire, or something in the way.
+- Each step costs `tuPerTile` per tile (x1.5 diagonal) and `tuPerQuarterTurn` per quarter turn, paid both by the driver and by the vehicle's own `timeUnits`, which fill up at the start of its side's turn. Swapping drivers lets a fresh crew member take over, but never takes the vehicle further than its time units in one turn (see [GD-16](GAME_DESIGN_DECISIONS.md#gd-16--vehicles-have-their-own-time-units-per-turn)).
+- The route preview counts down whichever is lower, the driver's or the vehicle's time units.
+- Driving stops like walking does: the driver or the vehicle out of time units, a new enemy spotted, reaction fire, or something in the way.
+- Later, the driver's skill can make each tile cheaper, rewarding dedicated drivers (see [GD-17](GAME_DESIGN_DECISIONS.md#gd-17--skilled-and-dedicated-drivers-make-a-vehicle-go-further)).
 - The AI drives with the same rules and costs (see AI vehicles).
 
 ## Movement rules

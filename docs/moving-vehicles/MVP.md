@@ -18,13 +18,13 @@ The MVP is milestone M1 of the [design](DESIGN.md#roadmap): the player drives cr
 
 | Feature | Scope in the MVP | Design section |
 | --- | --- | --- |
-| Ruleset | `battleVehicle` block under `crafts`, with `split`, `pieces`, `driverSeats`, `drivers`, `tuPerTile`, `crushArmor`; checked when the mod loads | Ruleset design |
+| Ruleset | `battleVehicle` block under `crafts`, with `split`, `pieces`, `driverSeats`, `drivers`, `tuPerTile`, `timeUnits`, `crushArmor`; checked when the mod loads | Ruleset design |
 | Vehicles from craft maps | Craft map split into vehicles by connected tiles or by rectangles, at battle start | Core model |
 | What moves | Hull parts (with damage), units on its floors, mounted units, items on its floors, route nodes, discovered tiles | Core model |
-| Driving | A crew member on a seat drives in drive mode; pays `tuPerTile` per tile (x1.5 diagonal) | Driving and controls |
+| Driving | A crew member on a seat drives in drive mode; each tile costs `tuPerTile` (x1.5 diagonal) to the driver and to the vehicle's own `timeUnits` per turn, so swapping drivers doesn't take it further | Driving and controls |
 | Route preview | Center path, time units left per step, ghost at the end, second click confirms | Driving and controls |
 | Movement rules | Map edge, other vehicles and all units block; solid terrain up to `crushArmor` is crushed; special terrain blocks; no corner cutting; gravity on tiles left behind and above crushed terrain | Movement rules |
-| Interruptions | Driving stops when out of time units, when a new enemy comes into view, or when the next step is blocked | Driving and controls |
+| Interruptions | Driving stops when the driver or the vehicle is out of time units, when a new enemy comes into view, or when the next step is blocked | Driving and controls |
 | Saves | `vehicles` list in the battle save; saves without it load unchanged | Saves, compatibility and performance |
 | Messages | Every message through translatable strings (English first) | Where we are |
 | Performance | No map-sized allocations or scans of every unit per step or per route check | Saves, compatibility and performance |
@@ -61,6 +61,7 @@ Both are in [mods](mods/README.md); [TESTING.md](TESTING.md) has the in-game che
 - [ ] Vanilla UFO and TFTD battles with no `battleVehicle` play and save exactly as before.
 - [ ] The vanilla demo craft and the Rosigma Chimera both drive, crush light terrain and are blocked by heavy terrain and units.
 - [ ] Soldiers ride along, walk out in drive mode off, and items left on board ride along too.
+- [ ] A vehicle never drives further in one turn than its `timeUnits`, however many crew take turns driving, and gets them back on the next turn.
 - [ ] A battle saved mid-drive and loaded again keeps every vehicle, crew member, item and crushed tile where it was.
 - [x] A broken `battleVehicle` block (seat outside the map, unknown driver armor) is reported when the mod loads.
 - [x] Every new ruleset key is described in the design document, ready for the OXCE wiki.

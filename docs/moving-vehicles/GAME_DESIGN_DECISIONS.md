@@ -22,7 +22,7 @@ Why moving vehicles plays the way it does. Each entry records a game design choi
 | [GD-02](#gd-02--a-crew-member-drives-no-spawned-driver) | A crew member drives; no spawned driver | Decided | M1 |
 | [GD-03](#gd-03--driving-from-a-seat-with-a-drive-mode) | Driving from a seat, with a drive mode | Decided | M1 |
 | [GD-04](#gd-04--who-may-drive-is-set-by-armor) | Who may drive is set by armor | Decided | M1 |
-| [GD-05](#gd-05--driving-costs-the-drivers-time-units) | Driving costs the driver's time units | Decided | M1 |
+| [GD-05](#gd-05--driving-costs-the-drivers-time-units) | Driving costs the driver's time units | Decided, extended by GD-16 | M1 |
 | [GD-06](#gd-06--diagonal-steps-cost-more-and-cant-cut-corners) | Diagonal steps cost more and can't cut corners | Decided | M1 |
 | [GD-07](#gd-07--units-always-block-in-the-mvp) | Units always block in the MVP | Decided | M1 |
 | [GD-08](#gd-08--light-terrain-is-crushed-special-terrain-always-blocks) | Light terrain is crushed, special terrain always blocks | Decided | M1 |
@@ -33,8 +33,8 @@ Why moving vehicles plays the way it does. Each entry records a game design choi
 | [GD-13](#gd-13--craft-maps-first-ufo-vehicles-with-ai-drivers) | Craft maps first, UFO vehicles with AI drivers | Decided | M1, M2 |
 | [GD-14](#gd-14--ai-drivers-follow-the-players-rules) | AI drivers follow the player's rules | Decided | M2 |
 | [GD-15](#gd-15--turning-only-to-facings-the-art-can-show) | Turning only to facings the art can show | Decided | M3 |
-| [GD-16](#gd-16--vehicles-have-their-own-time-units-per-turn) | Vehicles have their own time units per turn | Proposed | M1 |
-| [GD-17](#gd-17--skilled-and-dedicated-drivers-make-a-vehicle-go-further) | Skilled and dedicated drivers make a vehicle go further | Proposed | M2 |
+| [GD-16](#gd-16--vehicles-have-their-own-time-units-per-turn) | Vehicles have their own time units per turn | Decided | M1 |
+| [GD-17](#gd-17--skilled-and-dedicated-drivers-make-a-vehicle-go-further) | Skilled and dedicated drivers make a vehicle go further | Direction agreed | M2 and later |
 
 ## Decisions
 
@@ -92,7 +92,7 @@ Decided · 2026-10-28
 
 **Turned down.** Free movement once per turn (what the prototype's AI vehicles did).
 
-**Revisit when.** Changed by [GD-16](#gd-16--vehicles-have-their-own-time-units-per-turn) if it is agreed: the vehicle pays too.
+**Extended by** [GD-16](#gd-16--vehicles-have-their-own-time-units-per-turn): the driver still pays, and the vehicle pays the same from its own time units.
 
 ### GD-06 · Diagonal steps cost more and can't cut corners
 
@@ -178,11 +178,11 @@ Decided · 2026-10-28
 
 ### GD-16 · Vehicles have their own time units per turn
 
-Proposed · 2026-10-28
+Decided · 2026-10-28 · built in Phase 6
 
 **Problem.** Only the driver pays for driving. With several crew who can drive, the player drives, swaps seats and drives again: a vehicle with three crew goes three soldiers' worth of tiles in one turn.
 
-**Proposal.**
+**Decision.**
 
 - New key `timeUnits` under `battleVehicle`: the vehicle's time units per turn. It starts the battle full and fills up again at the start of its side's turn, when units get theirs back.
 - Each step costs the same from the vehicle and from the driver, and needs both to have enough.
@@ -199,14 +199,15 @@ Proposed · 2026-10-28
 - A time unit cost for taking the seat: makes the trick dearer but leaves the range unlimited with enough crew.
 - The vehicle pays and the driver doesn't: the driver would cross the map and still shoot with all their time units.
 
-**Open.**
+**Settled with it.**
 
-- Default when a mod leaves `timeUnits` out. Recommended: 10 straight tiles' worth (10 × `tuPerTile`), so no vehicle is unlimited by accident.
-- Demo values. Recommended: Skyranger 40 (10 tiles), Chimera 48 (12 tiles), Baneblade 48 (8 tiles at 6 per tile).
+- Left out, `timeUnits` is 10 straight tiles' worth (10 × `tuPerTile`), so no vehicle drives without a limit by accident. Turned down: no limit by default, which keeps the exploit for every mod that forgets the key.
+- Demo values: Skyranger 40 (10 tiles), Chimera 48 (12 tiles), Baneblade 48 (8 tiles at 6 per tile).
+- When both run out, the vehicle's message wins, since another driver wouldn't help.
 
 ### GD-17 · Skilled and dedicated drivers make a vehicle go further
 
-Proposed · 2026-10-28 · direction only, not for the MVP
+Direction agreed · 2026-10-28 · not for the MVP
 
 **Problem.** Any crew member drives equally well, so there is no reason to keep a dedicated driver, while Rosigma and other mods already have pilot soldier types (`STR_ADEPTAS_PILOT`) and OXCE already rewards good pilots in air combat.
 
@@ -228,4 +229,9 @@ Proposed · 2026-10-28 · direction only, not for the MVP
 - A bigger vehicle time unit pool for a good driver: who drives can change during the turn, so the pool would have to be recalculated mid-turn.
 - Skill that lets a driver ignore the stop on a newly seen enemy: Shift already does that, for everyone.
 
-**Open.** Whether reactions training from driving should also improve reaction fire (it would, since it is the same stat); the size of the bonus range; which layers go to M2.
+**Agreed.**
+
+- Layers 1 and 2 (skill makes each tile cheaper, assigned pilots count fully) are planned for M2; layers 3 to 5 come later.
+- Training from driving may also improve reaction fire: it is the same stat, and quick reflexes fit both.
+
+**Open.** The size of the bonus range, and each vehicle's zero point; set when layer 1 is built and tried in play.

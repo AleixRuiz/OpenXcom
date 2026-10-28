@@ -85,8 +85,8 @@ size_t VehicleDriveBState::countSpotted() const
 }
 
 /**
- * Drives one step. Like a walking unit, the vehicle stops when the driver runs out of time units,
- * when something blocks the way, or when the crew spots a new enemy.
+ * Drives one step. Like a walking unit, the vehicle stops when the driver or the vehicle runs out
+ * of time units, when something blocks the way, or when the crew spots a new enemy.
  */
 void VehicleDriveBState::think()
 {
@@ -100,6 +100,13 @@ void VehicleDriveBState::think()
 
 	const Position delta = _path[_step] - _vehicle->getPosition();
 	const int cost = _vehicle->getStepCost(save->getMod(), delta);
+	if (_vehicle->getTimeUnits() < cost)
+	{
+		// another driver wouldn't help either
+		_action.result = "STR_VEHICLE_OUT_OF_TIME_UNITS";
+		_parent->popState();
+		return;
+	}
 	if (driver->getTimeUnits() < cost)
 	{
 		_action.result = "STR_NOT_ENOUGH_TIME_UNITS";
@@ -116,6 +123,7 @@ void VehicleDriveBState::think()
 		return;
 	}
 	driver->spendTimeUnits(cost);
+	_vehicle->spendTimeUnits(cost);
 	++_step;
 
 	TileEngine *tileEngine = save->getTileEngine();

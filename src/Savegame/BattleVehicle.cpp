@@ -238,6 +238,7 @@ std::vector<BattleVehicle*> BattleVehicle::Placement::finish(SavedBattleGame *sa
 	for (int k = 0; k < pieceCount; ++k)
 	{
 		vehicles.push_back(new BattleVehicle(craftType, faction, firstSetId, lastSetId));
+		vehicles.back()->_timeUnits = rule.getTimeUnits();
 	}
 	for (size_t i = 0; i < cells.size(); ++i)
 	{
@@ -289,7 +290,7 @@ std::vector<BattleVehicle*> BattleVehicle::Placement::finish(SavedBattleGame *sa
 /**
  * Creates an empty vehicle, to be loaded from a save.
  */
-BattleVehicle::BattleVehicle() : _faction(0), _firstSetId(-1), _lastSetId(-1)
+BattleVehicle::BattleVehicle() : _faction(0), _timeUnits(0), _firstSetId(-1), _lastSetId(-1)
 {
 }
 
@@ -301,7 +302,7 @@ BattleVehicle::BattleVehicle() : _faction(0), _firstSetId(-1), _lastSetId(-1)
  * @param lastSetId Index after the craft's last tileset in the battle.
  */
 BattleVehicle::BattleVehicle(const std::string &craftType, int faction, int firstSetId, int lastSetId) :
-	_craftType(craftType), _faction(faction), _firstSetId(firstSetId), _lastSetId(lastSetId)
+	_craftType(craftType), _faction(faction), _timeUnits(0), _firstSetId(firstSetId), _lastSetId(lastSetId)
 {
 }
 
@@ -315,11 +316,14 @@ BattleVehicle::~BattleVehicle()
 /**
  * Loads the vehicle from YAML.
  * @param reader YAML node.
+ * @param mod The mod, for the time units of a vehicle saved without them.
  */
-void BattleVehicle::load(const YAML::YamlNodeReader &reader)
+void BattleVehicle::load(const YAML::YamlNodeReader &reader, const Mod *mod)
 {
 	reader.tryRead("craft", _craftType);
 	reader.tryRead("faction", _faction);
+	prepareNewTurn(mod);
+	reader.tryRead("timeUnits", _timeUnits);
 	reader.tryRead("position", _pos);
 	reader.tryRead("firstSetId", _firstSetId);
 	reader.tryRead("lastSetId", _lastSetId);
@@ -360,6 +364,7 @@ void BattleVehicle::save(YAML::YamlNodeWriter writer) const
 	writer.setAsMap();
 	writer.write("craft", _craftType);
 	writer.write("faction", _faction);
+	writer.write("timeUnits", _timeUnits);
 	writer.write("position", _pos);
 	writer.write("firstSetId", _firstSetId);
 	writer.write("lastSetId", _lastSetId);
@@ -394,6 +399,25 @@ const RuleBattleVehicle *BattleVehicle::getRule(const Mod *mod) const
 {
 	const RuleCraft *craft = mod->getCraft(_craftType);
 	return craft ? craft->getBattleVehicle() : nullptr;
+}
+
+/**
+ * Spends some of the vehicle's time units.
+ * @param tu Time units to spend.
+ */
+void BattleVehicle::spendTimeUnits(int tu)
+{
+	_timeUnits = std::max(0, _timeUnits - tu);
+}
+
+/**
+ * Gives the vehicle all its time units back, at the start of its side's turn.
+ * @param mod The mod.
+ */
+void BattleVehicle::prepareNewTurn(const Mod *mod)
+{
+	const RuleBattleVehicle *rule = getRule(mod);
+	_timeUnits = rule ? rule->getTimeUnits() : 0;
 }
 
 /**
@@ -759,7 +783,7 @@ BattleVehicle *BattleVehicle::getDrivenBy(SavedBattleGame *save, const BattleUni
 }
 
 /**
- * Gets the driver's time unit cost of a step; diagonal steps cost half as much again.
+ * Gets the time unit cost of a step, paid by the vehicle and its driver; diagonal steps cost half as much again.
  * @param mod The mod.
  * @param delta The step.
  * @return Time units.

@@ -25,6 +25,7 @@ From the [OpenXcom coding style](https://www.ufopaedia.org/index.php/Coding_Styl
 
 | Date | Finding | What it changes |
 | --- | --- | --- |
+| 2026-10-28 | Units get their time units back in `SavedBattleGame::endTurn`, for the side whose turn starts, after the side has changed. | Vehicles are filled up in the same place, so they follow exactly the units' turn order. |
 | 2026-10-28 | A finished battle state's `action.result` is shown by `BattlescapeGame::popState` as a translated warning to the player. | The drive state only sets a string ID when it stops; no message code of its own. |
 | 2026-10-28 | A hidden surface ignores every event, key presses included (`InteractiveSurface::handle`). | The drive hotkey is handled in `BattlescapeState::handle`, so it works when the Drive button has no free slot. |
 | 2026-10-28 | `State::add` builds a battle button's pressed picture before the button's icon is drawn. | The Drive button calls `initSurfaces()` again after drawing its icon. |

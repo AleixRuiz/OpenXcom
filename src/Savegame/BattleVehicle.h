@@ -80,6 +80,7 @@ public:
 private:
 	std::string _craftType;
 	int _faction;
+	int _timeUnits;
 	Position _pos;
 	int _firstSetId, _lastSetId;
 	std::vector<Cell> _cells;
@@ -124,7 +125,7 @@ public:
 	/// Cleans up the vehicle.
 	~BattleVehicle();
 	/// Loads the vehicle from YAML.
-	void load(const YAML::YamlNodeReader &reader);
+	void load(const YAML::YamlNodeReader &reader, const Mod *mod);
 	/// Saves the vehicle to YAML.
 	void save(YAML::YamlNodeWriter writer) const;
 
@@ -134,6 +135,12 @@ public:
 	const RuleBattleVehicle *getRule(const Mod *mod) const;
 	/// Gets the faction the vehicle belongs to.
 	int getFaction() const { return _faction; }
+	/// Gets the time units the vehicle has left this turn.
+	int getTimeUnits() const { return _timeUnits; }
+	/// Spends some of the vehicle's time units.
+	void spendTimeUnits(int tu);
+	/// Gives the vehicle its time units back, at the start of its side's turn.
+	void prepareNewTurn(const Mod *mod);
 	/// Gets the position of the vehicle's lowest corner.
 	Position getPosition() const { return _pos; }
 	/// Gets the center of the vehicle, on its lowest level.
@@ -151,7 +158,7 @@ public:
 	bool canDrive(SavedBattleGame *save, const BattleUnit *unit) const;
 	/// Gets the vehicle a unit can drive, if any.
 	static BattleVehicle *getDrivenBy(SavedBattleGame *save, const BattleUnit *unit);
-	/// Gets the driver's time unit cost of a step.
+	/// Gets the time unit cost of a step, paid by the vehicle and its driver.
 	int getStepCost(const Mod *mod, Position delta) const;
 	/// Moves the vehicle by one step, with everything on board.
 	MoveResult move(SavedBattleGame *save, Position delta);

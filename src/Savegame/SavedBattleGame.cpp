@@ -246,7 +246,7 @@ void SavedBattleGame::load(const YAML::YamlNodeReader& node, Mod *mod, SavedGame
 	for (const auto& vehicleReader : reader["vehicles"].children())
 	{
 		BattleVehicle *vehicle = new BattleVehicle();
-		vehicle->load(vehicleReader);
+		vehicle->load(vehicleReader, mod);
 		_vehicles.push_back(vehicle);
 	}
 
@@ -1630,6 +1630,15 @@ void SavedBattleGame::endTurn()
 		if (bu->getFaction() != FACTION_PLAYER)
 		{
 			bu->setVisible(false);
+		}
+	}
+
+	// vehicles get their time units back with their side
+	for (auto* vehicle : _vehicles)
+	{
+		if (vehicle->getFaction() == _side)
+		{
+			vehicle->prepareNewTurn(_rule);
 		}
 	}
 

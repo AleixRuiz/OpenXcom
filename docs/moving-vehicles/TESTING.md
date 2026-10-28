@@ -38,7 +38,7 @@ The game takes `-user <folder>` and `-cfg <folder>` on the command line, so a te
 **Route preview**
 
 - [ ] With drive mode on, click a tile: arrows mark the route of the vehicle's center, with the time units left after each step, and a see-through vehicle shows where it stops (the soldier's seat ends up on the clicked tile).
-- [ ] Steps beyond the driver's time units turn red.
+- [ ] Steps beyond the driver's or the vehicle's time units (whichever is lower) turn red.
 - [ ] Click the same tile again: the vehicle drives there, one tile per step, the camera following.
 - [ ] Click another tile instead: a new preview replaces the old one. A right click removes the preview.
 - [ ] Click where the vehicle can't fit or can't reach: "The vehicle does not fit there!" or "No route for the vehicle!", and nothing moves.
@@ -51,6 +51,15 @@ The game takes `-user <folder>` and `-cfg <folder>` on the command line, so a te
 - [ ] Heavy walls stop the route search, or the drive with "Terrain is in the way!".
 - [ ] A unit in the way blocks the vehicle ("A unit is in the way!"); so does another vehicle, and the map edge.
 - [ ] Each straight step costs the driver `tuPerTile` time units, each diagonal step half as much again; the drive stops when they run out ("Not Enough Time Units!").
+
+**Vehicle time units**
+
+- [ ] Drive a Chimera as far as it goes (12 straight tiles with the Rosigma demo, 10 for the Skyranger): it stops with "The vehicle can't move any further this turn!", even if the driver has time units left.
+- [ ] Put a fresh soldier on the seat: the preview shows no time units left and the vehicle doesn't move.
+- [ ] Drive part way with one soldier, swap to another: the second soldier can only use what the vehicle has left.
+- [ ] End the turn: on the next turn the vehicle drives its full distance again.
+- [ ] Each Chimera of the craft has its own time units: driving one doesn't use up the others'.
+- [ ] Save after driving part way and load: the vehicle has the same time units left.
 - [ ] The drive stops when a soldier on board spots a new enemy; Shift+click drives on past them.
 - [ ] Where the vehicle stood when the battle started, the ground is back after it drives away: no holes in the floor.
 

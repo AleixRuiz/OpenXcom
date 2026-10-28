@@ -30,9 +30,10 @@ namespace OpenXcom
 
 /**
  * Creates a blank battle vehicle ruleset: the craft map splits into its connected pieces,
- * anyone on board can drive, nothing is crushed.
+ * anyone on board can drive, nothing is crushed, and the vehicle's time units are set
+ * from its cost per tile once the rule is loaded.
  */
-RuleBattleVehicle::RuleBattleVehicle() : _split(SPLIT_CONNECTED), _tuPerTile(4), _crushArmor(0)
+RuleBattleVehicle::RuleBattleVehicle() : _split(SPLIT_CONNECTED), _tuPerTile(4), _timeUnits(-1), _crushArmor(0)
 {
 }
 
@@ -48,6 +49,7 @@ void RuleBattleVehicle::load(const YAML::YamlNodeReader &node)
 	node.tryRead("driverSeats", _driverSeats);
 	node.tryRead("drivers", _driverNames);
 	node.tryRead("tuPerTile", _tuPerTile);
+	node.tryRead("timeUnits", _timeUnits);
 	node.tryRead("crushArmor", _crushArmor);
 }
 
@@ -85,6 +87,11 @@ void RuleBattleVehicle::afterLoad(const Mod *mod, const std::string &craftType, 
 	if (mod->checkForSoftError(_crushArmor < 0, craftType, "battleVehicle: crushArmor cannot be negative.", LOG_ERROR))
 	{
 		_crushArmor = 0;
+	}
+	if (_timeUnits < 0)
+	{
+		// no limit given: a few straight tiles' worth, so no vehicle drives without a limit by accident
+		_timeUnits = DEFAULT_TILES_PER_TURN * _tuPerTile;
 	}
 
 	std::vector<MapBlock*> noBlocks;

@@ -44,8 +44,11 @@ private:
 	std::vector<std::vector<int> > _driverSeats;
 	std::vector<std::string> _driverNames;
 	std::vector<const Armor*> _drivers;
-	int _tuPerTile, _crushArmor;
+	int _tuPerTile, _timeUnits, _crushArmor;
 public:
+	/// Time units a vehicle gets per turn when its rule doesn't say, in straight tiles.
+	static constexpr int DEFAULT_TILES_PER_TURN = 10;
+
 	/// Creates a blank battle vehicle ruleset.
 	RuleBattleVehicle();
 	/// Loads the battle vehicle from YAML.
@@ -61,8 +64,10 @@ public:
 	const std::vector<std::vector<int> > &getDriverSeats() const { return _driverSeats; }
 	/// Can a unit with this armor drive?
 	bool canDrive(const Armor *armor) const;
-	/// Gets the driver's time unit cost to move the vehicle by one tile.
+	/// Gets the time unit cost to move the vehicle by one tile, paid by the vehicle and its driver.
 	int getTuPerTile() const { return _tuPerTile; }
+	/// Gets the vehicle's own time units per turn.
+	int getTimeUnits() const { return _timeUnits; }
 	/// Gets the strongest terrain armor the vehicle crushes when driving through.
 	int getCrushArmor() const { return _crushArmor; }
 };

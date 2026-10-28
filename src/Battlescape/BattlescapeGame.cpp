@@ -2123,7 +2123,8 @@ void BattlescapeGame::driveVehicle(Position pos, bool previewed)
 		std::vector<int> directions, tuLeft;
 		const Position center = vehicle->getCenter() - vehicle->getPosition();
 		Position previous = vehicle->getPosition();
-		int tu = driver->getTimeUnits();
+		// the drive stops when either the driver or the vehicle runs out
+		int tu = std::min(driver->getTimeUnits(), vehicle->getTimeUnits());
 		for (size_t i = 0; i < _drivePath.size(); ++i)
 		{
 			tu -= vehicle->getStepCost(_save->getMod(), _drivePath[i] - previous);

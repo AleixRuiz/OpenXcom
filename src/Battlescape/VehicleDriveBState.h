@@ -28,7 +28,7 @@ class BattleVehicle;
 
 /**
  * Drives a vehicle along a route, one tile per step, with everything on board.
- * The action's actor is the driver, who pays the time units.
+ * The action's actor is the driver; each step costs the same time units to the driver and to the vehicle.
  */
 class VehicleDriveBState : public BattleState
 {
