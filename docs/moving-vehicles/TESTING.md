@@ -69,5 +69,6 @@ The game takes `-user <folder>` and `-cfg <folder>` on the command line, so a te
 
 **Nothing else changed**
 
+- [ ] Start several Quick Battles in a row, on different missions, with the demo mod on and off: the battle screen opens every time.
 - [ ] With drive mode off, soldiers walk, kneel, shoot and open doors as usual, also inside the vehicle.
 - [ ] A battle without the demo mods plays exactly as before.

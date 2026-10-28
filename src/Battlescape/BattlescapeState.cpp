@@ -98,7 +98,7 @@ namespace OpenXcom
  * @param game Pointer to the core game.
  */
 BattlescapeState::BattlescapeState() :
-	_reserve(0), _touchButtonsEnabled(false), _manaBarVisible(false),
+	_reserve(0), _touchButtonsEnabled(false), _manaBarVisible(false), _battleGame(nullptr),
 	_firstInit(true), _paletteResetNeeded(false), _paletteResetRequested(false),
 	_isMouseScrolling(false), _isMouseScrolled(false),
 	_xBeforeMouseScrolling(0), _yBeforeMouseScrolling(0),
@@ -2474,7 +2474,8 @@ void BattlescapeState::updateUiButton(const BattleUnit *battleUnit)
 		_btnDrive->setX(_posSpecialActions[offset]);
 		++offset;
 	}
-	_btnDrive->toggle(_battleGame->isDriveMode());
+	// the battle game can be still under construction here (it checks for casualties at the start)
+	_btnDrive->toggle(_battleGame && _battleGame->isDriveMode());
 }
 
 void BattlescapeState::resetUiButton()
