@@ -312,6 +312,7 @@ set ( mod_src
   Mod/RuleAlienMission.cpp
   Mod/RuleArcScript.cpp
   Mod/RuleBaseFacility.cpp
+  Mod/RuleBattleVehicle.cpp
   Mod/RuleCommendations.cpp
   Mod/RuleConverter.cpp
   Mod/RuleCountry.cpp

@@ -31,6 +31,7 @@ namespace OpenXcom
 typedef std::vector<std::vector<int> > RuleCraftDeployment;
 
 class RuleTerrain;
+class RuleBattleVehicle;
 class RuleResearch;
 class RuleItem;
 class Mod;
@@ -215,6 +216,7 @@ private:
 	std::string _fixedWeaponNames[WeaponMax];
 	int _repairRate, _refuelRate, _transferTime, _score;
 	RuleTerrain *_battlescapeTerrainData;
+	RuleBattleVehicle *_battleVehicle;
 	int _maxSkinIndex;
 	bool _keepCraftAfterFailedMission, _allowLanding, _spacecraft, _notifyWhenRefueled, _autoPatrol, _undetectable, _patrolWithoutFuel;
 	int _missilePower;
@@ -333,6 +335,8 @@ public:
 	int getScore() const;
 	/// Gets the craft's terrain data.
 	RuleTerrain *getBattlescapeTerrainData() const;
+	/// Gets how the craft's battle map drives as vehicles, null if it doesn't.
+	const RuleBattleVehicle *getBattleVehicle() const { return _battleVehicle; }
 	/// Gets the craft's maximum skin index.
 	int getMaxSkinIndex() const { return _maxSkinIndex; }
 	/// Checks if this craft is lost after a failed mission or not.

@@ -17,6 +17,7 @@
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "RuleCraft.h"
+#include "RuleBattleVehicle.h"
 #include "RuleTerrain.h"
 #include "../Engine/Exception.h"
 #include "../Engine/RNG.h"
@@ -38,7 +39,7 @@ RuleCraft::RuleCraft(const std::string &type, int listOrder) :
 	_maxSmallSoldiers(-1), _maxLargeSoldiers(-1), _maxSmallVehicles(-1), _maxLargeVehicles(-1),
 	_maxSmallUnits(-1), _maxLargeUnits(-1), _maxSoldiers(-1), _maxVehicles(-1),
 	_monthlyBuyLimit(0), _costBuy(0), _costRent(0), _costSell(0), _repairRate(1), _refuelRate(1),
-	_transferTime(24), _score(0), _battlescapeTerrainData(0), _maxSkinIndex(0),
+	_transferTime(24), _score(0), _battlescapeTerrainData(0), _battleVehicle(nullptr), _maxSkinIndex(0),
 	_keepCraftAfterFailedMission(false), _allowLanding(true), _spacecraft(false), _notifyWhenRefueled(false), _autoPatrol(false), _undetectable(false),
 	_patrolWithoutFuel(false),
 	_missilePower(0),
@@ -66,6 +67,7 @@ RuleCraft::RuleCraft(const std::string &type, int listOrder) :
 RuleCraft::~RuleCraft()
 {
 	delete _battlescapeTerrainData;
+	delete _battleVehicle;
 }
 
 /**
@@ -140,6 +142,14 @@ void RuleCraft::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScript
 		RuleTerrain *rule = new RuleTerrain(terrain["name"].readVal<std::string>());
 		rule->load(terrain, mod);
 		_battlescapeTerrainData = rule;
+	}
+	if (const auto& vehicle = reader["battleVehicle"])
+	{
+		if (!_battleVehicle)
+		{
+			_battleVehicle = new RuleBattleVehicle();
+		}
+		_battleVehicle->load(vehicle);
 	}
 	reader.tryRead("craftInventoryTile", _craftInventoryTile);
 	mod->loadUnorderedInts(_type, _groups, reader["groups"]);
@@ -220,6 +230,11 @@ void RuleCraft::afterLoad(const Mod* mod)
 
 	mod->linkRule(_refuelItem, _refuelItemName);
 	mod->linkRule(_pilotSoldierBonusesRequired, _pilotSoldierBonusesRequiredNames);
+
+	if (_battleVehicle)
+	{
+		_battleVehicle->afterLoad(mod, _type, _battlescapeTerrainData);
+	}
 
 	// No turning soldiers into antimatter
 	mod->checkForSoftError(_stats.soldiers < 0, _type, "Default unit capacity cannot be negative.", LOG_ERROR);

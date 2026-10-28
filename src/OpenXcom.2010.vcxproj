@@ -624,6 +624,7 @@
     <ClCompile Include="Menu\VideoState.cpp" />
     <ClCompile Include="Mod\CustomPalettes.cpp" />
     <ClCompile Include="Mod\RuleArcScript.cpp" />
+    <ClCompile Include="Mod\RuleBattleVehicle.cpp" />
     <ClCompile Include="Mod\RuleDamageType.cpp" />
     <ClCompile Include="Mod\RuleEnviroEffects.cpp" />
     <ClCompile Include="Mod\RuleEvent.cpp" />
@@ -1119,6 +1120,7 @@
     <ClInclude Include="Mod\ModScript.h" />
     <ClInclude Include="Mod\RuleArcScript.h" />
     <ClInclude Include="Mod\RuleBaseFacilityFunctions.h" />
+    <ClInclude Include="Mod\RuleBattleVehicle.h" />
     <ClInclude Include="Mod\RuleDamageType.h" />
     <ClInclude Include="Mod\RuleEnviroEffects.h" />
     <ClInclude Include="Mod\RuleEvent.h" />

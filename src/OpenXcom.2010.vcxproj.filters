@@ -834,6 +834,9 @@
     <ClCompile Include="Mod\RuleBaseFacility.cpp">
       <Filter>Mod</Filter>
     </ClCompile>
+    <ClCompile Include="Mod\RuleBattleVehicle.cpp">
+      <Filter>Mod</Filter>
+    </ClCompile>
     <ClCompile Include="Mod\RuleCountry.cpp">
       <Filter>Mod</Filter>
     </ClCompile>
@@ -2094,6 +2097,9 @@
       <Filter>Mod</Filter>
     </ClInclude>
     <ClInclude Include="Mod\RuleBaseFacility.h">
+      <Filter>Mod</Filter>
+    </ClInclude>
+    <ClInclude Include="Mod\RuleBattleVehicle.h">
       <Filter>Mod</Filter>
     </ClInclude>
     <ClInclude Include="Mod\RuleCountry.h">
