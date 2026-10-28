@@ -2,10 +2,32 @@
 
 A running log of what we learn about the engine while building the feature, and ideas that could make it better. Newest entries at the top of each section; each finding says what it changes in the plan.
 
+## How OXCE is tested and reviewed
+
+- **No unit tests.** The repository has no test framework or test target. The CI workflow (`.github/workflows/nightly.test`, run by hand or on the `test` branch) only compiles: Windows with MSVC, and Linux with GCC using `-Wall -Wextra -Wshadow -Wsuggest-override` and more. The in-game test screen (`Menu/TestState`) checks mod data (route nodes, MCD files, palettes, script tags, map resources), not code.
+- **How we test instead:** rule problems are caught when the mod loads (`checkForSoftError`, `linkRule`); scripted launches with an isolated profile (`-user`, `-cfg`, and `-load <save>` to open a save directly) check that mods load and saves open; each phase has an in-game checklist. Adding a test framework to OXCE itself is not proposed: the project is conservative about new infrastructure.
+- **Contributions:** OXCE accepts no pull request without a forum discussion first (suggestion board, one feature per thread, describe the problem as well as the solution). Modding features are accepted only from modders, meaning established ones or those who published something non-trivial. The pull request template asks for a separate branch, one feature per request, the coding conventions, and a detailed explanation.
+
+## Conventions we follow
+
+From the [OpenXcom coding style](https://www.ufopaedia.org/index.php/Coding_Style_(OpenXcom)), `.editorconfig`, `.clang-format` and the code around ours:
+
+- Tabs for C++ indentation, Allman braces, braces even around one-line blocks, an empty line at the end of every file, no trailing whitespace; 2 spaces in `.rul` and `.yml` files.
+- `CamelCase` names: classes start uppercase, methods and variables lowercase, private members start with `_`, enums and constants are `UPPER_CASE`.
+- Comments with `//`. Every class has a `/** */` description in its header; every method has a one-line `///` brief in the header and a `/** */` description in its definition, with `@param` and `@return`, in full sentences ending with a period.
+- `*` and `&` next to the name (`int *a`, `const std::string &s`); objects passed by pointer or const reference; const getters; `++i`; `nullptr`, never `NULL`; no null check before `delete`.
+- One class per header and source file, named after the class; useless includes removed.
+- The style page still says C++03, but the project builds as C++17 and current OXCE code uses `auto`, range `for` loops and lambdas, so we follow the code around ours where the page is out of date.
+- Code must also compile cleanly with GCC and Clang (Linux CI), not only MSVC.
+- New source files are listed in `src/CMakeLists.txt` and the Visual Studio project and filters; `.vcxproj` files keep Windows line endings.
+
 ## Findings
 
 | Date | Finding | What it changes |
 | --- | --- | --- |
+| 2026-10-28 | A map block's height is only known once its MAP file is read (`MapBlock` defaults to 4 levels until then). | Seats are checked for x and y when the mod loads, and for their level when the battle starts. |
+| 2026-10-28 | Placing a craft or UFO part on a tile also removes the terrain object there (`BattlescapeGenerator::loadMAP`). | Every vehicle tile owns its object slot, so the terrain object comes back when the vehicle leaves. |
+| 2026-10-28 | The game takes `-user`, `-cfg` and `-load <save>` on the command line. | Scripted test launches use their own profile and never touch the player's saves or mod list. |
 | 2026-10-28 | OXCE does not tag releases; the dev branch is `oxce-plus`. 8.7.1 is commit `441cae1b0`, and the newest dev commit (`f0134ef80`) only adds a CI file on top of it. | Our branch starts from `f0134ef80`; we merge `upstream/oxce-plus` when it moves. |
 | 2026-10-28 | A craft map is loaded with its own copy of each of its tilesets, appended after the terrain's (`BattlescapeGenerator::generateMap`), so every craft tile part has a tileset index in the craft's own range. Saves store tilesets by name, in order, so the range survives save and load. | Vehicle parts are told apart from terrain by tileset range; no ownership data needed on tiles for craft vehicles. |
 | 2026-10-28 | Right after placing the craft, the generator fills every empty floor on level 0 with scorched earth. | A vehicle that leaves a level 0 tile must put scorched earth back where there was no floor, as the prototype did. |
