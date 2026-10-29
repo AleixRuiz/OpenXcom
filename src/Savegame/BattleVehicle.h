@@ -17,6 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <functional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -34,7 +35,7 @@ class SavedBattleGame;
 class Tile;
 
 /**
- * A piece of a craft map that drives during the battle, with the units and items on board.
+ * A piece of a craft or UFO map that drives during the battle, with the units and items on board.
  * The vehicle stays plain terrain inside the tiles: this remembers which tile parts belong
  * to it (by tileset, a craft map has its own copy of its tilesets) and what terrain they
  * cover, so it can be lifted off the map and set down somewhere else.
@@ -59,7 +60,21 @@ public:
 		PartRef under[O_MAX];
 	};
 	/// What happened to a step of the vehicle.
-	enum MoveResult { MOVE_OK, MOVE_BLOCKED_EDGE, MOVE_BLOCKED_VEHICLE, MOVE_BLOCKED_UNIT, MOVE_BLOCKED_TERRAIN, MOVE_TOO_STEEP };
+	enum MoveResult { MOVE_OK, MOVE_BLOCKED_EDGE, MOVE_BLOCKED_VEHICLE, MOVE_BLOCKED_UNIT, MOVE_BLOCKED_TERRAIN, MOVE_TOO_STEEP, MOVE_RUN_OVER };
+	/// What a unit standing in the vehicle's way does to it.
+	enum UnitInWay { UNIT_IGNORED, UNIT_BLOCKS, UNIT_RUN_OVER };
+	/// Decides what a unit standing in the vehicle's way does to it.
+	using UnitJudge = std::function<UnitInWay(const BattleUnit*)>;
+	/// A place the vehicle can drive to, found by the route search.
+	struct Reach
+	{
+		/// Vehicle position there.
+		Position pos;
+		/// Time units it takes to get there.
+		int tu;
+		/// Steps on the way that crush terrain or run over units.
+		int crushing;
+	};
 
 	/**
 	 * Finds the vehicles a craft map holds: remembers the terrain of the area before
@@ -74,13 +89,15 @@ public:
 		/// Remembers the terrain of an area, call before the craft map is placed there.
 		void begin(SavedBattleGame *save, Position corner, Position size);
 		/// Makes the vehicles out of what the craft map placed, call after its map and routes are loaded.
-		std::vector<BattleVehicle*> finish(SavedBattleGame *save, const RuleBattleVehicle &rule, const std::string &craftType, int faction, int firstSetId, int lastSetId, Position origin) const;
+		std::vector<BattleVehicle*> finish(SavedBattleGame *save, const RuleBattleVehicle &rule, const std::string &type, bool ufo, int faction, int firstSetId, int lastSetId, Position origin) const;
 	};
 
 private:
-	std::string _craftType;
+	std::string _type;
+	bool _ufo;
 	int _faction;
 	int _timeUnits;
+	bool _aiDecided;
 	Position _pos;
 	int _firstSetId, _lastSetId;
 	std::vector<Cell> _cells;
@@ -132,14 +149,18 @@ private:
 	void place(SavedBattleGame *save, Position pos, const std::vector<PartRef> &carried, const std::vector<char> &discovered);
 	/// Does the vehicle's side know where a unit is?
 	bool knowsOf(const BattleUnit *unit) const;
-	/// Checks whether the vehicle can be set down at a position, and what it must crush there.
-	MoveResult checkPlace(SavedBattleGame *save, Position pos, const std::vector<char> &inside, const std::vector<BattleUnit*> &passengers, int crushArmor, bool knownOnly, std::vector<std::pair<Tile*, TilePart> > &toCrush) const;
+	/// Decides what a unit in the way does to the vehicle when it gets there.
+	UnitInWay judgeUnit(SavedBattleGame *save, const BattleUnit *unit) const;
+	/// Checks whether the vehicle can be set down at a position, and what it must crush and run over there.
+	MoveResult checkPlace(SavedBattleGame *save, Position pos, const std::vector<char> &inside, const std::vector<BattleUnit*> &passengers, int crushArmor, const UnitJudge &judge, std::vector<std::pair<Tile*, TilePart> > &toCrush, std::vector<BattleUnit*> &victims) const;
+	/// Searches the vehicle's routes, to a target or to every place within some time units.
+	bool search(SavedBattleGame *save, const Position *target, int budget, std::vector<Position> &path, std::vector<Reach> *reach, std::string &error) const;
 
 public:
 	/// Creates an empty vehicle, to be loaded from a save.
 	BattleVehicle();
-	/// Creates a vehicle of a craft, owning the tilesets in [firstSetId, lastSetId).
-	BattleVehicle(const std::string &craftType, int faction, int firstSetId, int lastSetId);
+	/// Creates a vehicle of a craft or UFO, owning the tilesets in [firstSetId, lastSetId).
+	BattleVehicle(const std::string &type, bool ufo, int faction, int firstSetId, int lastSetId);
 	/// Cleans up the vehicle.
 	~BattleVehicle();
 	/// Loads the vehicle from YAML.
@@ -147,9 +168,11 @@ public:
 	/// Saves the vehicle to YAML.
 	void save(YAML::YamlNodeWriter writer) const;
 
-	/// Gets the type of the craft the vehicle belongs to.
-	const std::string &getCraftType() const { return _craftType; }
-	/// Gets the rule of the vehicle (null if its craft no longer defines one).
+	/// Gets the type of the craft or UFO the vehicle belongs to.
+	const std::string &getType() const { return _type; }
+	/// Does the vehicle belong to a UFO rather than a craft?
+	bool isUfo() const { return _ufo; }
+	/// Gets the rule of the vehicle (null if its craft or UFO no longer defines one).
 	const RuleBattleVehicle *getRule(const Mod *mod) const;
 	/// Gets the faction the vehicle belongs to.
 	int getFaction() const { return _faction; }
@@ -159,6 +182,10 @@ public:
 	void spendTimeUnits(int tu);
 	/// Gives the vehicle its time units back, at the start of its side's turn.
 	void prepareNewTurn(const Mod *mod);
+	/// Has an AI unit decided where the vehicle drives this turn?
+	bool isAIDecided() const { return _aiDecided; }
+	/// Marks that an AI unit has decided where the vehicle drives this turn.
+	void setAIDecided() { _aiDecided = true; }
 	/// Gets the position of the vehicle's lowest corner.
 	Position getPosition() const { return _pos; }
 	/// Gets the center of the vehicle, on its lowest level.
@@ -183,9 +210,11 @@ public:
 	/// Gets the time unit cost of a step, paid by the vehicle and its driver.
 	int getStepCost(const Mod *mod, Position delta) const;
 	/// Moves the vehicle by one step, with everything on board, onto the ground there.
-	MoveResult move(SavedBattleGame *save, Position delta);
+	MoveResult move(SavedBattleGame *save, Position delta, std::vector<BattleUnit*> &victims);
 	/// Finds the steps that take the vehicle to a new place, following the ground.
 	bool findPath(SavedBattleGame *save, Position target, std::vector<Position> &path, std::string &error) const;
+	/// Finds every place the vehicle can drive to with some time units.
+	std::vector<Reach> findReachable(SavedBattleGame *save, int tu) const;
 	/// Gets the message (a string ID) telling why a step failed.
 	static const char *getMoveResultString(MoveResult result);
 	/// Gets the vehicle's parts that would stand on a tile if the vehicle were at another position, to preview a drive.

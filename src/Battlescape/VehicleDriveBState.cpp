@@ -16,12 +16,15 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <algorithm>
 #include "VehicleDriveBState.h"
 #include "BattlescapeState.h"
 #include "Camera.h"
 #include "Map.h"
 #include "TileEngine.h"
 #include "../Engine/Options.h"
+#include "../Mod/RuleBattleVehicle.h"
+#include "../Mod/RuleDamageType.h"
 #include "../Savegame/BattleUnit.h"
 #include "../Savegame/BattleVehicle.h"
 #include "../Savegame/SavedBattleGame.h"
@@ -54,7 +57,8 @@ VehicleDriveBState::~VehicleDriveBState()
 void VehicleDriveBState::init()
 {
 	// a bit slower than a walking unit, it moves a whole vehicle each step
-	_parent->setStateInterval(Options::battleXcomSpeed * 6);
+	const bool player = _action.actor && _action.actor->getFaction() == FACTION_PLAYER;
+	_parent->setStateInterval((player ? Options::battleXcomSpeed : Options::battleAlienSpeed) * 6);
 	_spotted = countSpotted();
 }
 
@@ -85,8 +89,76 @@ size_t VehicleDriveBState::countSpotted() const
 }
 
 /**
+ * Runs over the units in the way of a step: each takes the vehicle's run over damage on the side
+ * facing it, credited to the driver. If they all go down, the drive goes on in a new drive state
+ * queued behind their deaths, which takes the step once they are out of the way. If one is still
+ * standing, the vehicle has rammed it: the step's time units are spent and the drive stops.
+ * @param victims The units in the way.
+ * @param delta The step.
+ * @param cost Time units of the step.
+ */
+void VehicleDriveBState::runOver(const std::vector<BattleUnit*> &victims, Position delta, int cost)
+{
+	SavedBattleGame *save = _parent->getSave();
+	const RuleBattleVehicle *rule = _vehicle->getRule(save->getMod());
+	const RuleDamageType *type = rule->getRunOverDamageType();
+	BattleActionAttack attack;
+	attack.type = BA_NONE;
+	attack.attacker = _action.actor;
+	for (auto *victim : victims)
+	{
+		// hit from the side the vehicle comes from
+		victim->damage(Position(-delta.x, -delta.y, 0) * Position::TileXY / 2, type->getRandomDamage(rule->getRunOverDamage()), type, save, attack);
+	}
+	_parent->checkForCasualties(type, attack);
+	if (std::any_of(victims.begin(), victims.end(), [](const BattleUnit *victim) { return !victim->isOutThresholdExceed(); }))
+	{
+		_action.actor->spendTimeUnits(cost);
+		_vehicle->spendTimeUnits(cost);
+		_action.result = "STR_VEHICLE_RAMMED";
+		_parent->popState();
+		return;
+	}
+	_parent->statePushBack(new VehicleDriveBState(_parent, _action, _vehicle, std::vector<Position>(_path.begin() + _step, _path.end())));
+	_parent->popState();
+}
+
+/**
+ * Lets enemies react to a step: every unit on board of the driving side counts as having taken
+ * a step, the driver first, and enemies who see it may fire as at a walking unit.
+ * @return True if anyone on board was fired upon.
+ */
+bool VehicleDriveBState::checkReactionFire()
+{
+	SavedBattleGame *save = _parent->getSave();
+	std::vector<BattleUnit*> crew = _vehicle->getPassengers(save);
+	auto driver = std::find(crew.begin(), crew.end(), _action.actor);
+	if (driver != crew.end())
+	{
+		std::rotate(crew.begin(), driver, driver + 1);
+	}
+	for (auto *unit : crew)
+	{
+		if (unit->getFaction() != _action.actor->getFaction() || unit->isOut())
+		{
+			continue;
+		}
+		BattleAction step;
+		step.type = BA_WALK;
+		step.actor = unit;
+		step.target = unit->getPosition();
+		if (save->getTileEngine()->checkReactionFire(unit, step))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
  * Drives one step. Like a walking unit, the vehicle stops when the driver or the vehicle runs out
- * of time units, when something blocks the way, or when the crew spots a new enemy.
+ * of time units, when something blocks the way, when the crew spots a new enemy, or when someone
+ * on board is fired upon. Units in the way are run over first (see runOver).
  */
 void VehicleDriveBState::think()
 {
@@ -115,7 +187,13 @@ void VehicleDriveBState::think()
 	}
 
 	const int level = _vehicle->getPosition().z;
-	const BattleVehicle::MoveResult result = _vehicle->move(save, delta);
+	std::vector<BattleUnit*> victims;
+	const BattleVehicle::MoveResult result = _vehicle->move(save, delta, victims);
+	if (result == BattleVehicle::MOVE_RUN_OVER)
+	{
+		runOver(victims, delta, cost);
+		return;
+	}
 	if (result != BattleVehicle::MOVE_OK)
 	{
 		// something got in the way since the route was planned
@@ -132,7 +210,8 @@ void VehicleDriveBState::think()
 	tileEngine->recalculateFOV();
 
 	Camera *camera = _parent->getMap()->getCamera();
-	if (driver->getFaction() == FACTION_PLAYER && !camera->isOnScreen(driver->getPosition(), true, 0, false))
+	// the camera follows the player's vehicles, and enemy vehicles while the player sees their driver
+	if ((driver->getFaction() == FACTION_PLAYER || driver->getVisible()) && !camera->isOnScreen(driver->getPosition(), true, 0, false))
 	{
 		camera->centerOnPosition(driver->getPosition());
 	}
@@ -150,6 +229,12 @@ void VehicleDriveBState::think()
 		return;
 	}
 	_spotted = spotted;
+	if (checkReactionFire())
+	{
+		// someone on board was fired upon: stop, as a walking unit does
+		_parent->popState();
+		return;
+	}
 }
 
 }

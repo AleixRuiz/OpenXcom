@@ -3286,10 +3286,26 @@ void BattlescapeGenerator::generateMap(const std::vector<MapScript*> *script, co
 			craftDataSetIDOffset++;
 		}
 
+		// a UFO that drives in battle: its map becomes vehicles of the alien side, as a craft's does
+		const RuleUfo *ufoRule = _game->getMod()->getUfo(consolidatedUfoType);
+		const RuleBattleVehicle *ufoVehicleRule = ufoRule ? ufoRule->getBattleVehicle() : nullptr;
 		for (size_t i = 0; i < ufoMaps.size(); ++i)
 		{
+			BattleVehicle::Placement ufoVehiclePlacement;
+			if (ufoVehicleRule)
+			{
+				ufoVehiclePlacement.begin(_save, Position(_ufoPos[i].x * 10, _ufoPos[i].y * 10, 0), Position(ufoMaps[i]->getSizeX(), ufoMaps[i]->getSizeY(), _mapsize_z));
+			}
 			loadMAP(ufoMaps[i], _ufoPos[i].x * 10, _ufoPos[i].y * 10, _ufoZ[i], ufoTerrain, mapDataSetIDOffset, false, false, i);
 			loadRMP(ufoMaps[i], _ufoPos[i].x * 10, _ufoPos[i].y * 10, _ufoZ[i], Node::UFOSEGMENT);
+			if (ufoVehicleRule)
+			{
+				const Position origin(_ufoPos[i].x * 10, _ufoPos[i].y * 10, _ufoZ[i]);
+				for (auto* vehicle : ufoVehiclePlacement.finish(_save, *ufoVehicleRule, consolidatedUfoType, true, FACTION_HOSTILE, mapDataSetIDOffset, (int)_save->getMapDataSets()->size(), origin))
+				{
+					_save->getVehicles()->push_back(vehicle);
+				}
+			}
 			for (int j = 0; j < ufoMaps[i]->getSizeX() / 10; ++j)
 			{
 				for (int k = 0; k < ufoMaps[i]->getSizeY() / 10; k++)
@@ -3322,7 +3338,7 @@ void BattlescapeGenerator::generateMap(const std::vector<MapScript*> *script, co
 		if (vehicleRule)
 		{
 			const Position origin(_craftPos.x * 10, _craftPos.y * 10, _craftZ);
-			for (auto* vehicle : vehiclePlacement.finish(_save, *vehicleRule, _craftRules->getType(), FACTION_PLAYER, mapDataSetIDOffset + craftDataSetIDOffset, (int)_save->getMapDataSets()->size(), origin))
+			for (auto* vehicle : vehiclePlacement.finish(_save, *vehicleRule, _craftRules->getType(), false, FACTION_PLAYER, mapDataSetIDOffset + craftDataSetIDOffset, (int)_save->getMapDataSets()->size(), origin))
 			{
 				_save->getVehicles()->push_back(vehicle);
 			}

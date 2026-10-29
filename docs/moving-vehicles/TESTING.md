@@ -87,3 +87,48 @@ Use a hilly map: a vanilla mountain or forest Quick Battle, or a Rosigma outdoor
 - [x] With drive mode off, soldiers walk, kneel, shoot and open doors as usual, also inside the vehicle.
 - [x] On flat ground, driving works and costs exactly as before the hills phase.
 - [x] A battle without the demo mods plays exactly as before.
+
+## M2
+
+The M2 checks use the same demo mods, updated with each phase.
+
+**Running over** (Phase 8)
+
+- [ ] Click so the vehicle ends on an enemy you can see: the route goes there, and the enemy takes the hit when the vehicle reaches it. A weak enemy goes down and the vehicle drives on over the body.
+- [ ] A strong enemy that survives stops the vehicle: "The vehicle rammed a unit!", the step's time units are spent, and the vehicle stays where it was.
+- [ ] A kill by running over counts for the driver: it shows in the soldier's diary after the mission.
+- [ ] Click past an enemy standing in the way (not under the place clicked): the route goes around it, or "No route for the vehicle!".
+- [ ] Your own soldiers always block: "A unit is in the way!".
+- [ ] A civilian is only run over when you click so the vehicle ends on them; the civilian loss counts.
+- [ ] An enemy nobody could see is run over (or rams the vehicle) when the vehicle reaches it.
+- [ ] A vehicle without `runOverDamage` (remove it from the demo mod) is blocked by every unit, as before.
+
+**Reaction fire** (Phase 9)
+
+- [ ] Drive past an enemy with a soldier standing on the roof: the enemy may fire at the soldier, and a shot stops the drive.
+- [ ] The same drive with everyone inside a closed vehicle (Chimera hatches shut): no reaction fire, the hull hides them.
+- [ ] The Chimera's turrets draw reaction fire like the roof crew.
+- [ ] A drive that draws no fire goes on to its end as before.
+
+**Enemy vehicles** (Phase 10)
+
+Fight the traitor convoy: in debug mode, a Quick Battle or a mission against the `STR_TRAITOR_CHIMERA` UFO.
+
+- [ ] The battle opens; the save file's `vehicles:` list has three entries with `ufo: STR_TRAITOR_CHIMERA` and `faction: 1`, next to the player's own vehicles with `craft:`.
+- [ ] The traitor Chimeras don't move yet (no AI drivers until Phase 11), and nothing else about the battle changes.
+- [ ] Shooting a traitor Chimera damages its hull as before; the turrets fight as before.
+- [ ] Your soldiers can't drive an enemy vehicle: no Drive button on its tiles.
+- [ ] Save and load: the enemy vehicles are still there.
+
+**AI drivers** (Phase 11)
+
+Same traitor convoy battle.
+
+- [ ] While the traitors don't know where your squad is, their Chimeras stay parked.
+- [ ] Once a traitor has spotted your squad, on the aliens' turn a turret Chimera drives toward it and stops about 6 tiles away, then its turret fires if it can.
+- [ ] A traitor Chimera whose turret already sees a target doesn't move; the turret fires.
+- [ ] The camera follows a traitor Chimera while you can see its turret, and the map shows it moving.
+- [ ] An enemy Chimera driving past your soldiers draws their reaction fire on its turret.
+- [ ] Your soldiers standing in its way are run over or ram it; its own infantry never are.
+- [ ] Each traitor Chimera drives at most once per aliens' turn, and no further than its time units allow.
+- [ ] The parked third Chimera (no turret) never moves.

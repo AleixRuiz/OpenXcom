@@ -25,6 +25,7 @@
 #include "BattleState.h"
 #include "UnitTurnBState.h"
 #include "UnitWalkBState.h"
+#include "VehicleAI.h"
 #include "VehicleDriveBState.h"
 #include "ProjectileFlyBState.h"
 #include "MeleeAttackBState.h"
@@ -359,6 +360,23 @@ void BattlescapeGame::handleAI(BattleUnit *unit)
 		_playedAggroSound = false;
 		unit->setHiding(false);
 		if (Options::traceAI) { Log(LOG_INFO) << "#" << unit->getId() << "--" << unit->getType(); }
+
+		// a unit that can drive decides for its vehicle first, once a turn, then acts as usual
+		BattleVehicle *vehicle = BattleVehicle::getDrivenBy(_save, unit);
+		if (vehicle && !vehicle->isAIDecided())
+		{
+			vehicle->setAIDecided();
+			std::vector<Position> path;
+			if (VehicleAI::think(_save, unit, vehicle, path))
+			{
+				_parentState->debug("Driving");
+				BattleAction drive;
+				drive.actor = unit;
+				drive.number = _AIActionCounter;
+				statePushBack(new VehicleDriveBState(this, drive, vehicle, path));
+				return;
+			}
+		}
 	}
 
 	BattleAction action;

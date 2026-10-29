@@ -26,16 +26,17 @@ namespace OpenXcom
 
 class Armor;
 class Mod;
+struct RuleDamageType;
 class RuleTerrain;
 
 /**
- * Turns the pieces of a craft map into vehicles that can drive during a battle,
- * with the units and items on board. Read from the craft's battleVehicle block.
+ * Turns the pieces of a craft or UFO map into vehicles that can drive during a battle,
+ * with the units and items on board. Read from the craft's or UFO's battleVehicle block.
  */
 class RuleBattleVehicle
 {
 public:
-	/// How a craft map is split into vehicles.
+	/// How a map is split into vehicles.
 	enum Split { SPLIT_CONNECTED, SPLIT_RECTS, SPLIT_WHOLE };
 private:
 	std::string _splitName;
@@ -45,6 +46,8 @@ private:
 	std::vector<std::string> _driverNames;
 	std::vector<const Armor*> _drivers;
 	int _tuPerTile, _timeUnits, _crushArmor;
+	int _runOverDamage, _runOverDamageType, _aiKeepDistance;
+	const RuleDamageType *_runOverDamageRule;
 public:
 	/// Time units a vehicle gets per turn when its rule doesn't say, in straight tiles.
 	static constexpr int DEFAULT_TILES_PER_TURN = 10;
@@ -54,13 +57,13 @@ public:
 	/// Loads the battle vehicle from YAML.
 	void load(const YAML::YamlNodeReader &node);
 	/// Checks the rule and links it to other rules.
-	void afterLoad(const Mod *mod, const std::string &craftType, RuleTerrain *terrain);
+	void afterLoad(const Mod *mod, const std::string &type, RuleTerrain *terrain);
 
-	/// Gets how the craft map is split into vehicles.
+	/// Gets how the map is split into vehicles.
 	Split getSplit() const { return _split; }
-	/// Gets the rectangles [x, y, width, length] of the pieces, in craft map tiles (for SPLIT_RECTS).
+	/// Gets the rectangles [x, y, width, length] of the pieces, in map tiles (for SPLIT_RECTS).
 	const std::vector<std::vector<int> > &getPieces() const { return _pieces; }
-	/// Gets the tiles [x, y, z] a unit must stand on to drive, in craft map tiles; none means anywhere on board.
+	/// Gets the tiles [x, y, z] a unit must stand on to drive, in map tiles; none means anywhere on board.
 	const std::vector<std::vector<int> > &getDriverSeats() const { return _driverSeats; }
 	/// Can a unit with this armor drive?
 	bool canDrive(const Armor *armor) const;
@@ -70,6 +73,12 @@ public:
 	int getTimeUnits() const { return _timeUnits; }
 	/// Gets the strongest terrain armor the vehicle crushes when driving through.
 	int getCrushArmor() const { return _crushArmor; }
+	/// Gets the damage dealt to a unit the vehicle is driven onto; 0 means units block it.
+	int getRunOverDamage() const { return _runOverDamage; }
+	/// Gets the damage type dealt to a unit the vehicle is driven onto.
+	const RuleDamageType *getRunOverDamageType() const { return _runOverDamageRule; }
+	/// Gets the distance in tiles an AI driver keeps from the nearest enemy.
+	int getAIKeepDistance() const { return _aiKeepDistance; }
 };
 
 }
