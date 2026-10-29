@@ -87,3 +87,18 @@ Use a hilly map: a vanilla mountain or forest Quick Battle, or a Rosigma outdoor
 - [x] With drive mode off, soldiers walk, kneel, shoot and open doors as usual, also inside the vehicle.
 - [x] On flat ground, driving works and costs exactly as before the hills phase.
 - [x] A battle without the demo mods plays exactly as before.
+
+## M2
+
+The M2 checks use the same demo mods, updated with each phase.
+
+**Running over** (Phase 8)
+
+- [ ] Click so the vehicle ends on an enemy you can see: the route goes there, and the enemy takes the hit when the vehicle reaches it. A weak enemy goes down and the vehicle drives on over the body.
+- [ ] A strong enemy that survives stops the vehicle: "The vehicle rammed a unit!", the step's time units are spent, and the vehicle stays where it was.
+- [ ] A kill by running over counts for the driver: it shows in the soldier's diary after the mission.
+- [ ] Click past an enemy standing in the way (not under the place clicked): the route goes around it, or "No route for the vehicle!".
+- [ ] Your own soldiers always block: "A unit is in the way!".
+- [ ] A civilian is only run over when you click so the vehicle ends on them; the civilian loss counts.
+- [ ] An enemy nobody could see is run over (or rams the vehicle) when the vehicle reaches it.
+- [ ] A vehicle without `runOverDamage` (remove it from the demo mod) is blocked by every unit, as before.

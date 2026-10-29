@@ -17,6 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <functional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -59,7 +60,11 @@ public:
 		PartRef under[O_MAX];
 	};
 	/// What happened to a step of the vehicle.
-	enum MoveResult { MOVE_OK, MOVE_BLOCKED_EDGE, MOVE_BLOCKED_VEHICLE, MOVE_BLOCKED_UNIT, MOVE_BLOCKED_TERRAIN, MOVE_TOO_STEEP };
+	enum MoveResult { MOVE_OK, MOVE_BLOCKED_EDGE, MOVE_BLOCKED_VEHICLE, MOVE_BLOCKED_UNIT, MOVE_BLOCKED_TERRAIN, MOVE_TOO_STEEP, MOVE_RUN_OVER };
+	/// What a unit standing in the vehicle's way does to it.
+	enum UnitInWay { UNIT_IGNORED, UNIT_BLOCKS, UNIT_RUN_OVER };
+	/// Decides what a unit standing in the vehicle's way does to it.
+	using UnitJudge = std::function<UnitInWay(const BattleUnit*)>;
 
 	/**
 	 * Finds the vehicles a craft map holds: remembers the terrain of the area before
@@ -132,8 +137,10 @@ private:
 	void place(SavedBattleGame *save, Position pos, const std::vector<PartRef> &carried, const std::vector<char> &discovered);
 	/// Does the vehicle's side know where a unit is?
 	bool knowsOf(const BattleUnit *unit) const;
-	/// Checks whether the vehicle can be set down at a position, and what it must crush there.
-	MoveResult checkPlace(SavedBattleGame *save, Position pos, const std::vector<char> &inside, const std::vector<BattleUnit*> &passengers, int crushArmor, bool knownOnly, std::vector<std::pair<Tile*, TilePart> > &toCrush) const;
+	/// Decides what a unit in the way does to the vehicle when it gets there.
+	UnitInWay judgeUnit(SavedBattleGame *save, const BattleUnit *unit) const;
+	/// Checks whether the vehicle can be set down at a position, and what it must crush and run over there.
+	MoveResult checkPlace(SavedBattleGame *save, Position pos, const std::vector<char> &inside, const std::vector<BattleUnit*> &passengers, int crushArmor, const UnitJudge &judge, std::vector<std::pair<Tile*, TilePart> > &toCrush, std::vector<BattleUnit*> &victims) const;
 
 public:
 	/// Creates an empty vehicle, to be loaded from a save.
@@ -183,7 +190,7 @@ public:
 	/// Gets the time unit cost of a step, paid by the vehicle and its driver.
 	int getStepCost(const Mod *mod, Position delta) const;
 	/// Moves the vehicle by one step, with everything on board, onto the ground there.
-	MoveResult move(SavedBattleGame *save, Position delta);
+	MoveResult move(SavedBattleGame *save, Position delta, std::vector<BattleUnit*> &victims);
 	/// Finds the steps that take the vehicle to a new place, following the ground.
 	bool findPath(SavedBattleGame *save, Position target, std::vector<Position> &path, std::string &error) const;
 	/// Gets the message (a string ID) telling why a step failed.

@@ -26,6 +26,7 @@ namespace OpenXcom
 
 class Armor;
 class Mod;
+struct RuleDamageType;
 class RuleTerrain;
 
 /**
@@ -45,6 +46,8 @@ private:
 	std::vector<std::string> _driverNames;
 	std::vector<const Armor*> _drivers;
 	int _tuPerTile, _timeUnits, _crushArmor;
+	int _runOverDamage, _runOverDamageType;
+	const RuleDamageType *_runOverDamageRule;
 public:
 	/// Time units a vehicle gets per turn when its rule doesn't say, in straight tiles.
 	static constexpr int DEFAULT_TILES_PER_TURN = 10;
@@ -70,6 +73,10 @@ public:
 	int getTimeUnits() const { return _timeUnits; }
 	/// Gets the strongest terrain armor the vehicle crushes when driving through.
 	int getCrushArmor() const { return _crushArmor; }
+	/// Gets the damage dealt to a unit the vehicle is driven onto; 0 means units block it.
+	int getRunOverDamage() const { return _runOverDamage; }
+	/// Gets the damage type dealt to a unit the vehicle is driven onto.
+	const RuleDamageType *getRunOverDamageType() const { return _runOverDamageRule; }
 };
 
 }

@@ -206,8 +206,8 @@ Decided in [GD-21](GAME_DESIGN_DECISIONS.md#gd-21--running-over-is-the-players-c
 
 **Checks**
 
-- [ ] Builds with no new warnings.
-- [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
+- [x] Builds with no new warnings.
+- [ ] Both demo mods load with no messages, and a battle save made before this phase loads (to run when the screen is free).
 - [ ] The in-game checks under "Running over" in [TESTING.md](TESTING.md).
 
 **Commit:** `Moving vehicles: vehicles run over units`

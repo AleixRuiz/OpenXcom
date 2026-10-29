@@ -604,6 +604,7 @@ en-US:
   STR_VEHICLE_BLOCKED_BY_TERRAIN: "Terrain is in the way!"
   STR_VEHICLE_OUT_OF_TIME_UNITS: "The vehicle can't move any further this turn!"
   STR_VEHICLE_TOO_STEEP: "The ground is too steep for the vehicle!"
+  STR_VEHICLE_RAMMED: "The vehicle rammed a unit!"
 #Soldier.cpp
   STR_RANK_NONE: "-"
 #=================== Ufopaedia ===================

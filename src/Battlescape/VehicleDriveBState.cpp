@@ -16,12 +16,15 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <algorithm>
 #include "VehicleDriveBState.h"
 #include "BattlescapeState.h"
 #include "Camera.h"
 #include "Map.h"
 #include "TileEngine.h"
 #include "../Engine/Options.h"
+#include "../Mod/RuleBattleVehicle.h"
+#include "../Mod/RuleDamageType.h"
 #include "../Savegame/BattleUnit.h"
 #include "../Savegame/BattleVehicle.h"
 #include "../Savegame/SavedBattleGame.h"
@@ -85,8 +88,44 @@ size_t VehicleDriveBState::countSpotted() const
 }
 
 /**
+ * Runs over the units in the way of a step: each takes the vehicle's run over damage on the side
+ * facing it, credited to the driver. If they all go down, the drive goes on in a new drive state
+ * queued behind their deaths, which takes the step once they are out of the way. If one is still
+ * standing, the vehicle has rammed it: the step's time units are spent and the drive stops.
+ * @param victims The units in the way.
+ * @param delta The step.
+ * @param cost Time units of the step.
+ */
+void VehicleDriveBState::runOver(const std::vector<BattleUnit*> &victims, Position delta, int cost)
+{
+	SavedBattleGame *save = _parent->getSave();
+	const RuleBattleVehicle *rule = _vehicle->getRule(save->getMod());
+	const RuleDamageType *type = rule->getRunOverDamageType();
+	BattleActionAttack attack;
+	attack.type = BA_NONE;
+	attack.attacker = _action.actor;
+	for (auto *victim : victims)
+	{
+		// hit from the side the vehicle comes from
+		victim->damage(Position(-delta.x, -delta.y, 0) * Position::TileXY / 2, type->getRandomDamage(rule->getRunOverDamage()), type, save, attack);
+	}
+	_parent->checkForCasualties(type, attack);
+	if (std::any_of(victims.begin(), victims.end(), [](const BattleUnit *victim) { return !victim->isOutThresholdExceed(); }))
+	{
+		_action.actor->spendTimeUnits(cost);
+		_vehicle->spendTimeUnits(cost);
+		_action.result = "STR_VEHICLE_RAMMED";
+		_parent->popState();
+		return;
+	}
+	_parent->statePushBack(new VehicleDriveBState(_parent, _action, _vehicle, std::vector<Position>(_path.begin() + _step, _path.end())));
+	_parent->popState();
+}
+
+/**
  * Drives one step. Like a walking unit, the vehicle stops when the driver or the vehicle runs out
- * of time units, when something blocks the way, or when the crew spots a new enemy.
+ * of time units, when something blocks the way, or when the crew spots a new enemy. Units in the
+ * way are run over first (see runOver).
  */
 void VehicleDriveBState::think()
 {
@@ -115,7 +154,13 @@ void VehicleDriveBState::think()
 	}
 
 	const int level = _vehicle->getPosition().z;
-	const BattleVehicle::MoveResult result = _vehicle->move(save, delta);
+	std::vector<BattleUnit*> victims;
+	const BattleVehicle::MoveResult result = _vehicle->move(save, delta, victims);
+	if (result == BattleVehicle::MOVE_RUN_OVER)
+	{
+		runOver(victims, delta, cost);
+		return;
+	}
 	if (result != BattleVehicle::MOVE_OK)
 	{
 		// something got in the way since the route was planned

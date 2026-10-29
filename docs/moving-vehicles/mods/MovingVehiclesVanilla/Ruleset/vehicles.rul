@@ -2,7 +2,8 @@
 # (level 1, the raised troop compartment) switches on drive mode with the Drive button
 # or the drive hotkey (D), then clicks where to go: the first click previews the route,
 # the second drives. Fences, bushes and trees (armor up to 30) are crushed on the way.
-# It moves up to 10 tiles a turn (40 time units), whoever drives.
+# It moves up to 10 tiles a turn (40 time units), whoever drives. Driven onto an alien,
+# it hits it for 100 melee damage: a sectoid goes down, a muton may stop it (rammed).
 crafts:
   - type: STR_SKYRANGER
     battleVehicle:
@@ -10,3 +11,4 @@ crafts:
       tuPerTile: 4
       timeUnits: 40
       crushArmor: 30
+      runOverDamage: 100

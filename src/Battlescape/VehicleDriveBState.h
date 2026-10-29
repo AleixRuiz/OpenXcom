@@ -24,6 +24,7 @@
 namespace OpenXcom
 {
 
+class BattleUnit;
 class BattleVehicle;
 
 /**
@@ -40,6 +41,8 @@ private:
 	bool _cancelled;
 	/// Counts the enemies the crew has spotted this turn.
 	size_t countSpotted() const;
+	/// Runs over the units in the way of a step.
+	void runOver(const std::vector<BattleUnit*> &victims, Position delta, int cost);
 public:
 	/// Creates a new VehicleDriveBState.
 	VehicleDriveBState(BattlescapeGame *parent, BattleAction action, BattleVehicle *vehicle, const std::vector<Position> &path);

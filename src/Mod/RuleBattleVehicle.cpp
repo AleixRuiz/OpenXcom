@@ -22,6 +22,7 @@
 #include "Armor.h"
 #include "MapBlock.h"
 #include "Mod.h"
+#include "RuleDamageType.h"
 #include "RuleTerrain.h"
 #include "../Engine/Logger.h"
 
@@ -30,10 +31,11 @@ namespace OpenXcom
 
 /**
  * Creates a blank battle vehicle ruleset: the craft map splits into its connected pieces,
- * anyone on board can drive, nothing is crushed, and the vehicle's time units are set
- * from its cost per tile once the rule is loaded.
+ * anyone on board can drive, nothing is crushed, units block it, and the vehicle's time
+ * units are set from its cost per tile once the rule is loaded.
  */
-RuleBattleVehicle::RuleBattleVehicle() : _split(SPLIT_CONNECTED), _tuPerTile(4), _timeUnits(-1), _crushArmor(0)
+RuleBattleVehicle::RuleBattleVehicle() : _split(SPLIT_CONNECTED), _tuPerTile(4), _timeUnits(-1), _crushArmor(0),
+	_runOverDamage(0), _runOverDamageType(DT_MELEE), _runOverDamageRule(nullptr)
 {
 }
 
@@ -51,10 +53,13 @@ void RuleBattleVehicle::load(const YAML::YamlNodeReader &node)
 	node.tryRead("tuPerTile", _tuPerTile);
 	node.tryRead("timeUnits", _timeUnits);
 	node.tryRead("crushArmor", _crushArmor);
+	node.tryRead("runOverDamage", _runOverDamage);
+	node.tryRead("runOverDamageType", _runOverDamageType);
 }
 
 /**
- * Checks the rule against its craft's battle map blocks and links the driver armors.
+ * Checks the rule against its craft's battle map blocks and links the driver armors
+ * and the damage type of running over.
  * The height of a map block is only known once its map is loaded, so seat levels are
  * checked when the battle starts instead.
  * @param mod Mod for the rule.
@@ -88,6 +93,15 @@ void RuleBattleVehicle::afterLoad(const Mod *mod, const std::string &craftType, 
 	{
 		_crushArmor = 0;
 	}
+	if (mod->checkForSoftError(_runOverDamage < 0, craftType, "battleVehicle: runOverDamage cannot be negative.", LOG_ERROR))
+	{
+		_runOverDamage = 0;
+	}
+	if (mod->checkForSoftError(_runOverDamageType < DT_NONE || _runOverDamageType >= DAMAGE_TYPES, craftType, "battleVehicle: unknown runOverDamageType.", LOG_ERROR))
+	{
+		_runOverDamageType = DT_MELEE;
+	}
+	_runOverDamageRule = mod->getDamageType((ItemDamageType)_runOverDamageType);
 	if (_timeUnits < 0)
 	{
 		// no limit given: a few straight tiles' worth, so no vehicle drives without a limit by accident
