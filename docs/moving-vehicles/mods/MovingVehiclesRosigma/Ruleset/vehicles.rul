@@ -32,13 +32,14 @@ crafts:
       crushArmor: 254
       runOverDamage: 300
 
-# The traitor convoy is a UFO whose map holds three Chimeras, each an enemy vehicle. The two
-# with a turret on top are driven by it (the turret can't walk, so it is listed); the third
-# has no turret and stays parked. AI drivers take the wheel from M2 Phase 11 on.
+# The traitor convoy is a UFO whose map holds three Chimeras, each an enemy vehicle facing east.
+# Each has a driver seat at the front of its troop bay. When the battle starts, one traitor of
+# the deployed crew is put on each seat (any of them but a leader or commander), and drives it
+# for the AI; the turrets are mounted guns and only fight.
 ufos:
   - type: STR_TRAITOR_CHIMERA
     battleVehicle:
-      drivers: [STR_TRAITOR_CHIMERA_TURRET_ARMOR]
+      driverSeats: [[5, 8, 0], [17, 7, 0], [9, 2, 0]]
       tuPerTile: 4
       timeUnits: 48
       crushArmor: 100

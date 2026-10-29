@@ -742,6 +742,8 @@ void BattlescapeGenerator::nextStage()
 	size_t unitCount = _save->getUnits()->size();
 
 	deployAliens(_alienCustomDeploy && !_alienCustomDeploy->getDeploymentData()->empty() ? _alienCustomDeploy : ruleDeploy);
+	// enemy vehicles get their drivers from the crew just deployed
+	BattleVehicle::seatDrivers(_save, FACTION_HOSTILE);
 
 	if (unitCount == _save->getUnits()->size())
 	{
@@ -919,6 +921,8 @@ void BattlescapeGenerator::run()
 	if (!isPreview)
 	{
 		deployAliens(_alienCustomDeploy && !_alienCustomDeploy->getDeploymentData()->empty() ? _alienCustomDeploy : ruleDeploy);
+		// enemy vehicles get their drivers from the crew just deployed
+		BattleVehicle::seatDrivers(_save, FACTION_HOSTILE);
 	}
 
 	if (!isPreview && unitCount == _save->getUnits()->size())

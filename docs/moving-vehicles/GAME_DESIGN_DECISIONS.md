@@ -44,6 +44,7 @@ Why moving vehicles plays the way it does. Each entry records a game design choi
 | [GD-24](#gd-24--ai-drivers-hold-advance-or-stay-parked) | AI drivers hold, advance or stay parked | Decided | M2, Phase 11 |
 | [GD-25](#gd-25--convoys-drive-for-the-map-edge) | Convoys drive for the map edge | Proposed | M2, Phase 12 |
 | [GD-26](#gd-26--how-driving-skill-counts) | How driving skill counts | Decided | M2, Phase 13 |
+| [GD-27](#gd-27--enemy-vehicles-get-their-driver-from-the-deployed-crew) | Enemy vehicles get their driver from the deployed crew | Decided | M2, Phase 14 |
 
 ## Decisions
 
@@ -429,3 +430,29 @@ Decided · 2026-10-29 · M2, Phase 13 · settles layers 1 and 2 of [GD-17](#gd-1
 - A malus for non-pilots in a craft with pilot slots: being a novice is penalty enough, and a malus would make swapping seats feel punishing.
 
 **Revisit when.** Play shows the bonus too small or too big to notice; the default range and the cap are the knobs (GD-17's open question).
+
+### GD-27 · Enemy vehicles get their driver from the deployed crew
+
+Decided · 2026-10-29 · M2, Phase 14 · follows [GD-02](#gd-02--a-crew-member-drives-no-spawned-driver) and [GD-14](#gd-14--ai-drivers-follow-the-players-rules)
+
+**Problem.** OXCE places enemies on the UFO map's route nodes by rank, and many start outside the UFO, so nothing puts anyone on a driver seat: on the Rosigma convoy map, 2 of the 9 spawn nodes are inside a Chimera and none is on a seat. Making the turret the driver, as the first demo did, needs no seats, but the vehicle stops for good as soon as that exposed turret dies, and it isn't how the player drives.
+
+**Decision.**
+
+- When the battle starts, once the enemies are deployed, each enemy vehicle with driver seats and nobody on them who can drive gets one of its side's deployed units moved onto a seat. No unit is added: how many enemies there are, of which kind and with what gear, doesn't change.
+- **Dedicated drivers:** `driverRanks` lists the alien ranks put on the seat first, for example 4 to make a UFO's navigators its drivers.
+- Otherwise any unit allowed by `drivers` takes the seat, except commanders and leaders, who ride as passengers; units already on board come first, then the nearest. Large units don't take seats.
+- If nobody can, the vehicle stays parked.
+- **An AI driver keeps its seat:** it fights from there and never walks off it.
+- Vehicles without seats keep the old rule: any unit on board allowed by `drivers` drives, a turret for instance.
+- The camera follows an enemy vehicle while the player sees anyone on board, since its driver now sits behind the hull.
+
+**Why.** No map editing, so it works for any mod's UFOs as they are. The driver is a real member of the deployed crew, so killing or stunning them counts as usual, and the driver sits behind the hull, so stopping a vehicle means boarding it or breaking in. Dedicated ranks let modders say who drives, and reuse existing units such as navigators.
+
+**Turned down.**
+
+- A spawner item on the seat in the UFO's map block: it adds units outside the deployment and its difficulty scaling (still possible in a mod).
+- Spawn nodes on the seats: map editing for every UFO, and the dice may still leave the seat empty.
+- A driver unit spawned by the engine: [GD-02](#gd-02--a-crew-member-drives-no-spawned-driver) turned down spawned drivers.
+
+**Settled with it.** When the driver dies, nobody takes over yet. A crew member walking to the empty seat is a follow-up, judged once this has been played.

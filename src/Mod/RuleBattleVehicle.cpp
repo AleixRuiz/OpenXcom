@@ -51,6 +51,7 @@ void RuleBattleVehicle::load(const YAML::YamlNodeReader &node)
 	node.tryRead("pieces", _pieces);
 	node.tryRead("driverSeats", _driverSeats);
 	node.tryRead("drivers", _driverNames);
+	node.tryRead("driverRanks", _driverRanks);
 	node.tryRead("tuPerTile", _tuPerTile);
 	node.tryRead("timeUnits", _timeUnits);
 	node.tryRead("crushArmor", _crushArmor);
@@ -167,6 +168,16 @@ void RuleBattleVehicle::afterLoad(const Mod *mod, const std::string &type, RuleT
 			continue;
 		}
 		++seat;
+	}
+	for (auto rank = _driverRanks.begin(); rank != _driverRanks.end();)
+	{
+		// the ranks of alienDeployments: 0 commander, 1 leader, 2 engineer, 3 medic, 4 navigator, 5 soldier, 6 and 7 terrorists
+		if ((*rank < 0 || *rank > 7) && mod->checkForSoftError(true, type, "battleVehicle: driver rank " + std::to_string(*rank) + " is not an alien rank from 0 to 7.", LOG_ERROR))
+		{
+			rank = _driverRanks.erase(rank);
+			continue;
+		}
+		++rank;
 	}
 	if (_split == SPLIT_RECTS && mod->checkForSoftError(_pieces.empty(), type, "battleVehicle: split rects needs at least one piece.", LOG_ERROR))
 	{
