@@ -112,7 +112,7 @@ The M2 checks use the same demo mods, updated with each phase.
 
 **Enemy vehicles** (Phase 10)
 
-Fight the traitor convoy: in debug mode, a Quick Battle or a mission against the `STR_TRAITOR_CHIMERA` UFO.
+Fight the traitor convoy: **New Battle**, the last mission in the list, "Moving vehicles: convoy showcase", with the Chimera as your craft.
 
 - [ ] The battle opens; the save file's `vehicles:` list has three entries with `ufo: STR_TRAITOR_CHIMERA` and `faction: 1`, next to the player's own vehicles with `craft:`.
 - [ ] The traitor Chimeras don't move yet (no AI drivers until Phase 11), and nothing else about the battle changes.
