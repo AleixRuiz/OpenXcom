@@ -189,7 +189,7 @@ Decided in [GD-18](GAME_DESIGN_DECISIONS.md#gd-18--ground-vehicles-rest-on-the-h
 | 10. Enemy vehicles | `battleVehicle` under `ufos`, alien-side vehicles, `ufo:` in saves | The traitor convoy's Chimeras are vehicles (not driven yet) | `a7d9f8c3d` |
 | 11. AI drivers | Hold, advance or park, once per turn per vehicle | The traitor Chimeras close in on the squad | `13ee31083` |
 | 12. Convoy | Settles [GD-25](GAME_DESIGN_DECISIONS.md#gd-25--convoys-drive-for-the-map-edge); `aiExit` and escaping at the map edge | The convoy tries to drive off the map | |
-| 13. Driver skill | Layers 1 and 2 of [GD-17](GAME_DESIGN_DECISIONS.md#gd-17--skilled-and-dedicated-drivers-make-a-vehicle-go-further) | A good driver gets further | |
+| 13. Driver skill | Layers 1 and 2 of [GD-17](GAME_DESIGN_DECISIONS.md#gd-17--skilled-and-dedicated-drivers-make-a-vehicle-go-further) | A good driver gets further | `0b374aca1` |
 
 ## Phase 8: Running over
 
