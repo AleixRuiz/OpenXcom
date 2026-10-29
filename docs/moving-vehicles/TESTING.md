@@ -102,3 +102,10 @@ The M2 checks use the same demo mods, updated with each phase.
 - [ ] A civilian is only run over when you click so the vehicle ends on them; the civilian loss counts.
 - [ ] An enemy nobody could see is run over (or rams the vehicle) when the vehicle reaches it.
 - [ ] A vehicle without `runOverDamage` (remove it from the demo mod) is blocked by every unit, as before.
+
+**Reaction fire** (Phase 9)
+
+- [ ] Drive past an enemy with a soldier standing on the roof: the enemy may fire at the soldier, and a shot stops the drive.
+- [ ] The same drive with everyone inside a closed vehicle (Chimera hatches shut): no reaction fire, the hull hides them.
+- [ ] The Chimera's turrets draw reaction fire like the roof crew.
+- [ ] A drive that draws no fire goes on to its end as before.

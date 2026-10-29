@@ -184,8 +184,8 @@ Decided in [GD-18](GAME_DESIGN_DECISIONS.md#gd-18--ground-vehicles-rest-on-the-h
 
 | Phase | Delivers | Playable result | Commit |
 | --- | --- | --- | --- |
-| 8. Running over | `runOverDamage`, `runOverDamageType`; damage, kill credit, ramming | A Chimera runs over the infantry it is driven onto | |
-| 9. Reaction fire | Reaction checks for every unit on board after each step | Crew showing on a driving vehicle draw fire | |
+| 8. Running over | `runOverDamage`, `runOverDamageType`; damage, kill credit, ramming | A Chimera runs over the infantry it is driven onto | `377183df4` |
+| 9. Reaction fire | Reaction checks for every unit on board after each step | Crew showing on a driving vehicle draw fire | the commit that ticks this phase |
 | 10. Enemy vehicles | `battleVehicle` under `ufos`, alien-side vehicles, `ufo:` in saves | The traitor convoy's Chimeras are vehicles (not driven yet) | |
 | 11. AI drivers | Hold, advance or park, once per turn per vehicle | The traitor Chimeras close in on the squad | |
 | 12. Convoy | Settles [GD-25](GAME_DESIGN_DECISIONS.md#gd-25--convoys-drive-for-the-map-edge); `aiExit` and escaping at the map edge | The convoy tries to drive off the map | |
@@ -223,7 +223,7 @@ Decided in [GD-22](GAME_DESIGN_DECISIONS.md#gd-22--reaction-fire-against-everyon
 
 **Checks**
 
-- [ ] Builds with no new warnings.
+- [x] Builds with no new warnings.
 - [ ] The in-game checks under "Reaction fire" in [TESTING.md](TESTING.md).
 
 **Commit:** `Moving vehicles: reaction fire against driving vehicles`

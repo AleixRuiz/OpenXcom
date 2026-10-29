@@ -123,9 +123,41 @@ void VehicleDriveBState::runOver(const std::vector<BattleUnit*> &victims, Positi
 }
 
 /**
+ * Lets enemies react to a step: every unit on board of the driving side counts as having taken
+ * a step, the driver first, and enemies who see it may fire as at a walking unit.
+ * @return True if anyone on board was fired upon.
+ */
+bool VehicleDriveBState::checkReactionFire()
+{
+	SavedBattleGame *save = _parent->getSave();
+	std::vector<BattleUnit*> crew = _vehicle->getPassengers(save);
+	auto driver = std::find(crew.begin(), crew.end(), _action.actor);
+	if (driver != crew.end())
+	{
+		std::rotate(crew.begin(), driver, driver + 1);
+	}
+	for (auto *unit : crew)
+	{
+		if (unit->getFaction() != _action.actor->getFaction() || unit->isOut())
+		{
+			continue;
+		}
+		BattleAction step;
+		step.type = BA_WALK;
+		step.actor = unit;
+		step.target = unit->getPosition();
+		if (save->getTileEngine()->checkReactionFire(unit, step))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
  * Drives one step. Like a walking unit, the vehicle stops when the driver or the vehicle runs out
- * of time units, when something blocks the way, or when the crew spots a new enemy. Units in the
- * way are run over first (see runOver).
+ * of time units, when something blocks the way, when the crew spots a new enemy, or when someone
+ * on board is fired upon. Units in the way are run over first (see runOver).
  */
 void VehicleDriveBState::think()
 {
@@ -195,6 +227,12 @@ void VehicleDriveBState::think()
 		return;
 	}
 	_spotted = spotted;
+	if (checkReactionFire())
+	{
+		// someone on board was fired upon: stop, as a walking unit does
+		_parent->popState();
+		return;
+	}
 }
 
 }
