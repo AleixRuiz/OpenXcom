@@ -65,6 +65,16 @@ public:
 	enum UnitInWay { UNIT_IGNORED, UNIT_BLOCKS, UNIT_RUN_OVER };
 	/// Decides what a unit standing in the vehicle's way does to it.
 	using UnitJudge = std::function<UnitInWay(const BattleUnit*)>;
+	/// A place the vehicle can drive to, found by the route search.
+	struct Reach
+	{
+		/// Vehicle position there.
+		Position pos;
+		/// Time units it takes to get there.
+		int tu;
+		/// Steps on the way that crush terrain or run over units.
+		int crushing;
+	};
 
 	/**
 	 * Finds the vehicles a craft map holds: remembers the terrain of the area before
@@ -87,6 +97,7 @@ private:
 	bool _ufo;
 	int _faction;
 	int _timeUnits;
+	bool _aiDecided;
 	Position _pos;
 	int _firstSetId, _lastSetId;
 	std::vector<Cell> _cells;
@@ -142,6 +153,8 @@ private:
 	UnitInWay judgeUnit(SavedBattleGame *save, const BattleUnit *unit) const;
 	/// Checks whether the vehicle can be set down at a position, and what it must crush and run over there.
 	MoveResult checkPlace(SavedBattleGame *save, Position pos, const std::vector<char> &inside, const std::vector<BattleUnit*> &passengers, int crushArmor, const UnitJudge &judge, std::vector<std::pair<Tile*, TilePart> > &toCrush, std::vector<BattleUnit*> &victims) const;
+	/// Searches the vehicle's routes, to a target or to every place within some time units.
+	bool search(SavedBattleGame *save, const Position *target, int budget, std::vector<Position> &path, std::vector<Reach> *reach, std::string &error) const;
 
 public:
 	/// Creates an empty vehicle, to be loaded from a save.
@@ -169,6 +182,10 @@ public:
 	void spendTimeUnits(int tu);
 	/// Gives the vehicle its time units back, at the start of its side's turn.
 	void prepareNewTurn(const Mod *mod);
+	/// Has an AI unit decided where the vehicle drives this turn?
+	bool isAIDecided() const { return _aiDecided; }
+	/// Marks that an AI unit has decided where the vehicle drives this turn.
+	void setAIDecided() { _aiDecided = true; }
 	/// Gets the position of the vehicle's lowest corner.
 	Position getPosition() const { return _pos; }
 	/// Gets the center of the vehicle, on its lowest level.
@@ -196,6 +213,8 @@ public:
 	MoveResult move(SavedBattleGame *save, Position delta, std::vector<BattleUnit*> &victims);
 	/// Finds the steps that take the vehicle to a new place, following the ground.
 	bool findPath(SavedBattleGame *save, Position target, std::vector<Position> &path, std::string &error) const;
+	/// Finds every place the vehicle can drive to with some time units.
+	std::vector<Reach> findReachable(SavedBattleGame *save, int tu) const;
 	/// Gets the message (a string ID) telling why a step failed.
 	static const char *getMoveResultString(MoveResult result);
 	/// Gets the vehicle's parts that would stand on a tile if the vehicle were at another position, to preview a drive.

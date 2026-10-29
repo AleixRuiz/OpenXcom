@@ -186,7 +186,7 @@ Decided in [GD-18](GAME_DESIGN_DECISIONS.md#gd-18--ground-vehicles-rest-on-the-h
 | --- | --- | --- | --- |
 | 8. Running over | `runOverDamage`, `runOverDamageType`; damage, kill credit, ramming | A Chimera runs over the infantry it is driven onto | `377183df4` |
 | 9. Reaction fire | Reaction checks for every unit on board after each step | Crew showing on a driving vehicle draw fire | `8264a1c8b` |
-| 10. Enemy vehicles | `battleVehicle` under `ufos`, alien-side vehicles, `ufo:` in saves | The traitor convoy's Chimeras are vehicles (not driven yet) | |
+| 10. Enemy vehicles | `battleVehicle` under `ufos`, alien-side vehicles, `ufo:` in saves | The traitor convoy's Chimeras are vehicles (not driven yet) | `a7d9f8c3d` |
 | 11. AI drivers | Hold, advance or park, once per turn per vehicle | The traitor Chimeras close in on the squad | |
 | 12. Convoy | Settles [GD-25](GAME_DESIGN_DECISIONS.md#gd-25--convoys-drive-for-the-map-edge); `aiExit` and escaping at the map edge | The convoy tries to drive off the map | |
 | 13. Driver skill | Layers 1 and 2 of [GD-17](GAME_DESIGN_DECISIONS.md#gd-17--skilled-and-dedicated-drivers-make-a-vehicle-go-further) | A good driver gets further | |
@@ -258,10 +258,11 @@ Decided in [GD-24](GAME_DESIGN_DECISIONS.md#gd-24--ai-drivers-hold-advance-or-st
 - A small new class, `VehicleAI`, decides for a driver: hold, advance (scoring reachable places by distance to the nearest known enemy, then crushing, then cost) or park. Known enemies come from the driver's own AI module (`AIModule::validTarget`).
 - `BattlescapeGame::handleAI` asks it as the first action of an AI unit that can drive, once per vehicle per turn, and queues a `VehicleDriveBState` when the vehicle moves.
 - The camera follows an AI vehicle while the player can see its driver.
+- As built: the route search is shared as `BattleVehicle::search`, with `findPath` (A* to a target) and `findReachable` (every place within a budget) on top; an AI driver spends at most half its own time units driving; `BattleVehicle` keeps a flag (not saved) so each vehicle is decided for once per turn.
 
 **Checks**
 
-- [ ] Builds with no new warnings.
+- [x] Builds with no new warnings.
 - [ ] Both demo mods load with no messages.
 - [ ] The in-game checks under "AI drivers" in [TESTING.md](TESTING.md).
 

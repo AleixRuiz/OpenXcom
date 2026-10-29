@@ -132,6 +132,7 @@ set ( battlescape_src
   Battlescape/UnitSprite.cpp
   Battlescape/UnitTurnBState.cpp
   Battlescape/UnitWalkBState.cpp
+  Battlescape/VehicleAI.cpp
   Battlescape/VehicleDriveBState.cpp
   Battlescape/WarningMessage.cpp
 )

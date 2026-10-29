@@ -395,6 +395,8 @@ Decided · 2026-10-29 · M2, Phase 11 · follows [GD-14](#gd-14--ai-drivers-foll
 - Free moves once per turn toward the player, as in the prototype: cheating.
 - Patrolling along route nodes with no known enemy, as the design first said: landed alien vehicles driving around at random look wrong. Convoys get their own goal ([GD-25](#gd-25--convoys-drive-for-the-map-edge)).
 
+**Settled with it.** An AI driver drives with at most half its own time units, keeping the rest to fight; the vehicle's time units still limit the drive.
+
 **Revisit when.** AI vehicles feel too passive or too reckless in play; the distance and the hold rule are the knobs.
 
 ### GD-25 · Convoys drive for the map edge

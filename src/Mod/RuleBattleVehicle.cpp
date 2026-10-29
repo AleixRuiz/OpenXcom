@@ -35,7 +35,7 @@ namespace OpenXcom
  * units are set from its cost per tile once the rule is loaded.
  */
 RuleBattleVehicle::RuleBattleVehicle() : _split(SPLIT_CONNECTED), _tuPerTile(4), _timeUnits(-1), _crushArmor(0),
-	_runOverDamage(0), _runOverDamageType(DT_MELEE), _runOverDamageRule(nullptr)
+	_runOverDamage(0), _runOverDamageType(DT_MELEE), _aiKeepDistance(6), _runOverDamageRule(nullptr)
 {
 }
 
@@ -55,6 +55,7 @@ void RuleBattleVehicle::load(const YAML::YamlNodeReader &node)
 	node.tryRead("crushArmor", _crushArmor);
 	node.tryRead("runOverDamage", _runOverDamage);
 	node.tryRead("runOverDamageType", _runOverDamageType);
+	node.tryRead("aiKeepDistance", _aiKeepDistance);
 }
 
 /**
@@ -102,6 +103,10 @@ void RuleBattleVehicle::afterLoad(const Mod *mod, const std::string &type, RuleT
 		_runOverDamageType = DT_MELEE;
 	}
 	_runOverDamageRule = mod->getDamageType((ItemDamageType)_runOverDamageType);
+	if (mod->checkForSoftError(_aiKeepDistance < 0, type, "battleVehicle: aiKeepDistance cannot be negative.", LOG_ERROR))
+	{
+		_aiKeepDistance = 0;
+	}
 	if (_timeUnits < 0)
 	{
 		// no limit given: a few straight tiles' worth, so no vehicle drives without a limit by accident

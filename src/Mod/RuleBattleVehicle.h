@@ -46,7 +46,7 @@ private:
 	std::vector<std::string> _driverNames;
 	std::vector<const Armor*> _drivers;
 	int _tuPerTile, _timeUnits, _crushArmor;
-	int _runOverDamage, _runOverDamageType;
+	int _runOverDamage, _runOverDamageType, _aiKeepDistance;
 	const RuleDamageType *_runOverDamageRule;
 public:
 	/// Time units a vehicle gets per turn when its rule doesn't say, in straight tiles.
@@ -77,6 +77,8 @@ public:
 	int getRunOverDamage() const { return _runOverDamage; }
 	/// Gets the damage type dealt to a unit the vehicle is driven onto.
 	const RuleDamageType *getRunOverDamageType() const { return _runOverDamageRule; }
+	/// Gets the distance in tiles an AI driver keeps from the nearest enemy.
+	int getAIKeepDistance() const { return _aiKeepDistance; }
 };
 
 }

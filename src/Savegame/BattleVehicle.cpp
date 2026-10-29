@@ -295,7 +295,7 @@ std::vector<BattleVehicle*> BattleVehicle::Placement::finish(SavedBattleGame *sa
 /**
  * Creates an empty vehicle, to be loaded from a save.
  */
-BattleVehicle::BattleVehicle() : _ufo(false), _faction(0), _timeUnits(0), _firstSetId(-1), _lastSetId(-1)
+BattleVehicle::BattleVehicle() : _ufo(false), _faction(0), _timeUnits(0), _aiDecided(false), _firstSetId(-1), _lastSetId(-1)
 {
 }
 
@@ -308,7 +308,7 @@ BattleVehicle::BattleVehicle() : _ufo(false), _faction(0), _timeUnits(0), _first
  * @param lastSetId Index after the map's last tileset in the battle.
  */
 BattleVehicle::BattleVehicle(const std::string &type, bool ufo, int faction, int firstSetId, int lastSetId) :
-	_type(type), _ufo(ufo), _faction(faction), _timeUnits(0), _firstSetId(firstSetId), _lastSetId(lastSetId)
+	_type(type), _ufo(ufo), _faction(faction), _timeUnits(0), _aiDecided(false), _firstSetId(firstSetId), _lastSetId(lastSetId)
 {
 }
 
@@ -423,13 +423,15 @@ void BattleVehicle::spendTimeUnits(int tu)
 }
 
 /**
- * Gives the vehicle all its time units back, at the start of its side's turn.
+ * Gives the vehicle all its time units back, at the start of its side's turn, and lets an AI
+ * driver decide for it again.
  * @param mod The mod.
  */
 void BattleVehicle::prepareNewTurn(const Mod *mod)
 {
 	const RuleBattleVehicle *rule = getRule(mod);
 	_timeUnits = rule ? rule->getTimeUnits() : 0;
+	_aiDecided = false;
 }
 
 /**
@@ -1243,27 +1245,30 @@ BattleVehicle::MoveResult BattleVehicle::move(SavedBattleGame *save, Position de
 }
 
 /**
- * Finds the steps that take the vehicle to a new place, with A* over vehicle positions; the level
- * of each position follows from the ground there (see findLevel). Straight steps cost 2, diagonal
- * steps 3 (they can't cut corners), climbing a level half as much again, a step that crushes
- * terrain 2 more and one that runs over units 6 more. Tiles the vehicle covers now are judged by
- * the terrain under it. Only the units the vehicle's side knows of are in the way; any other
- * unit stops the drive, or is run over, when the vehicle gets there. The player's vehicles only
- * run over the units under the target place; other sides' run over whatever is in the way.
+ * Searches the vehicle's routes over vehicle positions, the level of each position following from
+ * the ground there (see findLevel): A* to a target, or every place within some time units. Straight
+ * steps cost 2, diagonal steps 3 (they can't cut corners), climbing a level half as much again, a
+ * step that crushes terrain 2 more and one that runs over units 6 more. Tiles the vehicle covers now
+ * are judged by the terrain under it. Only the units the vehicle's side knows of are in the way; any
+ * other unit stops the drive, or is run over, when the vehicle gets there. The player's vehicles
+ * only run over the units under the target place; other sides' run over whatever is in the way.
  * @param save Battle save.
- * @param target New vehicle position (its level is ignored).
- * @param path Gets the vehicle positions after each step, the last one being the target.
- * @param error Gets a string ID telling why there is no way.
- * @return True if a way was found.
+ * @param target New vehicle position (its level is ignored), or null to find every place within the budget.
+ * @param budget Time units the vehicle may spend, without a target.
+ * @param path Gets the vehicle positions after each step to the target, the last one being the target.
+ * @param reach Gets the places within the budget, without a target.
+ * @param error Gets a string ID telling why there is no way to the target.
+ * @return True if a way to the target was found.
  */
-bool BattleVehicle::findPath(SavedBattleGame *save, Position target, std::vector<Position> &path, std::string &error) const
+bool BattleVehicle::search(SavedBattleGame *save, const Position *target, int budget, std::vector<Position> &path, std::vector<Reach> *reach, std::string &error) const
 {
 	path.clear();
-	if (_cells.empty() || (target.x == _pos.x && target.y == _pos.y))
+	if (_cells.empty() || (target && target->x == _pos.x && target->y == _pos.y))
 	{
 		error = "STR_VEHICLE_ALREADY_THERE";
 		return false;
 	}
+	const Mod *mod = save->getMod();
 	const int crushArmor = getCrushArmor(save->getMod());
 	const std::vector<BattleUnit*> passengers = getPassengers(save);
 	std::vector<char> inside(_cells.size(), 0);
@@ -1277,9 +1282,9 @@ bool BattleVehicle::findPath(SavedBattleGame *save, Position target, std::vector
 	std::vector<const BattleUnit*> targetUnits;
 	for (const auto &column : _columns)
 	{
-		for (int z = 0; z < height; ++z)
+		for (int z = 0; z < height && target; ++z)
 		{
-			const Tile *tile = save->getTile(Position(target.x + column.x, target.y + column.y, z));
+			const Tile *tile = save->getTile(Position(target->x + column.x, target->y + column.y, z));
 			if (tile && tile->getUnit())
 			{
 				targetUnits.push_back(tile->getUnit());
@@ -1346,10 +1351,10 @@ bool BattleVehicle::findPath(SavedBattleGame *save, Position target, std::vector
 		return fit;
 	};
 	// the target, coming from any level; when it doesn't fit, what stands in the way says more than the ground
-	MoveResult atTarget = MOVE_TOO_STEEP;
+	MoveResult atTarget = target ? MOVE_TOO_STEEP : MOVE_OK;
 	for (int z = 0; z < height && atTarget != MOVE_OK; ++z)
 	{
-		const MoveResult result = fitsAt(target.x, target.y, z, (int)_columns.size()).blocked;
+		const MoveResult result = fitsAt(target->x, target->y, z, (int)_columns.size()).blocked;
 		if (result == MOVE_OK || atTarget == MOVE_TOO_STEEP)
 		{
 			atTarget = result;
@@ -1363,7 +1368,11 @@ bool BattleVehicle::findPath(SavedBattleGame *save, Position target, std::vector
 
 	auto estimate = [&](int x, int y)
 	{
-		const int dx = std::abs(x - target.x), dy = std::abs(y - target.y);
+		if (!target)
+		{
+			return 0;
+		}
+		const int dx = std::abs(x - target->x), dy = std::abs(y - target->y);
 		return 2 * std::max(dx, dy) + std::min(dx, dy);
 	};
 	auto nodeAt = [&](int x, int y, int z)
@@ -1372,11 +1381,13 @@ bool BattleVehicle::findPath(SavedBattleGame *save, Position target, std::vector
 	};
 	const int start = nodeAt(_pos.x, _pos.y, _pos.z);
 	int goal = -1;
-	std::unordered_map<int, int> cost, from, buried;
+	std::unordered_map<int, int> cost, from, buried, tuSpent, crushing;
 	using Entry = std::pair<int, int>;
 	std::priority_queue<Entry, std::vector<Entry>, std::greater<Entry> > open;
 	cost[start] = 0;
 	buried[start] = countBuried(save, _pos);
+	tuSpent[start] = 0;
+	crushing[start] = 0;
 	open.push(std::make_pair(estimate(_pos.x, _pos.y), start));
 	int expanded = 0;
 	while (!open.empty() && expanded < 20000)
@@ -1385,7 +1396,7 @@ bool BattleVehicle::findPath(SavedBattleGame *save, Position target, std::vector
 		open.pop();
 		const int current = top.second;
 		const int cx = current % width, cy = current / width % length, cz = current / (width * length);
-		if (cx == target.x && cy == target.y)
+		if (target && cx == target->x && cy == target->y)
 		{
 			goal = current;
 			break;
@@ -1407,6 +1418,11 @@ bool BattleVehicle::findPath(SavedBattleGame *save, Position target, std::vector
 				continue;
 			}
 			const int next = nodeAt(cx + v.x, cy + v.y, fit.z);
+			const int tu = tuSpent[current] + getStepCost(mod, Position(v.x, v.y, fit.z - cz));
+			if (!target && tu > budget)
+			{
+				continue;
+			}
 			int step = diagonal ? 3 : 2;
 			if (fit.z > cz)
 			{
@@ -1422,9 +1438,20 @@ bool BattleVehicle::findPath(SavedBattleGame *save, Position target, std::vector
 				}
 				cost[next] = newCost;
 				from[next] = current;
+				tuSpent[next] = tu;
+				crushing[next] = crushing[current] + (fit.crushed > 0 || fit.victims > 0 ? 1 : 0);
 				open.push(std::make_pair(newCost + estimate(cx + v.x, cy + v.y), next));
 			}
 		}
+	}
+	if (!target)
+	{
+		for (const auto &place : cost)
+		{
+			const int at = place.first;
+			reach->push_back({ Position(at % width, at / width % length, at / (width * length)), tuSpent[at], crushing[at] });
+		}
+		return false;
 	}
 	if (goal == -1)
 	{
@@ -1437,6 +1464,35 @@ bool BattleVehicle::findPath(SavedBattleGame *save, Position target, std::vector
 	}
 	std::reverse(path.begin(), path.end());
 	return true;
+}
+
+/**
+ * Finds the steps that take the vehicle to a new place (see search).
+ * @param save Battle save.
+ * @param target New vehicle position (its level is ignored).
+ * @param path Gets the vehicle positions after each step, the last one being the target.
+ * @param error Gets a string ID telling why there is no way.
+ * @return True if a way was found.
+ */
+bool BattleVehicle::findPath(SavedBattleGame *save, Position target, std::vector<Position> &path, std::string &error) const
+{
+	return search(save, &target, 0, path, nullptr, error);
+}
+
+/**
+ * Finds every place the vehicle can drive to with some time units, its current place included
+ * (see search).
+ * @param save Battle save.
+ * @param tu Time units the vehicle may spend.
+ * @return The places, with what it takes to get to each.
+ */
+std::vector<BattleVehicle::Reach> BattleVehicle::findReachable(SavedBattleGame *save, int tu) const
+{
+	std::vector<Reach> reach;
+	std::vector<Position> path;
+	std::string error;
+	search(save, nullptr, tu, path, &reach, error);
+	return reach;
 }
 
 /**

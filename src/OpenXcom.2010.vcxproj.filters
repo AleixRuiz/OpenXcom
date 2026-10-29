@@ -422,6 +422,9 @@
     <ClCompile Include="Battlescape\Inventory.cpp">
       <Filter>Battlescape</Filter>
     </ClCompile>
+    <ClCompile Include="Battlescape\VehicleAI.cpp">
+      <Filter>Battlescape</Filter>
+    </ClCompile>
     <ClCompile Include="Battlescape\VehicleDriveBState.cpp">
       <Filter>Battlescape</Filter>
     </ClCompile>
@@ -1674,6 +1677,9 @@
       <Filter>Battlescape</Filter>
     </ClInclude>
     <ClInclude Include="Battlescape\Inventory.h">
+      <Filter>Battlescape</Filter>
+    </ClInclude>
+    <ClInclude Include="Battlescape\VehicleAI.h">
       <Filter>Battlescape</Filter>
     </ClInclude>
     <ClInclude Include="Battlescape\VehicleDriveBState.h">

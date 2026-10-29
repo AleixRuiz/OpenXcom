@@ -119,3 +119,16 @@ Fight the traitor convoy: in debug mode, a Quick Battle or a mission against the
 - [ ] Shooting a traitor Chimera damages its hull as before; the turrets fight as before.
 - [ ] Your soldiers can't drive an enemy vehicle: no Drive button on its tiles.
 - [ ] Save and load: the enemy vehicles are still there.
+
+**AI drivers** (Phase 11)
+
+Same traitor convoy battle.
+
+- [ ] While the traitors don't know where your squad is, their Chimeras stay parked.
+- [ ] Once a traitor has spotted your squad, on the aliens' turn a turret Chimera drives toward it and stops about 6 tiles away, then its turret fires if it can.
+- [ ] A traitor Chimera whose turret already sees a target doesn't move; the turret fires.
+- [ ] The camera follows a traitor Chimera while you can see its turret, and the map shows it moving.
+- [ ] An enemy Chimera driving past your soldiers draws their reaction fire on its turret.
+- [ ] Your soldiers standing in its way are run over or ram it; its own infantry never are.
+- [ ] Each traitor Chimera drives at most once per aliens' turn, and no further than its time units allow.
+- [ ] The parked third Chimera (no turret) never moves.

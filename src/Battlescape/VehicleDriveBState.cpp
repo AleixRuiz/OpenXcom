@@ -57,7 +57,8 @@ VehicleDriveBState::~VehicleDriveBState()
 void VehicleDriveBState::init()
 {
 	// a bit slower than a walking unit, it moves a whole vehicle each step
-	_parent->setStateInterval(Options::battleXcomSpeed * 6);
+	const bool player = _action.actor && _action.actor->getFaction() == FACTION_PLAYER;
+	_parent->setStateInterval((player ? Options::battleXcomSpeed : Options::battleAlienSpeed) * 6);
 	_spotted = countSpotted();
 }
 
@@ -209,7 +210,8 @@ void VehicleDriveBState::think()
 	tileEngine->recalculateFOV();
 
 	Camera *camera = _parent->getMap()->getCamera();
-	if (driver->getFaction() == FACTION_PLAYER && !camera->isOnScreen(driver->getPosition(), true, 0, false))
+	// the camera follows the player's vehicles, and enemy vehicles while the player sees their driver
+	if ((driver->getFaction() == FACTION_PLAYER || driver->getVisible()) && !camera->isOnScreen(driver->getPosition(), true, 0, false))
 	{
 		camera->centerOnPosition(driver->getPosition());
 	}
