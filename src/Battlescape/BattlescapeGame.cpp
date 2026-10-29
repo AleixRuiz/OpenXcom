@@ -421,6 +421,13 @@ void BattlescapeGame::handleAI(BattleUnit *unit)
 			_playedAggroSound = true;
 		}
 	}
+	const BattleVehicle *drivenVehicle = BattleVehicle::getDrivenBy(_save, unit);
+	if (action.type == BA_WALK && drivenVehicle && drivenVehicle->hasSeats())
+	{
+		// a driver keeps its seat: it fights from there instead of walking off
+		_parentState->debug("Keeping the driver seat");
+		action.type = BA_NONE;
+	}
 	if (action.type == BA_WALK)
 	{
 		ss << "Walking to " << action.target;

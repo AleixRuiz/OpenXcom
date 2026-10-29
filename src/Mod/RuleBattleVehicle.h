@@ -45,6 +45,7 @@ private:
 	std::vector<std::vector<int> > _driverSeats;
 	std::vector<std::string> _driverNames;
 	std::vector<const Armor*> _drivers;
+	std::vector<int> _driverRanks;
 	int _tuPerTile, _timeUnits, _crushArmor;
 	int _runOverDamage, _runOverDamageType, _aiKeepDistance;
 	int _driverReactionsZeroPoint, _driverReactionsRange;
@@ -68,6 +69,8 @@ public:
 	const std::vector<std::vector<int> > &getDriverSeats() const { return _driverSeats; }
 	/// Can a unit with this armor drive?
 	bool canDrive(const Armor *armor) const;
+	/// Gets the alien ranks put on a driver seat first when the battle starts (4 is the navigator).
+	const std::vector<int> &getDriverRanks() const { return _driverRanks; }
 	/// Gets the time unit cost to move the vehicle by one tile, paid by the vehicle and its driver.
 	int getTuPerTile() const { return _tuPerTile; }
 	/// Gets the vehicle's own time units per turn.

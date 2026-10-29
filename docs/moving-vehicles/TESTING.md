@@ -125,13 +125,13 @@ Fight the traitor convoy: in debug mode, a Quick Battle or a mission against the
 Same traitor convoy battle.
 
 - [ ] While the traitors don't know where your squad is, their Chimeras stay parked.
-- [ ] Once a traitor has spotted your squad, on the aliens' turn a turret Chimera drives toward it and stops about 6 tiles away, then its turret fires if it can.
-- [ ] A traitor Chimera whose turret already sees a target doesn't move; the turret fires.
-- [ ] The camera follows a traitor Chimera while you can see its turret, and the map shows it moving.
-- [ ] An enemy Chimera driving past your soldiers draws their reaction fire on its turret.
+- [ ] Once a traitor has spotted your squad, on the aliens' turn a traitor Chimera drives toward it and stops about 6 tiles away, then its turret and crew fire if they can.
+- [ ] A traitor Chimera whose turret or crew already sees a target doesn't move; they fire.
+- [ ] The camera follows a traitor Chimera while you can see anyone on board (its turret, say), and the map shows it moving.
+- [ ] An enemy Chimera driving past your soldiers draws their reaction fire on whoever shows: its turret, roof crew.
 - [ ] Your soldiers standing in its way are run over or ram it; its own infantry never are.
 - [ ] Each traitor Chimera drives at most once per aliens' turn, and no further than its time units allow.
-- [ ] The parked third Chimera (no turret) never moves.
+- [ ] The third Chimera (no turret) drives too, with its own driver (from Phase 14).
 
 **Driver skill** (Phase 13)
 
@@ -139,4 +139,13 @@ Same traitor convoy battle.
 - [ ] A soldier with low reactions (35 or less) gets less far.
 - [ ] On a craft that takes pilots, a soldier who isn't one of its pilots drives as a 55-reactions soldier would, whatever their reactions.
 - [ ] Save in the middle of a turn and load: the time units left and the next steps' costs are the same.
-- [ ] The traitor Chimeras (driven by turrets) go exactly as far as before.
+- [ ] The traitor Chimeras (driven by traitors, who aren't soldiers) go exactly as far as before.
+
+**Enemy drivers** (Phase 14)
+
+- [ ] At battle start, each traitor Chimera has a traitor on its driver seat, inside at the front of its troop bay: in a save, a traitor stands on each of `[5, 8, 0]`, `[17, 7, 0]` and `[9, 2, 0]` of the convoy map.
+- [ ] No leader or commander is put on a seat.
+- [ ] The battle has as many traitors as before: none are added.
+- [ ] The traitor on a seat never walks off it; it shoots from there when it can.
+- [ ] Kill or stun a driver (break in, or a grenade through a hatch): that Chimera stops driving for the rest of the battle.
+- [ ] A battle save made before this phase opens; nobody is moved in it.

@@ -21,6 +21,7 @@
 #include <cstdlib>
 #include <functional>
 #include <queue>
+#include <tuple>
 #include <unordered_map>
 #include "BattleVehicle.h"
 #include "BattleItem.h"
@@ -1112,6 +1113,83 @@ BattleVehicle *BattleVehicle::getDrivenBy(SavedBattleGame *save, const BattleUni
 		}
 	}
 	return nullptr;
+}
+
+/**
+ * Puts one of the vehicle's side on a driver seat, when the battle starts, if nobody on its seats
+ * can drive. The driver comes from the units already deployed, so how many there are and what they
+ * carry doesn't change: a unit of one of the rule's driver ranks first (navigators, say), otherwise
+ * any unit but a commander or a leader; those already on board before the others, then the nearest.
+ * It must be allowed to drive and fit on a seat. If nobody can, the vehicle stays where it is.
+ * @param save Battle save.
+ */
+void BattleVehicle::seatDriver(SavedBattleGame *save)
+{
+	const RuleBattleVehicle *rule = getRule(save->getMod());
+	if (!rule || _seats.empty())
+	{
+		return;
+	}
+	for (const auto &seat : _seats)
+	{
+		const Tile *tile = save->getTile(_pos + seat);
+		if (tile && tile->getUnit() && canDrive(save, tile->getUnit()))
+		{
+			return;
+		}
+	}
+
+	const std::vector<int> &ranks = rule->getDriverRanks();
+	const Position firstSeat = _pos + _seats.front();
+	BattleUnit *driver = nullptr;
+	std::tuple<int, int, int> best;
+	for (auto *unit : *save->getUnits())
+	{
+		if (unit->getFaction() != _faction || unit->isOut() || !unit->getTile() || unit->isBigUnit() || !rule->canDrive(unit->getArmor()) || getDrivenBy(save, unit))
+		{
+			continue;
+		}
+		const bool dedicated = std::find(ranks.begin(), ranks.end(), unit->getRankInt()) != ranks.end();
+		if (!dedicated && unit->getRankInt() <= 1)
+		{
+			// commanders and leaders ride, they don't drive
+			continue;
+		}
+		const std::tuple<int, int, int> score(dedicated ? 0 : 1, covers(unit->getPosition()) ? 0 : 1, Position::distanceSq(unit->getPosition(), firstSeat));
+		if (!driver || score < best)
+		{
+			driver = unit;
+			best = score;
+		}
+	}
+	if (!driver)
+	{
+		return;
+	}
+	for (const auto &seat : _seats)
+	{
+		if (save->setUnitPosition(driver, _pos + seat))
+		{
+			return;
+		}
+	}
+}
+
+/**
+ * Puts a driver on the seats of every vehicle of a side, once the side's units are deployed
+ * (see seatDriver).
+ * @param save Battle save.
+ * @param faction The side.
+ */
+void BattleVehicle::seatDrivers(SavedBattleGame *save, int faction)
+{
+	for (auto *vehicle : *save->getVehicles())
+	{
+		if (vehicle->getFaction() == faction)
+		{
+			vehicle->seatDriver(save);
+		}
+	}
 }
 
 /**

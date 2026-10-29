@@ -208,6 +208,12 @@ public:
 	bool canDrive(SavedBattleGame *save, const BattleUnit *unit) const;
 	/// Gets the vehicle a unit can drive, if any.
 	static BattleVehicle *getDrivenBy(SavedBattleGame *save, const BattleUnit *unit);
+	/// Does the vehicle have driver seats (otherwise anyone on board can drive)?
+	bool hasSeats() const { return !_seats.empty(); }
+	/// Puts one of the vehicle's side on a driver seat, if nobody there can drive.
+	void seatDriver(SavedBattleGame *save);
+	/// Puts a driver on the seats of every vehicle of a side, once its units are deployed.
+	static void seatDrivers(SavedBattleGame *save, int faction);
 	/// Gets the time unit cost of a step, paid by the vehicle and its driver.
 	int getStepCost(const Mod *mod, Position delta) const;
 	/// Gets the time unit cost of a step for a driver with a skill bonus, carrying fractions over between steps.

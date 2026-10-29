@@ -215,10 +215,12 @@ void VehicleDriveBState::think()
 	tileEngine->recalculateFOV();
 
 	Camera *camera = _parent->getMap()->getCamera();
-	// the camera follows the player's vehicles, and enemy vehicles while the player sees their driver
-	if ((driver->getFaction() == FACTION_PLAYER || driver->getVisible()) && !camera->isOnScreen(driver->getPosition(), true, 0, false))
+	// the camera follows the player's vehicles, and enemy vehicles while the player sees anyone on board
+	const std::vector<BattleUnit*> crew = _vehicle->getPassengers(save);
+	const bool seen = driver->getFaction() == FACTION_PLAYER || std::any_of(crew.begin(), crew.end(), [](const BattleUnit *unit) { return unit->getVisible(); });
+	if (seen && !camera->isOnScreen(_vehicle->getCenter(), true, 0, false))
 	{
-		camera->centerOnPosition(driver->getPosition());
+		camera->centerOnPosition(_vehicle->getCenter());
 	}
 	if (driver->getFaction() == FACTION_PLAYER && _vehicle->getPosition().z != level)
 	{

@@ -188,8 +188,9 @@ Decided in [GD-18](GAME_DESIGN_DECISIONS.md#gd-18--ground-vehicles-rest-on-the-h
 | 9. Reaction fire | Reaction checks for every unit on board after each step | Crew showing on a driving vehicle draw fire | `8264a1c8b` |
 | 10. Enemy vehicles | `battleVehicle` under `ufos`, alien-side vehicles, `ufo:` in saves | The traitor convoy's Chimeras are vehicles (not driven yet) | `a7d9f8c3d` |
 | 11. AI drivers | Hold, advance or park, once per turn per vehicle | The traitor Chimeras close in on the squad | `13ee31083` |
-| 12. Convoy | Settles [GD-25](GAME_DESIGN_DECISIONS.md#gd-25--convoys-drive-for-the-map-edge); `aiExit` and escaping at the map edge | The convoy tries to drive off the map | |
-| 13. Driver skill | Layers 1 and 2 of [GD-17](GAME_DESIGN_DECISIONS.md#gd-17--skilled-and-dedicated-drivers-make-a-vehicle-go-further) | A good driver gets further | |
+| 12. Convoy | Settles [GD-25](GAME_DESIGN_DECISIONS.md#gd-25--convoys-drive-for-the-map-edge); `aiExit` and escaping at the map edge | The convoy tries to drive off the map | built last, after 14 |
+| 13. Driver skill | Layers 1 and 2 of [GD-17](GAME_DESIGN_DECISIONS.md#gd-17--skilled-and-dedicated-drivers-make-a-vehicle-go-further) | A good driver gets further | `0b374aca1` |
+| 14. Enemy drivers | One of the deployed enemies put on each enemy vehicle's seat; `driverRanks`; AI drivers keep their seat | The traitor Chimeras are driven by traitors inside | the commit that ticks this phase |
 
 ## Phase 8: Running over
 
@@ -292,3 +293,24 @@ Layers 1 and 2 of [GD-17](GAME_DESIGN_DECISIONS.md#gd-17--skilled-and-dedicated-
 - [ ] The in-game checks under "Driver skill" in [TESTING.md](TESTING.md).
 
 **Commit:** `Moving vehicles: skilled drivers get further`
+
+## Phase 14: Enemy drivers
+
+Decided in [GD-27](GAME_DESIGN_DECISIONS.md#gd-27--enemy-vehicles-get-their-driver-from-the-deployed-crew), after the first enemy vehicles (Phase 10) were driven by their turrets. Built before the convoy (Phase 12), which needs it.
+
+**Approach**
+
+- `RuleBattleVehicle` reads `driverRanks`, alien ranks from 0 to 7.
+- `BattleVehicle::seatDriver` picks one of the vehicle's side for a seat (dedicated ranks first, then anyone allowed by `drivers` but commanders and leaders; on board first, then the nearest) and moves it there with `SavedBattleGame::setUnitPosition`. `seatDrivers` does it for every vehicle of a side.
+- `BattlescapeGenerator` calls it for the alien side right after `deployAliens`, in both places enemies are deployed (a battle and the next stage of a mission).
+- `BattlescapeGame::handleAI` turns a driver's walk into no action, so it keeps its seat; vehicles without seats are left alone.
+- `VehicleDriveBState` follows an enemy vehicle with the camera while the player sees anyone on board, at the vehicle's middle.
+- Rosigma demo: the traitor Chimeras get a seat at the front of each troop bay and no `drivers` list, so any traitor infantry can drive; the turrets only fight.
+
+**Checks**
+
+- [x] Builds with no new warnings.
+- [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
+- [ ] The in-game checks under "Enemy drivers" in [TESTING.md](TESTING.md).
+
+**Commit:** `Moving vehicles: enemy vehicles get a driver from their crew`

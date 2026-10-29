@@ -181,21 +181,24 @@ Keys M2 adds, as each phase is built. All are optional, and leaving them out kee
 | `runOverDamage` | integer | 0 | Damage dealt to an enemy or civilian the vehicle is driven onto, once per unit, credited to the driver. If a unit survives, the vehicle has rammed it and stops. 0 means units block the vehicle. The player's route only runs over the units under the place clicked. |
 | `runOverDamageType` | damage type number | 7 (melee) | Damage type of `runOverDamage`, as for items (`damageType`). |
 | `aiKeepDistance` | integer | 6 | Tiles an AI driver keeps between the vehicle's middle and the nearest enemy it knows of, when it advances. |
+| `driverRanks` | list of alien ranks | none | For enemy vehicles: the ranks (as in `alienDeployments`, 4 is the navigator) put on a driver seat first when the battle starts. Without them, any deployed unit allowed by `drivers` but a commander or leader takes the seat. Needs `driverSeats`. |
 | `driverReactionsZeroPoint` | integer | the mod's `pilotReactionsZeroPoint` (55) | Reactions of a soldier who drives with no skill bonus. |
 | `driverReactionsRange` | integer | the mod's `pilotReactionsRange` (60) | A soldier driving changes each step's cost by (reactions − zero point) × range / 100 percent, capped at 50 either way; 0 turns driving skill off. If the craft takes pilots, only its pilots drive with their skill. |
 
-The whole block is also read under `ufos`: the UFO's map becomes vehicles of the alien side, with the same keys and checks as a craft's. Example, Rosigma's traitor convoy, driven by its turrets:
+The whole block is also read under `ufos`: the UFO's map becomes vehicles of the alien side, with the same keys and checks as a craft's. When the battle starts, one of the deployed enemies is put on each vehicle's seat. Example, Rosigma's traitor convoy, three Chimeras with a seat each:
 
 ```yaml
 ufos:
   - type: STR_TRAITOR_CHIMERA
     battleVehicle:
-      drivers: [STR_TRAITOR_CHIMERA_TURRET_ARMOR]   # mounted guns drive only when listed
+      driverSeats: [[5, 8, 0], [17, 7, 0], [9, 2, 0]]   # front of each troop bay
       tuPerTile: 4
       timeUnits: 48
       crushArmor: 100
       runOverDamage: 150
 ```
+
+A vanilla UFO could make its navigators the pilots with `driverRanks: [4]`.
 
 ## Driving and controls
 
@@ -295,7 +298,7 @@ There is no separate vehicle health: a vehicle is exactly as broken as its tiles
 
 ## AI vehicles
 
-AI drivers follow the player's rules: a crew member on a seat drives, pays time units, and only knows what its side has seen. The prototype instead moved each AI vehicle for free once per turn, toward the nearest player unit, wherever it was.
+AI drivers follow the player's rules: a crew member on a seat drives, pays time units, and only knows what its side has seen. When the battle starts, one of the deployed enemies is put on each enemy vehicle's seat, dedicated driver ranks such as navigators first ([GD-27](GAME_DESIGN_DECISIONS.md#gd-27--enemy-vehicles-get-their-driver-from-the-deployed-crew)). The prototype instead moved each AI vehicle for free once per turn, toward the nearest player unit, wherever it was.
 
 **What the AI knows.** Only enemies its side currently sees or remembers from earlier sightings, using the same knowledge the OXCE AI already keeps for its units.
 
