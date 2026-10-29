@@ -37,6 +37,8 @@
 #include "../Mod/RuleBattleVehicle.h"
 #include "../Mod/RuleCraft.h"
 #include "../Mod/RuleUfo.h"
+#include "Craft.h"
+#include "Soldier.h"
 
 namespace OpenXcom
 {
@@ -295,7 +297,7 @@ std::vector<BattleVehicle*> BattleVehicle::Placement::finish(SavedBattleGame *sa
 /**
  * Creates an empty vehicle, to be loaded from a save.
  */
-BattleVehicle::BattleVehicle() : _ufo(false), _faction(0), _timeUnits(0), _aiDecided(false), _firstSetId(-1), _lastSetId(-1)
+BattleVehicle::BattleVehicle() : _ufo(false), _faction(0), _timeUnits(0), _aiDecided(false), _tuCarry(0), _firstSetId(-1), _lastSetId(-1)
 {
 }
 
@@ -308,7 +310,7 @@ BattleVehicle::BattleVehicle() : _ufo(false), _faction(0), _timeUnits(0), _aiDec
  * @param lastSetId Index after the map's last tileset in the battle.
  */
 BattleVehicle::BattleVehicle(const std::string &type, bool ufo, int faction, int firstSetId, int lastSetId) :
-	_type(type), _ufo(ufo), _faction(faction), _timeUnits(0), _aiDecided(false), _firstSetId(firstSetId), _lastSetId(lastSetId)
+	_type(type), _ufo(ufo), _faction(faction), _timeUnits(0), _aiDecided(false), _tuCarry(0), _firstSetId(firstSetId), _lastSetId(lastSetId)
 {
 }
 
@@ -331,6 +333,7 @@ void BattleVehicle::load(const YAML::YamlNodeReader &reader, const Mod *mod)
 	reader.tryRead("faction", _faction);
 	prepareNewTurn(mod);
 	reader.tryRead("timeUnits", _timeUnits);
+	reader.tryRead("tuCarry", _tuCarry);
 	reader.tryRead("position", _pos);
 	reader.tryRead("firstSetId", _firstSetId);
 	reader.tryRead("lastSetId", _lastSetId);
@@ -372,6 +375,10 @@ void BattleVehicle::save(YAML::YamlNodeWriter writer) const
 	writer.write(_ufo ? "ufo" : "craft", _type);
 	writer.write("faction", _faction);
 	writer.write("timeUnits", _timeUnits);
+	if (_tuCarry != 0)
+	{
+		writer.write("tuCarry", _tuCarry);
+	}
 	writer.write("position", _pos);
 	writer.write("firstSetId", _firstSetId);
 	writer.write("lastSetId", _lastSetId);
@@ -431,6 +438,7 @@ void BattleVehicle::prepareNewTurn(const Mod *mod)
 {
 	const RuleBattleVehicle *rule = getRule(mod);
 	_timeUnits = rule ? rule->getTimeUnits() : 0;
+	_tuCarry = 0;
 	_aiDecided = false;
 }
 
@@ -1126,6 +1134,53 @@ int BattleVehicle::getStepCost(const Mod *mod, Position delta) const
 		cost = cost * 3 / 2;
 	}
 	return cost;
+}
+
+/**
+ * Gets the time unit cost of a step for a driver with a skill bonus: the step's cost made cheaper
+ * by the bonus (dearer if it is negative). Fractions of a time unit carry over to the next step,
+ * so a small bonus still counts over a drive.
+ * @param mod The mod.
+ * @param delta The step.
+ * @param bonus The driver's bonus, in percent (see getDriverBonus).
+ * @param carry Hundredths of a time unit carried over from the last step; gets what carries over to the next.
+ * @return Time units.
+ */
+int BattleVehicle::getStepCost(const Mod *mod, Position delta, int bonus, int &carry) const
+{
+	const int hundredths = getStepCost(mod, delta) * (100 - bonus) + carry;
+	carry = hundredths % 100;
+	return hundredths / 100;
+}
+
+/**
+ * Gets how much a driver's skill makes each step cheaper, as piloting skill does in air combat:
+ * (reactions - zero point) * range / 100 percent, capped at 50 either way. Only soldiers have
+ * driving skill. If the vehicle's craft takes pilots, only its pilots drive with their skill;
+ * anyone else drives as a novice, with no bonus.
+ * @param save Battle save.
+ * @param driver The driver.
+ * @return The bonus in percent, negative if the step gets dearer.
+ */
+int BattleVehicle::getDriverBonus(SavedBattleGame *save, const BattleUnit *driver) const
+{
+	const RuleBattleVehicle *rule = getRule(save->getMod());
+	Soldier *soldier = driver ? driver->getGeoscapeSoldier() : nullptr;
+	if (!rule || !soldier)
+	{
+		return 0;
+	}
+	Craft *craft = soldier->getCraft();
+	if (!_ufo && craft && craft->getRules()->getType() == _type && craft->getRules()->getPilots() > 0)
+	{
+		const std::vector<Soldier*> pilots = craft->getPilotList(false, nullptr);
+		if (std::find(pilots.begin(), pilots.end(), soldier) == pilots.end())
+		{
+			return 0;
+		}
+	}
+	const int bonus = (driver->getBaseStats()->reactions - rule->getDriverReactionsZeroPoint()) * rule->getDriverReactionsRange() / 100;
+	return std::max(-50, std::min(50, bonus));
 }
 
 /**

@@ -181,6 +181,8 @@ Keys M2 adds, as each phase is built. All are optional, and leaving them out kee
 | `runOverDamage` | integer | 0 | Damage dealt to an enemy or civilian the vehicle is driven onto, once per unit, credited to the driver. If a unit survives, the vehicle has rammed it and stops. 0 means units block the vehicle. The player's route only runs over the units under the place clicked. |
 | `runOverDamageType` | damage type number | 7 (melee) | Damage type of `runOverDamage`, as for items (`damageType`). |
 | `aiKeepDistance` | integer | 6 | Tiles an AI driver keeps between the vehicle's middle and the nearest enemy it knows of, when it advances. |
+| `driverReactionsZeroPoint` | integer | the mod's `pilotReactionsZeroPoint` (55) | Reactions of a soldier who drives with no skill bonus. |
+| `driverReactionsRange` | integer | the mod's `pilotReactionsRange` (60) | A soldier driving changes each step's cost by (reactions − zero point) × range / 100 percent, capped at 50 either way; 0 turns driving skill off. If the craft takes pilots, only its pilots drive with their skill. |
 
 The whole block is also read under `ufos`: the UFO's map becomes vehicles of the alien side, with the same keys and checks as a craft's. Example, Rosigma's traitor convoy, driven by its turrets:
 

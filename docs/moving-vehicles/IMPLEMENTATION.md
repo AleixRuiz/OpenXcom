@@ -187,7 +187,7 @@ Decided in [GD-18](GAME_DESIGN_DECISIONS.md#gd-18--ground-vehicles-rest-on-the-h
 | 8. Running over | `runOverDamage`, `runOverDamageType`; damage, kill credit, ramming | A Chimera runs over the infantry it is driven onto | `377183df4` |
 | 9. Reaction fire | Reaction checks for every unit on board after each step | Crew showing on a driving vehicle draw fire | `8264a1c8b` |
 | 10. Enemy vehicles | `battleVehicle` under `ufos`, alien-side vehicles, `ufo:` in saves | The traitor convoy's Chimeras are vehicles (not driven yet) | `a7d9f8c3d` |
-| 11. AI drivers | Hold, advance or park, once per turn per vehicle | The traitor Chimeras close in on the squad | |
+| 11. AI drivers | Hold, advance or park, once per turn per vehicle | The traitor Chimeras close in on the squad | `13ee31083` |
 | 12. Convoy | Settles [GD-25](GAME_DESIGN_DECISIONS.md#gd-25--convoys-drive-for-the-map-edge); `aiExit` and escaping at the map edge | The convoy tries to drive off the map | |
 | 13. Driver skill | Layers 1 and 2 of [GD-17](GAME_DESIGN_DECISIONS.md#gd-17--skilled-and-dedicated-drivers-make-a-vehicle-go-further) | A good driver gets further | |
 
@@ -276,6 +276,19 @@ Settles [GD-25](GAME_DESIGN_DECISIONS.md#gd-25--convoys-drive-for-the-map-edge) 
 
 ## Phase 13: Driver skill
 
-Layers 1 and 2 of [GD-17](GAME_DESIGN_DECISIONS.md#gd-17--skilled-and-dedicated-drivers-make-a-vehicle-go-further); the size of the bonus, each vehicle's zero point, and how a bonus rounds on steps of a few time units are settled first and logged.
+Layers 1 and 2 of [GD-17](GAME_DESIGN_DECISIONS.md#gd-17--skilled-and-dedicated-drivers-make-a-vehicle-go-further), with the numbers and the rounding settled in [GD-26](GAME_DESIGN_DECISIONS.md#gd-26--how-driving-skill-counts).
+
+**Approach**
+
+- `RuleBattleVehicle` reads `driverReactionsZeroPoint` and `driverReactionsRange`, defaulting to the mod's pilot values.
+- `BattleVehicle::getDriverBonus` gives a driver's bonus: soldiers only, and only the craft's pilots when it takes pilots (`Craft::getPilotList`, without changing anything).
+- A second `getStepCost` scales a step by the bonus and carries hundredths of a time unit to the next step; the vehicle keeps the carry, saved as `tuCarry` and cleared at the start of each turn.
+- `VehicleDriveBState` charges steps with it, and the route preview counts down the same way. AI route planning keeps the plain cost, since AI drivers aren't soldiers.
+
+**Checks**
+
+- [x] Builds with no new warnings.
+- [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
+- [ ] The in-game checks under "Driver skill" in [TESTING.md](TESTING.md).
 
 **Commit:** `Moving vehicles: skilled drivers get further`

@@ -47,6 +47,7 @@ private:
 	std::vector<const Armor*> _drivers;
 	int _tuPerTile, _timeUnits, _crushArmor;
 	int _runOverDamage, _runOverDamageType, _aiKeepDistance;
+	int _driverReactionsZeroPoint, _driverReactionsRange;
 	const RuleDamageType *_runOverDamageRule;
 public:
 	/// Time units a vehicle gets per turn when its rule doesn't say, in straight tiles.
@@ -79,6 +80,10 @@ public:
 	const RuleDamageType *getRunOverDamageType() const { return _runOverDamageRule; }
 	/// Gets the distance in tiles an AI driver keeps from the nearest enemy.
 	int getAIKeepDistance() const { return _aiKeepDistance; }
+	/// Gets the driver reactions that drive the vehicle with no skill bonus.
+	int getDriverReactionsZeroPoint() const { return _driverReactionsZeroPoint; }
+	/// Gets the skill range: a driver changes the step cost by (reactions - zero point) * range / 100 percent.
+	int getDriverReactionsRange() const { return _driverReactionsRange; }
 };
 
 }

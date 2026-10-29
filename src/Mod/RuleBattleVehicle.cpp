@@ -35,7 +35,8 @@ namespace OpenXcom
  * units are set from its cost per tile once the rule is loaded.
  */
 RuleBattleVehicle::RuleBattleVehicle() : _split(SPLIT_CONNECTED), _tuPerTile(4), _timeUnits(-1), _crushArmor(0),
-	_runOverDamage(0), _runOverDamageType(DT_MELEE), _aiKeepDistance(6), _runOverDamageRule(nullptr)
+	_runOverDamage(0), _runOverDamageType(DT_MELEE), _aiKeepDistance(6), _driverReactionsZeroPoint(-1), _driverReactionsRange(-1),
+	_runOverDamageRule(nullptr)
 {
 }
 
@@ -56,6 +57,8 @@ void RuleBattleVehicle::load(const YAML::YamlNodeReader &node)
 	node.tryRead("runOverDamage", _runOverDamage);
 	node.tryRead("runOverDamageType", _runOverDamageType);
 	node.tryRead("aiKeepDistance", _aiKeepDistance);
+	node.tryRead("driverReactionsZeroPoint", _driverReactionsZeroPoint);
+	node.tryRead("driverReactionsRange", _driverReactionsRange);
 }
 
 /**
@@ -106,6 +109,15 @@ void RuleBattleVehicle::afterLoad(const Mod *mod, const std::string &type, RuleT
 	if (mod->checkForSoftError(_aiKeepDistance < 0, type, "battleVehicle: aiKeepDistance cannot be negative.", LOG_ERROR))
 	{
 		_aiKeepDistance = 0;
+	}
+	// driving skill works like piloting skill in air combat, with the same numbers unless the vehicle says otherwise
+	if (_driverReactionsZeroPoint < 0)
+	{
+		_driverReactionsZeroPoint = mod->getPilotReactionsZeroPoint();
+	}
+	if (_driverReactionsRange < 0)
+	{
+		_driverReactionsRange = mod->getPilotReactionsRange();
 	}
 	if (_timeUnits < 0)
 	{

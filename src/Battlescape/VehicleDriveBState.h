@@ -42,7 +42,7 @@ private:
 	/// Counts the enemies the crew has spotted this turn.
 	size_t countSpotted() const;
 	/// Runs over the units in the way of a step.
-	void runOver(const std::vector<BattleUnit*> &victims, Position delta, int cost);
+	void runOver(const std::vector<BattleUnit*> &victims, Position delta, int cost, int carry);
 	/// Lets enemies react to the units on board after a step.
 	bool checkReactionFire();
 public:
