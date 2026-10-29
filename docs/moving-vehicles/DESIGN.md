@@ -2,7 +2,7 @@
 
 Last updated 2026-10-29 · Aleix Ruiz Sorribes
 
-Why each game design choice was made, and what we turned down, is logged in [GAME_DESIGN_DECISIONS.md](GAME_DESIGN_DECISIONS.md).
+Why each game design choice was made, and what we turned down, is logged in [GAME_DESIGN_DECISIONS.md](GAME_DESIGN_DECISIONS.md). What each milestone delivers: [MVP](MVP.md) (M1), [M2](M2.md).
 
 ## Summary
 
@@ -206,7 +206,7 @@ A step is allowed only when every tile of the vehicle's new footprint is free, c
 | Edge of the map | Blocked |
 | Another vehicle | Blocked, always |
 | A unit of the driver's side | Blocked |
-| An enemy or civilian unit | Run over if `runOverDamage` > 0, else blocked; a survivor stops the vehicle ("rammed") |
+| An enemy or civilian unit | Run over if `runOverDamage` > 0, else blocked; a survivor stops the vehicle ("rammed"). The player's route only runs over units under the place clicked ([GD-21](GAME_DESIGN_DECISIONS.md#gd-21--running-over-is-the-players-choice-ai-drivers-dont-hesitate)) |
 | Solid terrain with armor up to `crushArmor` | Crushed, along with whatever it turns into when destroyed |
 | Solid terrain that is indestructible (armor 255), explosive, a lift, an exit, a start tile or a mission objective | Blocked |
 | Raised ground on the vehicle's level (slopes, bumps) | Hidden under the vehicle while it stands there |
@@ -276,10 +276,12 @@ AI drivers follow the player's rules: a crew member on a seat drives, pays time 
 
 **What the AI does**, in order of preference:
 
-1. **Hold** when a mounted gun already has a target in range: the gun fires, the vehicle stays.
-2. **Advance** to `aiKeepDistance` tiles from the nearest known enemy, preferring routes that crush little.
-3. **Patrol** along its route nodes when no enemy is known; a convoy follows its road from node to node.
+1. **Hold** when a unit on board already has a target: the crew fights, the vehicle stays.
+2. **Advance** to `aiKeepDistance` tiles from the nearest known enemy, preferring places that crush little.
+3. **Park** when no enemy is known: the vehicle stays where it is. A convoy instead drives for the map edge (M2, Phase 12).
 4. **Retreat** when its hull is badly damaged (follow-up, needs `criticalParts`).
+
+How each of these is decided is in [GD-24](GAME_DESIGN_DECISIONS.md#gd-24--ai-drivers-hold-advance-or-stay-parked) and, for convoys, [GD-25](GAME_DESIGN_DECISIONS.md#gd-25--convoys-drive-for-the-map-edge).
 
 It never rams its own side and never crushes mission objectives.
 

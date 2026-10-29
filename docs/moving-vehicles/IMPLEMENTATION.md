@@ -1,8 +1,8 @@
-# Moving Vehicles — MVP implementation plan
+# Moving Vehicles — Implementation plan
 
 Last updated 2026-10-29 · Aleix Ruiz Sorribes
 
-The [MVP](MVP.md) is built in phases on the `moving-vehicles` branch. Each phase builds cleanly and lands as its own commit (pushed to the fork), so the history reads as a series of reviewable steps that can be rolled back one by one. Findings and ideas met on the way go to [NOTES.md](NOTES.md); the in-game checks are collected in [TESTING.md](TESTING.md).
+The [MVP](MVP.md) (Phases 1 to 7) and [M2](M2.md) (Phases 8 to 13) are built in phases on the `moving-vehicles` branch. Each phase builds cleanly and lands as its own commit (pushed to the fork), so the history reads as a series of reviewable steps that can be rolled back one by one. Findings and ideas met on the way go to [NOTES.md](NOTES.md); the in-game checks are collected in [TESTING.md](TESTING.md).
 
 All seven phases are written, built and committed, and the test plan was played on 2026-10-29; the two problems it found are fixed (see Phase 7), and the reopened lines are to play again. Phase 6 was added after the first five, when testing showed that swapping drivers let a vehicle drive without limit, and Phase 7 when we looked at hilly maps, where a vehicle staying on its level drove into hills.
 
@@ -177,3 +177,104 @@ Decided in [GD-18](GAME_DESIGN_DECISIONS.md#gd-18--ground-vehicles-rest-on-the-h
 - [ ] The reopened lines in [TESTING.md](TESTING.md) ("Route preview" and "Driving").
 
 **Commit:** `Moving vehicles: fixes from testing the hills phase`
+
+# M2: Combat and AI drivers
+
+[M2](M2.md) continues the phase numbering on the same branch, with the same rules for every phase. Each phase is a series of commits on top of the core that leaves the core's behaviour alone where its keys are left out: a craft without `runOverDamage` is blocked by units as before, a UFO without `battleVehicle` doesn't drive.
+
+| Phase | Delivers | Playable result | Commit |
+| --- | --- | --- | --- |
+| 8. Running over | `runOverDamage`, `runOverDamageType`; damage, kill credit, ramming | A Chimera runs over the infantry it is driven onto | |
+| 9. Reaction fire | Reaction checks for every unit on board after each step | Crew showing on a driving vehicle draw fire | |
+| 10. Enemy vehicles | `battleVehicle` under `ufos`, alien-side vehicles, `ufo:` in saves | The traitor convoy's Chimeras are vehicles (not driven yet) | |
+| 11. AI drivers | Hold, advance or park, once per turn per vehicle | The traitor Chimeras close in on the squad | |
+| 12. Convoy | Settles [GD-25](GAME_DESIGN_DECISIONS.md#gd-25--convoys-drive-for-the-map-edge); `aiExit` and escaping at the map edge | The convoy tries to drive off the map | |
+| 13. Driver skill | Layers 1 and 2 of [GD-17](GAME_DESIGN_DECISIONS.md#gd-17--skilled-and-dedicated-drivers-make-a-vehicle-go-further) | A good driver gets further | |
+
+## Phase 8: Running over
+
+Decided in [GD-21](GAME_DESIGN_DECISIONS.md#gd-21--running-over-is-the-players-choice-ai-drivers-dont-hesitate).
+
+**Approach**
+
+- `RuleBattleVehicle` reads `runOverDamage` (default 0) and `runOverDamageType` (default melee), and links the damage type rule.
+- `checkPlace` tells the units in the way apart: the vehicle's own side and other vehicles block; enemies and civilians are run over when `runOverDamage` is above 0, and are handed back as victims instead of blocking. Units already going down (out of health or stunned) no longer count.
+- Planning: the player's route search lets the vehicle onto known units only under the clicked place; AI routes (Phase 11) go through known enemies and civilians at a high extra cost.
+- `move` refuses a step with victims (`MOVE_RUN_OVER`) without moving anything, so the drive state deals the damage: `BattleUnit::damage` on the side facing the vehicle, with the driver as attacker, then `BattlescapeGame::checkForCasualties` for the kill credit, diaries, score and morale.
+- Death animations run after the current state, so the drive state hands the rest of the route to a new drive state queued behind them and ends; the step is taken once the victims are down. If one survives, the step's time units are spent and the drive stops with `STR_VEHICLE_RAMMED`.
+- Demo mods: Chimeras and Baneblade (Rosigma) and the Skyranger (vanilla) get `runOverDamage`.
+
+**Checks**
+
+- [ ] Builds with no new warnings.
+- [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
+- [ ] The in-game checks under "Running over" in [TESTING.md](TESTING.md).
+
+**Commit:** `Moving vehicles: vehicles run over units`
+
+## Phase 9: Reaction fire
+
+Decided in [GD-22](GAME_DESIGN_DECISIONS.md#gd-22--reaction-fire-against-everyone-on-board-who-shows).
+
+**Approach**
+
+- After each step, `VehicleDriveBState` asks `TileEngine::checkReactionFire` about every unit on board of the driving side, the driver first, as `UnitWalkBState` does for a walker; a reaction stops the drive.
+- Nothing else changes: who sees whom comes from the field of view, already updated after each step, so the hull hides the crew inside.
+
+**Checks**
+
+- [ ] Builds with no new warnings.
+- [ ] The in-game checks under "Reaction fire" in [TESTING.md](TESTING.md).
+
+**Commit:** `Moving vehicles: reaction fire against driving vehicles`
+
+## Phase 10: Enemy vehicles
+
+Decided in [GD-23](GAME_DESIGN_DECISIONS.md#gd-23--enemy-vehicles-come-from-ufo-maps).
+
+**Approach**
+
+- `RuleUfo` reads `battleVehicle`, checked against the UFO's map blocks like a craft's.
+- `BattlescapeGenerator` runs `BattleVehicle::Placement` around each UFO map it loads, with the UFO's tileset range and the alien side.
+- `BattleVehicle` remembers whether it came from a UFO; `getRule` looks in the right list, and saves write `ufo:` instead of `craft:`.
+- Rosigma demo: the traitor convoy (`STR_TRAITOR_CHIMERA`) gets a block with its turrets as drivers.
+
+**Checks**
+
+- [ ] Builds with no new warnings.
+- [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
+- [ ] The in-game checks under "Enemy vehicles" in [TESTING.md](TESTING.md).
+
+**Commit:** `Moving vehicles: UFO maps can be enemy vehicles`
+
+## Phase 11: AI drivers
+
+Decided in [GD-24](GAME_DESIGN_DECISIONS.md#gd-24--ai-drivers-hold-advance-or-stay-parked).
+
+**Approach**
+
+- `RuleBattleVehicle` reads `aiKeepDistance` (default 6).
+- The route search gets a second use: every place the vehicle can reach with a given budget of time units, with the cost and crushing of each, sharing the A* code of `findPath`.
+- A small new class, `VehicleAI`, decides for a driver: hold, advance (scoring reachable places by distance to the nearest known enemy, then crushing, then cost) or park. Known enemies come from the driver's own AI module (`AIModule::validTarget`).
+- `BattlescapeGame::handleAI` asks it as the first action of an AI unit that can drive, once per vehicle per turn, and queues a `VehicleDriveBState` when the vehicle moves.
+- The camera follows an AI vehicle while the player can see its driver.
+
+**Checks**
+
+- [ ] Builds with no new warnings.
+- [ ] Both demo mods load with no messages.
+- [ ] The in-game checks under "AI drivers" in [TESTING.md](TESTING.md).
+
+**Commit:** `Moving vehicles: AI units drive vehicles`
+
+## Phase 12: Convoy
+
+Settles [GD-25](GAME_DESIGN_DECISIONS.md#gd-25--convoys-drive-for-the-map-edge) first, after the AI drivers of Phase 11 have been played; the approach is written then.
+
+**Commit:** `Moving vehicles: convoys drive for the map edge`
+
+## Phase 13: Driver skill
+
+Layers 1 and 2 of [GD-17](GAME_DESIGN_DECISIONS.md#gd-17--skilled-and-dedicated-drivers-make-a-vehicle-go-further); the size of the bonus, each vehicle's zero point, and how a bonus rounds on steps of a few time units are settled first and logged.
+
+**Commit:** `Moving vehicles: skilled drivers get further`

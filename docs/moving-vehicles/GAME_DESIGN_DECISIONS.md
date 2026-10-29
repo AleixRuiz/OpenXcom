@@ -38,6 +38,11 @@ Why moving vehicles plays the way it does. Each entry records a game design choi
 | [GD-18](#gd-18--ground-vehicles-rest-on-the-highest-ground-under-them) | Ground vehicles rest on the highest ground under them | Decided | M1, Phase 7 |
 | [GD-19](#gd-19--mounted-guns-are-held-by-their-vehicle) | Mounted guns are held by their vehicle | Decided | M1, Phase 7 fixes |
 | [GD-20](#gd-20--the-route-search-only-knows-the-units-its-side-knows) | The route search only knows the units its side knows | Decided | M1, Phase 7 fixes |
+| [GD-21](#gd-21--running-over-is-the-players-choice-ai-drivers-dont-hesitate) | Running over is the player's choice, AI drivers don't hesitate | Decided | M2, Phase 8 |
+| [GD-22](#gd-22--reaction-fire-against-everyone-on-board-who-shows) | Reaction fire against everyone on board who shows | Decided | M2, Phase 9 |
+| [GD-23](#gd-23--enemy-vehicles-come-from-ufo-maps) | Enemy vehicles come from UFO maps | Decided | M2, Phase 10 |
+| [GD-24](#gd-24--ai-drivers-hold-advance-or-stay-parked) | AI drivers hold, advance or stay parked | Decided | M2, Phase 11 |
+| [GD-25](#gd-25--convoys-drive-for-the-map-edge) | Convoys drive for the map edge | Proposed | M2, Phase 12 |
 
 ## Decisions
 
@@ -318,3 +323,84 @@ Decided · 2026-10-29 · built in the Phase 7 fixes · extends [GD-07](#gd-07--u
 - One message for every reason: the player can't tell a soldier in the way from a wall.
 
 **Settled with it.** Until AI drivers come in M2, vehicles of the other sides plan knowing every unit.
+
+### GD-21 · Running over is the player's choice, AI drivers don't hesitate
+
+Decided · 2026-10-29 · M2, Phase 8 · extends [GD-07](#gd-07--units-always-block-in-the-mvp)
+
+**Problem.** In the MVP every unit blocks a vehicle, so a tank is no threat to infantry in its way, and one soldier standing on a road stops a convoy.
+
+**Decision.**
+
+- `runOverDamage` (default 0: units block, as in the MVP) and `runOverDamageType` (default melee). A step onto an enemy or a civilian deals that damage once to each unit hit, on its armor side facing the vehicle, credited to the driver: a kill counts for the soldier's diary, the score and civilian losses like any other.
+- If every unit hit is killed or knocked out, the vehicle drives on. If one survives, the vehicle has rammed it: it stays where it was, the step's time units are spent, and the drive stops with "The vehicle rammed a unit!".
+- Units of the driver's side and other vehicles always block. A large unit takes the damage once.
+- **The player's route** goes around every unit the player knows of, except the units under the place clicked: running over is always a choice, never a side effect of a route.
+- **AI drivers' routes** go through the enemies and civilians they know of, at a high extra cost: around when that's cheap, over when that's the way.
+- A unit the driver's side didn't know about is run over, or rams the vehicle, when the vehicle reaches it.
+
+**Why.** The driver getting the kill was settled in the design. Paying for a ram makes it a choice with a cost. The player's route rule avoids running over civilians by accident; AI drivers driving through units make standing in a convoy's road dangerous, which the convoy showcase needs.
+
+**Turned down.**
+
+- Damage to the vehicle from ramming: there is no vehicle health ([GD-12](#gd-12--no-vehicle-health)); the hull is damaged by weapons.
+- Pushing units aside: OXCE has no pushed movement, and where to push to is often unclear (walls, other units, edges).
+- Letting the player's route run over units on the way: civilians would die to a careless click, and the score with them.
+
+**Settled with it.** Items lying where the vehicle arrives, bodies of units it ran over among them, end up on its floor and ride along, as any item on a tile it drives onto.
+
+### GD-22 · Reaction fire against everyone on board who shows
+
+Decided · 2026-10-29 · M2, Phase 9
+
+**Problem.** A driving vehicle carries its crew past enemies without any reaction fire, so it is a safe way across open ground.
+
+**Decision.** Each step counts as a step for every unit on board. After it, enemies who see a unit on board may react to it, exactly as to a walking unit (OXCE's reaction rules and scores, unchanged): the driver first, then the others. Any reaction shot stops the drive, as it stops a walk. The hull blocks sight like any wall, so a closed vehicle draws fire only to what shows: roof crew, turrets, open hatches. The same applies to AI vehicles, with the player's units reacting.
+
+**Why.** It reuses the walking rule players know, and makes the hull worth having as cover, which is what an armoured transport is for.
+
+**Turned down.**
+
+- Checking only the driver: a squad on an open roof would cross a killing field untouched.
+- Reaction fire against the hull: the hull is terrain, and units only react to units.
+
+**Settled with it.** A vehicle with several crew showing draws more reaction checks per step than a lone walker: it is a bigger target.
+
+### GD-23 · Enemy vehicles come from UFO maps
+
+Decided · 2026-10-29 · M2, Phase 10 · carries out [GD-13](#gd-13--craft-maps-first-ufo-vehicles-with-ai-drivers)
+
+**Decision.** The same `battleVehicle` block under `ufos` turns the UFO's map into vehicles of the alien side, by the same rules as crafts: tile parts from the UFO's tilesets, split into vehicles, seats and drivers, with mounted guns driving when their armor is in `drivers`. Every UFO map placed in the battle (a map script can place several) gives its own vehicles. Their time units fill at the start of the aliens' turn. Saves record `ufo:` instead of `craft:`, so a craft and a UFO with the same name can't be confused.
+
+**Why.** One block for crafts and UFOs was settled in the design. Rosigma's traitor convoy is a UFO whose map holds two Chimeras, so enemy vehicles need no new map art.
+
+**Turned down.** Vehicles inside ordinary terrain map blocks: it needs ownership of single tile parts (the hijack idea), and UFO maps already cover the showcase.
+
+### GD-24 · AI drivers hold, advance or stay parked
+
+Decided · 2026-10-29 · M2, Phase 11 · follows [GD-14](#gd-14--ai-drivers-follow-the-players-rules)
+
+**Decision.**
+
+- Once per turn, the first AI unit able to drive a vehicle (on a seat, allowed by `drivers`, with time units) decides for it, as its first action; then it and the crew act as usual.
+- **Hold:** if any unit on board sees a target it would attack (the OXCE AI's own rule), the vehicle stays and the crew fights.
+- **Advance:** otherwise, toward the nearest enemy the AI knows of, to the place reachable this turn whose middle is closest to `aiKeepDistance` tiles from it (default 6), preferring places that crush less. Known means what the OXCE AI already knows: enemies spotted recently enough for the unit's intelligence.
+- **Park:** with no known enemy, the vehicle stays where it is.
+- Routes follow [GD-21](#gd-21--running-over-is-the-players-choice-ai-drivers-dont-hesitate): through enemies and civilians when that's the way, never through their own side, never crushing special terrain ([GD-08](#gd-08--light-terrain-is-crushed-special-terrain-always-blocks)).
+
+**Why.** Same rules, time units and knowledge as the player and as other AI units ([GD-14](#gd-14--ai-drivers-follow-the-players-rules)). Holding while the crew has targets keeps turret vehicles shooting instead of wandering off, and keeping a distance stops them driving into the player's squad.
+
+**Turned down.**
+
+- Free moves once per turn toward the player, as in the prototype: cheating.
+- Patrolling along route nodes with no known enemy, as the design first said: landed alien vehicles driving around at random look wrong. Convoys get their own goal ([GD-25](#gd-25--convoys-drive-for-the-map-edge)).
+
+**Revisit when.** AI vehicles feel too passive or too reckless in play; the distance and the hold rule are the knobs.
+
+### GD-25 · Convoys drive for the map edge
+
+Proposed · 2026-10-29 · M2, Phase 12 · settled after the AI drivers of Phase 11 have been played
+
+**Proposal.** A vehicle marked as a convoy (`aiExit`, a map direction) drives toward that edge of the map whenever its crew has nothing to hold for, following [GD-24](#gd-24--ai-drivers-hold-advance-or-stay-parked) otherwise. When its footprint reaches the edge, it leaves the battle with everyone and everything on board: aliens on board escape (removed, not killed) and items on board are lost. The player stops it by blocking the road with a vehicle, ramming it, killing or stunning whoever can drive it, or taking its seat. The Rosigma traitor convoy is set up this way in the demo mod.
+
+**Why proposed, not decided.** Whether the convoy should stop to fight, how an escape counts for the mission, and how far it may drive in a turn are best judged once AI driving has been seen in play.
