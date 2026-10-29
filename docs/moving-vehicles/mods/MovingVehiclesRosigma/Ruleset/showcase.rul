@@ -7,6 +7,8 @@ alienDeployments:
     customUfo: STR_TRAITOR_CHIMERA
     race: STR_SNAKEMAN  # the traitor guard
     terrains: [CULTA, PLAINSGRASS]
+    width: 50  # a deployment without a size gets an empty map; Rosigma's convoy battle is 50 x 50
+    length: 50
     height: 9
     briefing:
       title: STR_MV_CONVOY_SHOWCASE
