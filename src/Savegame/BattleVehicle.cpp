@@ -837,6 +837,18 @@ void BattleVehicle::place(SavedBattleGame *save, Position pos, const std::vector
 }
 
 /**
+ * Checks whether the vehicle's side knows where a unit is, as for walking: its own units, and
+ * for the player every unit it sees. A route goes around these; any other unit stops the
+ * vehicle when it gets there. The other sides have no drivers yet, so they know every unit.
+ * @param unit The unit.
+ * @return True if the vehicle's side knows where the unit is.
+ */
+bool BattleVehicle::knowsOf(const BattleUnit *unit) const
+{
+	return _faction != FACTION_PLAYER || unit->getFaction() == _faction || unit->getVisible();
+}
+
+/**
  * Checks whether the vehicle can be set down at a position, judging the terrain as if the vehicle
  * were not on the map. Inside the vehicle (where it has a floor) any solid terrain is in the way;
  * at its edges only the parts it would replace. Ground is never crushed: raised ground on the
@@ -846,10 +858,11 @@ void BattleVehicle::place(SavedBattleGame *save, Position pos, const std::vector
  * @param inside For each cell, does the vehicle have its floor there?
  * @param passengers Units that move with the vehicle.
  * @param crushArmor Strongest armor the vehicle crushes.
+ * @param knownOnly Are only the units the vehicle's side knows of in the way (to plan a route)?
  * @param toCrush Gets the terrain parts to crush to make room.
  * @return MOVE_OK if it fits, otherwise what blocks it.
  */
-BattleVehicle::MoveResult BattleVehicle::checkPlace(SavedBattleGame *save, Position pos, const std::vector<char> &inside, const std::vector<BattleUnit*> &passengers, int crushArmor, std::vector<std::pair<Tile*, TilePart> > &toCrush) const
+BattleVehicle::MoveResult BattleVehicle::checkPlace(SavedBattleGame *save, Position pos, const std::vector<char> &inside, const std::vector<BattleUnit*> &passengers, int crushArmor, bool knownOnly, std::vector<std::pair<Tile*, TilePart> > &toCrush) const
 {
 	toCrush.clear();
 	for (size_t i = 0; i < _cells.size(); ++i)
@@ -869,7 +882,7 @@ BattleVehicle::MoveResult BattleVehicle::checkPlace(SavedBattleGame *save, Posit
 			}
 		}
 		const BattleUnit *unit = tile->getUnit();
-		if (unit && std::find(passengers.begin(), passengers.end(), unit) == passengers.end())
+		if (unit && std::find(passengers.begin(), passengers.end(), unit) == passengers.end() && (!knownOnly || knowsOf(unit)))
 		{
 			return MOVE_BLOCKED_UNIT;
 		}
@@ -927,7 +940,7 @@ bool BattleVehicle::isOnBoard(SavedBattleGame *save, Position pos) const
 
 /**
  * Gets the units carried by the vehicle: units standing with all their tiles on its floors,
- * and units that can't walk (mounted guns) on any of its tiles.
+ * and units mounted on it.
  * @param save Battle save.
  * @return The units on board.
  */
@@ -942,23 +955,72 @@ std::vector<BattleUnit*> BattleVehicle::getPassengers(SavedBattleGame *save) con
 		{
 			continue;
 		}
-		const bool mounted = !unit->getArmor()->allowsMoving();
 		const int size = unit->getArmor()->getSize();
 		bool onBoard = true;
 		for (int x = 0; x < size && onBoard; ++x)
 		{
 			for (int y = 0; y < size && onBoard; ++y)
 			{
-				const Position p = unit->getPosition() + Position(x, y, 0);
-				onBoard = isOnBoard(save, p) || (mounted && covers(p));
+				onBoard = isOnBoard(save, unit->getPosition() + Position(x, y, 0));
 			}
 		}
-		if (onBoard)
+		if (onBoard || isMounted(unit))
 		{
 			passengers.push_back(unit);
 		}
 	}
 	return passengers;
+}
+
+/**
+ * Checks whether a unit is mounted on the vehicle: it can't walk (a mounted gun) and all its
+ * tiles are the vehicle's, floor or not. A mounted unit rides along and is held by the vehicle,
+ * so it never falls out, even where the vehicle hangs over lower ground.
+ * @param unit The unit.
+ * @return True if the unit is mounted on the vehicle.
+ */
+bool BattleVehicle::isMounted(const BattleUnit *unit) const
+{
+	if (!unit->getTile() || unit->getArmor()->allowsMoving())
+	{
+		return false;
+	}
+	// the unit's tile, not its position: while it rides along, its tile changes first
+	const Position pos = unit->getTile()->getPosition();
+	const int size = unit->getArmor()->getSize();
+	for (int x = 0; x < size; ++x)
+	{
+		for (int y = 0; y < size; ++y)
+		{
+			if (!covers(pos + Position(x, y, 0)))
+			{
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+/**
+ * Gets the vehicle a unit is mounted on.
+ * @param save Battle save.
+ * @param unit The unit.
+ * @return The vehicle, or null if the unit isn't mounted on one.
+ */
+BattleVehicle *BattleVehicle::getMountedOn(SavedBattleGame *save, const BattleUnit *unit)
+{
+	if (unit->getArmor()->allowsMoving())
+	{
+		return nullptr;
+	}
+	for (auto *vehicle : *save->getVehicles())
+	{
+		if (vehicle->isMounted(unit))
+		{
+			return vehicle;
+		}
+	}
+	return nullptr;
 }
 
 /**
@@ -1073,7 +1135,7 @@ BattleVehicle::MoveResult BattleVehicle::move(SavedBattleGame *save, Position de
 		inside[i] = carried[i * O_MAX + O_FLOOR].id != -1;
 	}
 	std::vector<std::pair<Tile*, TilePart> > toCrush;
-	const MoveResult result = checkPlace(save, newPos, inside, passengers, getCrushArmor(save->getMod()), toCrush);
+	const MoveResult result = checkPlace(save, newPos, inside, passengers, getCrushArmor(save->getMod()), false, toCrush);
 	if (result != MOVE_OK)
 	{
 		place(save, oldPos, carried, discovered);
@@ -1140,7 +1202,8 @@ BattleVehicle::MoveResult BattleVehicle::move(SavedBattleGame *save, Position de
  * Finds the steps that take the vehicle to a new place, with A* over vehicle positions; the level
  * of each position follows from the ground there (see findLevel). Straight steps cost 2, diagonal
  * steps 3 (they can't cut corners), climbing a level half as much again, and a step that crushes
- * terrain 2 more. Tiles the vehicle covers now are judged by the terrain under it.
+ * terrain 2 more. Tiles the vehicle covers now are judged by the terrain under it. Only the
+ * units the vehicle's side knows of are in the way; any other unit stops the drive there.
  * @param save Battle save.
  * @param target New vehicle position (its level is ignored).
  * @param path Gets the vehicle positions after each step, the last one being the target.
@@ -1164,16 +1227,17 @@ bool BattleVehicle::findPath(SavedBattleGame *save, Position target, std::vector
 	}
 
 	// where the vehicle stands with its corner at (x, y), coming from a level with some columns in the ground above it:
-	// its level (-1 if it doesn't fit there) and the number of parts it crushes
+	// its level (-1 if it doesn't fit there), the number of parts it crushes, and what blocks it
 	struct Fit
 	{
 		int z, crushed;
+		MoveResult blocked;
 	};
 	const int width = save->getMapSizeX(), length = save->getMapSizeY(), height = save->getMapSizeZ();
 	std::unordered_map<long long, Fit> fits;
 	auto fitsAt = [&](int x, int y, int fromZ, int fromBuried)
 	{
-		Fit fit = { -1, 0 };
+		Fit fit = { -1, 0, MOVE_BLOCKED_EDGE };
 		if (x < 0 || y < 0 || x >= width || y >= length)
 		{
 			return fit;
@@ -1184,11 +1248,17 @@ bool BattleVehicle::findPath(SavedBattleGame *save, Position target, std::vector
 		{
 			return known->second;
 		}
-		fit.z = findLevel(save, x, y, fromZ, fromBuried);
+		const bool onMap = std::all_of(_columns.begin(), _columns.end(), [&](Position column) { return x + column.x < width && y + column.y < length; });
+		if (onMap)
+		{
+			fit.z = findLevel(save, x, y, fromZ, fromBuried);
+			fit.blocked = MOVE_TOO_STEEP;
+		}
 		if (fit.z >= 0)
 		{
 			std::vector<std::pair<Tile*, TilePart> > toCrush;
-			if (checkPlace(save, Position(x, y, fit.z), inside, passengers, crushArmor, toCrush) == MOVE_OK)
+			fit.blocked = checkPlace(save, Position(x, y, fit.z), inside, passengers, crushArmor, true, toCrush);
+			if (fit.blocked == MOVE_OK)
 			{
 				fit.crushed = (int)toCrush.size();
 			}
@@ -1200,14 +1270,19 @@ bool BattleVehicle::findPath(SavedBattleGame *save, Position target, std::vector
 		fits[key] = fit;
 		return fit;
 	};
-	bool fitsTarget = false;
-	for (int z = 0; z < height && !fitsTarget; ++z)
+	// the target, coming from any level; when it doesn't fit, what stands in the way says more than the ground
+	MoveResult atTarget = MOVE_TOO_STEEP;
+	for (int z = 0; z < height && atTarget != MOVE_OK; ++z)
 	{
-		fitsTarget = fitsAt(target.x, target.y, z, (int)_columns.size()).z >= 0;
+		const MoveResult result = fitsAt(target.x, target.y, z, (int)_columns.size()).blocked;
+		if (result == MOVE_OK || atTarget == MOVE_TOO_STEEP)
+		{
+			atTarget = result;
+		}
 	}
-	if (!fitsTarget)
+	if (atTarget != MOVE_OK)
 	{
-		error = "STR_VEHICLE_DOES_NOT_FIT_THERE";
+		error = getMoveResultString(atTarget);
 		return false;
 	}
 

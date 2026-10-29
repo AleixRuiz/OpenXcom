@@ -158,7 +158,21 @@ Decided in [GD-18](GAME_DESIGN_DECISIONS.md#gd-18--ground-vehicles-rest-on-the-h
 
 - [x] Builds with no new warnings.
 - [x] The rule, simulated on the vanilla mountain and forest blocks (MCD and MAP files read by a script), lets a 3x4 and a 4x6 vehicle climb hills to levels 1 and 2 and come down cliffs, and never strands it where it can't drive back.
-- [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
-- [ ] The in-game checks under "Hills" in [TESTING.md](TESTING.md).
+- [x] The Rosigma demo mod loads with no messages, and a battle save made before this phase opens (2026-10-29, after the fixes below).
+- [ ] The vanilla demo mod loads with no messages (it has no new keys to read; not launched again yet).
+- [x] The in-game checks under "Hills" in [TESTING.md](TESTING.md), played 2026-10-29, with the rest of the test plan. Two problems turned up elsewhere in the plan, fixed below.
 
-**Commit:** `Moving vehicles: ground vehicles follow hills`
+**Commit:** `Moving vehicles: ground vehicles follow hills` (`1f3e5ed95`)
+
+### Fixes after testing
+
+- The Chimera's hull gun fell out of the vehicle where it hung over lower ground, and was left behind. Mounted guns are now held by their vehicle ([GD-19](GAME_DESIGN_DECISIONS.md#gd-19--mounted-guns-are-held-by-their-vehicle)): `BattleVehicle::isMounted` and `getMountedOn`, asked by `BattleUnit::updateTileFloorState`.
+- A place that couldn't take the vehicle always said "The vehicle does not fit there!", and planning knew about units the player couldn't see. The route search now names what blocks the place, and only counts the units its side knows of ([GD-20](GAME_DESIGN_DECISIONS.md#gd-20--the-route-search-only-knows-the-units-its-side-knows)): `checkPlace` takes `knownOnly`, and `STR_VEHICLE_DOES_NOT_FIT_THERE` is gone.
+
+**Checks**
+
+- [x] Builds with no new warnings.
+- [x] A battle save made before Phase 7 opens with the Rosigma demo mod, with no messages.
+- [ ] The reopened lines in [TESTING.md](TESTING.md) ("Route preview" and "Driving").
+
+**Commit:** `Moving vehicles: fixes from testing the hills phase`

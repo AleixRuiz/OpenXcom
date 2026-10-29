@@ -130,8 +130,10 @@ private:
 	void lift(SavedBattleGame *save, std::vector<PartRef> &carried, std::vector<char> &discovered) const;
 	/// Sets the vehicle down at a position, remembering the terrain under it.
 	void place(SavedBattleGame *save, Position pos, const std::vector<PartRef> &carried, const std::vector<char> &discovered);
+	/// Does the vehicle's side know where a unit is?
+	bool knowsOf(const BattleUnit *unit) const;
 	/// Checks whether the vehicle can be set down at a position, and what it must crush there.
-	MoveResult checkPlace(SavedBattleGame *save, Position pos, const std::vector<char> &inside, const std::vector<BattleUnit*> &passengers, int crushArmor, std::vector<std::pair<Tile*, TilePart> > &toCrush) const;
+	MoveResult checkPlace(SavedBattleGame *save, Position pos, const std::vector<char> &inside, const std::vector<BattleUnit*> &passengers, int crushArmor, bool knownOnly, std::vector<std::pair<Tile*, TilePart> > &toCrush) const;
 
 public:
 	/// Creates an empty vehicle, to be loaded from a save.
@@ -169,6 +171,10 @@ public:
 	bool isOnBoard(SavedBattleGame *save, Position pos) const;
 	/// Gets the units carried by the vehicle.
 	std::vector<BattleUnit*> getPassengers(SavedBattleGame *save) const;
+	/// Is a unit that can't walk mounted on the vehicle?
+	bool isMounted(const BattleUnit *unit) const;
+	/// Gets the vehicle a unit is mounted on, if any.
+	static BattleVehicle *getMountedOn(SavedBattleGame *save, const BattleUnit *unit);
 
 	/// Can a unit drive the vehicle right now?
 	bool canDrive(SavedBattleGame *save, const BattleUnit *unit) const;

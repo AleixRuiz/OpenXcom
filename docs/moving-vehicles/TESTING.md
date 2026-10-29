@@ -29,60 +29,61 @@ The game takes `-user <folder>` and `-cfg <folder>` on the command line, so a te
 
 **Drive mode**
 
-- [ ] A soldier who is not on a driver seat shows no Drive button, and the drive hotkey (D) does nothing.
-- [ ] Walk a soldier onto a driver seat: the Drive button appears at the top right.
-- [ ] Press Drive (or D): the button looks pressed. Press it again: it pops back and the soldier walks normally.
-- [ ] With drive mode on, select another soldier: drive mode switches off.
-- [ ] With the special action buttons full (special weapon, skills and psi), the Drive button can't show, but D still switches drive mode.
+- [x] A soldier who is not on a driver seat shows no Drive button, and the drive hotkey (D) does nothing.
+- [x] Walk a soldier onto a driver seat: the Drive button appears at the top right.
+- [x] Press Drive (or D): the button looks pressed. Press it again: it pops back and the soldier walks normally.
+- [x] With drive mode on, select another soldier: drive mode switches off.
+- [x] With the special action buttons full (special weapon, skills and psi), the Drive button can't show, but D still switches drive mode.
 
 **Route preview**
 
-- [ ] With drive mode on, click a tile: arrows mark the route of the vehicle's center, with the time units left after each step, and a see-through vehicle shows where it stops (the soldier's seat ends up on the clicked tile).
-- [ ] Steps beyond the driver's or the vehicle's time units (whichever is lower) turn red.
-- [ ] Click the same tile again: the vehicle drives there, one tile per step, the camera following.
-- [ ] Click another tile instead: a new preview replaces the old one. A right click removes the preview.
-- [ ] Click where the vehicle can't fit or can't reach: "The vehicle does not fit there!" or "No route for the vehicle!", and nothing moves.
+- [x] With drive mode on, click a tile: arrows mark the route of the vehicle's center, with the time units left after each step, and a see-through vehicle shows where it stops (the soldier's seat ends up on the clicked tile).
+- [x] Steps beyond the driver's or the vehicle's time units (whichever is lower) turn red.
+- [x] Click the same tile again: the vehicle drives there, one tile per step, the camera following.
+- [x] Click another tile instead: a new preview replaces the old one. A right click removes the preview.
+- [ ] Click where the vehicle can't stand or can't reach: the message says what is in the way ("Terrain is in the way!", "The ground is too steep for the vehicle!", "The vehicle can't leave the map!") or "No route for the vehicle!", and nothing moves.
 
 **Driving**
 
-- [ ] Soldiers inside and on the roof ride along; the turrets on a Chimera ride along.
-- [ ] Items lying on the vehicle's floors ride along; a soldier standing outside next to it stays behind.
-- [ ] Fences, bushes and other light terrain in the way are crushed and stay destroyed after the vehicle passes.
-- [ ] Heavy walls stop the route search, or the drive with "Terrain is in the way!".
-- [ ] A unit in the way blocks the vehicle ("A unit is in the way!"); so does another vehicle, and the map edge.
-- [ ] Each straight step costs the driver `tuPerTile` time units, each diagonal step half as much again; the drive stops when they run out ("Not Enough Time Units!").
+- [ ] Soldiers inside and on the roof ride along; the turrets on a Chimera ride along, the hull gun at its front too, also where the front hangs over lower ground on a hill.
+- [x] Items lying on the vehicle's floors ride along; a soldier standing outside next to it stays behind.
+- [x] Fences, bushes and other light terrain in the way are crushed and stay destroyed after the vehicle passes.
+- [x] Heavy walls stop the route search, or the drive with "Terrain is in the way!".
+- [ ] Click so the vehicle would end on a soldier: "A unit is in the way!"; on another vehicle: "Another vehicle is in the way!". A soldier on the route makes it go around.
+- [ ] An enemy the player can't see doesn't change the route: driving into it stops the vehicle with "A unit is in the way!".
+- [x] Each straight step costs the driver `tuPerTile` time units, each diagonal step half as much again; the drive stops when they run out ("Not Enough Time Units!").
 
 **Vehicle time units**
 
-- [ ] Drive a Chimera as far as it goes (12 straight tiles with the Rosigma demo, 10 for the Skyranger): it stops with "The vehicle can't move any further this turn!", even if the driver has time units left.
-- [ ] Put a fresh soldier on the seat: the preview shows no time units left and the vehicle doesn't move.
-- [ ] Drive part way with one soldier, swap to another: the second soldier can only use what the vehicle has left.
-- [ ] End the turn: on the next turn the vehicle drives its full distance again.
-- [ ] Each Chimera of the craft has its own time units: driving one doesn't use up the others'.
-- [ ] Save after driving part way and load: the vehicle has the same time units left.
-- [ ] The drive stops when a soldier on board spots a new enemy; Shift+click drives on past them.
-- [ ] Where the vehicle stood when the battle started, the ground is back after it drives away: no holes in the floor.
+- [x] Drive a Chimera as far as it goes (12 straight tiles with the Rosigma demo, 10 for the Skyranger): it stops with "The vehicle can't move any further this turn!", even if the driver has time units left.
+- [x] Put a fresh soldier on the seat: the preview shows no time units left and the vehicle doesn't move.
+- [x] Drive part way with one soldier, swap to another: the second soldier can only use what the vehicle has left.
+- [x] End the turn: on the next turn the vehicle drives its full distance again.
+- [x] Each Chimera of the craft has its own time units: driving one doesn't use up the others'.
+- [x] Save after driving part way and load: the vehicle has the same time units left.
+- [x] The drive stops when a soldier on board spots a new enemy; Shift+click drives on past them.
+- [x] Where the vehicle stood when the battle started, the ground is back after it drives away: no holes in the floor.
 
 **Hills**
 
 Use a hilly map: a vanilla mountain or forest Quick Battle, or a Rosigma outdoor map.
 
-- [ ] Drive up a gentle hill: the vehicle stays level, the slope disappears under it and comes back after it leaves, and it goes up a level when its front reaches the hilltop. The camera goes up with it.
-- [ ] The route preview over a hill shows its arrows on the levels the vehicle will be on, and the ghost stands on the hilltop.
-- [ ] A step that climbs a level costs half as much again (6 instead of 4 for a Chimera); coming down costs the usual.
-- [ ] A cliff (a whole level up in one tile) can't be climbed: the route goes around it, or "No route for the vehicle!".
-- [ ] Drive off a one-level ledge: the vehicle comes down when its middle passes the edge, its back end in the ledge until it drives on.
-- [ ] The vehicle never digs into a hill: mountain rock is never crushed.
-- [ ] Soldiers on board ride up and down with it. A soldier standing under the raised end of a vehicle stops it from coming down onto them.
-- [ ] Save on a hilltop and load: the vehicle is still there and drives on.
+- [x] Drive up a gentle hill: the vehicle stays level, the slope disappears under it and comes back after it leaves, and it goes up a level when its front reaches the hilltop. The camera goes up with it.
+- [x] The route preview over a hill shows its arrows on the levels the vehicle will be on, and the ghost stands on the hilltop.
+- [x] A step that climbs a level costs half as much again (6 instead of 4 for a Chimera); coming down costs the usual.
+- [x] A cliff (a whole level up in one tile) can't be climbed: the route goes around it, or "No route for the vehicle!".
+- [x] Drive off a one-level ledge: the vehicle comes down when its middle passes the edge, its back end in the ledge until it drives on.
+- [x] The vehicle never digs into a hill: mountain rock is never crushed.
+- [x] Soldiers on board ride up and down with it. A soldier standing under the raised end of a vehicle stops it from coming down onto them.
+- [x] Save on a hilltop and load: the vehicle is still there and drives on.
 
 **Saves**
 
-- [ ] Drive, save, and load the save: every vehicle, soldier, item and crushed tile is where it was, and the vehicle can keep driving.
+- [x] Drive, save, and load the save: every vehicle, soldier, item and crushed tile is where it was, and the vehicle can keep driving.
 
 **Nothing else changed**
 
-- [ ] Start several Quick Battles in a row, on different missions, with the demo mod on and off: the battle screen opens every time.
-- [ ] With drive mode off, soldiers walk, kneel, shoot and open doors as usual, also inside the vehicle.
-- [ ] On flat ground, driving works and costs exactly as before the hills phase.
-- [ ] A battle without the demo mods plays exactly as before.
+- [x] Start several Quick Battles in a row, on different missions, with the demo mod on and off: the battle screen opens every time.
+- [x] With drive mode off, soldiers walk, kneel, shoot and open doors as usual, also inside the vehicle.
+- [x] On flat ground, driving works and costs exactly as before the hills phase.
+- [x] A battle without the demo mods plays exactly as before.

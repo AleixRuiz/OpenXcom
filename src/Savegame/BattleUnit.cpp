@@ -49,6 +49,7 @@
 #include "Tile.h"
 #include "SavedGame.h"
 #include "SavedBattleGame.h"
+#include "BattleVehicle.h"
 #include "../Engine/ShaderDraw.h"
 #include "BattleUnitStatistics.h"
 #include "../fmath.h"
@@ -3441,7 +3442,12 @@ bool BattleUnit::getVisible() const
  */
 void BattleUnit::updateTileFloorState(SavedBattleGame *saveBattleGame)
 {
-	if (_tile)
+	if (_tile && saveBattleGame && BattleVehicle::getMountedOn(saveBattleGame, this))
+	{
+		// a mounted gun is held by its vehicle, even where the vehicle hangs over lower ground
+		_haveNoFloorBelow = false;
+	}
+	else if (_tile)
 	{
 		_haveNoFloorBelow = true;
 

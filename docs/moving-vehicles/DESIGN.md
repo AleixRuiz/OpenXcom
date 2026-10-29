@@ -70,7 +70,7 @@ A vehicle is a set of tile parts (floors, walls, objects) that the engine lifts 
 **What moves with the vehicle**
 
 - Its own tile parts, in their current state: a wall shot off stays missing.
-- Units standing on its floors, plus mounted guns (units that can't walk) on any of its tiles.
+- Units standing on its floors, plus mounted guns (units that can't walk) on any of its tiles. The vehicle holds its mounted guns: they never fall out, even where it hangs over lower ground ([GD-19](GAME_DESIGN_DECISIONS.md#gd-19--mounted-guns-are-held-by-their-vehicle)).
 - Items lying on its floors, including bodies.
 - Its route nodes, so AI units keep walking it correctly.
 - What players have discovered of it in the fog of war.
@@ -208,6 +208,8 @@ A step is allowed only when every tile of the vehicle's new footprint is free, c
 | Raised ground on the vehicle's level (slopes, bumps) | Hidden under the vehicle while it stands there |
 | Ground of the level above (a hilltop, or ground filling the tile) | The vehicle climbs onto it if its middle stays over ground; otherwise blocked. Never crushed |
 
+**Planning a route.** The route search goes around the units the vehicle's side knows of: its own units and, for the player, every unit on screen, as when planning a walk ([GD-20](GAME_DESIGN_DECISIONS.md#gd-20--the-route-search-only-knows-the-units-its-side-knows)). Any other unit stops the drive when the vehicle reaches it ("A unit is in the way!"). When the clicked place can't take the vehicle, the message names what is in the way.
+
 **Where terrain counts as solid.** Inside the vehicle (tiles with its floor), any wall or object in the way blocks or is crushed. At its edges, only the parts the vehicle itself would occupy count, so it can drive alongside a fence.
 
 **Levels.** A ground vehicle rests on the highest ground under it ([GD-18](GAME_DESIGN_DECISIONS.md#gd-18--ground-vehicles-rest-on-the-highest-ground-under-them)):
@@ -219,7 +221,7 @@ A step is allowed only when every tile of the vehicle's new footprint is free, c
 
 A flying vehicle (`fly: true`, M3) climbs or descends one level per step, and needs the same free footprint to land.
 
-**Gravity.** Units and items left behind on tiles the vehicle leaves fall, and so does anything standing on terrain it crushes.
+**Gravity.** Units and items left behind on tiles the vehicle leaves fall, and so does anything standing on terrain it crushes. Mounted guns on the vehicle never fall.
 
 **Steps.** Diagonal steps cost 1.5 times a straight one, and so does climbing a level (2.25 times for a diagonal climb). Diagonal steps can't cut corners: the vehicle must also fit on both straight steps around a diagonal.
 

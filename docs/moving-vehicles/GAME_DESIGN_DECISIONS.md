@@ -36,6 +36,8 @@ Why moving vehicles plays the way it does. Each entry records a game design choi
 | [GD-16](#gd-16--vehicles-have-their-own-time-units-per-turn) | Vehicles have their own time units per turn | Decided | M1 |
 | [GD-17](#gd-17--skilled-and-dedicated-drivers-make-a-vehicle-go-further) | Skilled and dedicated drivers make a vehicle go further | Direction agreed | M2 and later |
 | [GD-18](#gd-18--ground-vehicles-rest-on-the-highest-ground-under-them) | Ground vehicles rest on the highest ground under them | Decided | M1, Phase 7 |
+| [GD-19](#gd-19--mounted-guns-are-held-by-their-vehicle) | Mounted guns are held by their vehicle | Decided | M1, Phase 7 fixes |
+| [GD-20](#gd-20--the-route-search-only-knows-the-units-its-side-knows) | The route search only knows the units its side knows | Decided | M1, Phase 7 fixes |
 
 ## Decisions
 
@@ -276,3 +278,41 @@ Under GD-11 a vehicle stayed on its level. Raised ground under it was already hi
 - Parts filling a tile that units walk onto are ground even when they stand alone (a crate soldiers climb), so a vehicle that can't climb onto one is blocked rather than crushing it.
 
 **Revisit when.** Rosigma maps show lone walkable crates blocking vehicles where players expect them crushed.
+
+### GD-19 · Mounted guns are held by their vehicle
+
+Decided · 2026-10-29 · built in the Phase 7 fixes
+
+**Problem.** A unit that can't walk (a mounted gun, such as a Rosigma turret) rides along on any of the vehicle's tiles, floor or not. The Rosigma Chimera's hull gun stands in its front plate, a vehicle tile with no floor of its own, above the terrain's floor. Since [GD-18](#gd-18--ground-vehicles-rest-on-the-highest-ground-under-them) a vehicle may hang over lower ground; where its front did, OXCE found nothing under the gun and dropped it a level, and the vehicle drove on without it (found in testing on an Ork outpost, where the Chimeras stand on level 1).
+
+**Decision.** A unit that can't walk, with all its tiles on a vehicle's tiles, is mounted on the vehicle: it rides along and never falls, wherever the vehicle stands. Units that walk ride only on the vehicle's floors and fall where there is no floor, as anywhere else.
+
+**Why.** A mounted gun is part of the vehicle, and craft maps place hull guns on tiles without a floor on purpose. Giving those tiles a floor would change the mod's art and let soldiers walk out onto the front plate.
+
+**Turned down.**
+
+- Not letting a vehicle hang where a mounted gun has no floor under it: vehicles would stop at the edge of every hill for an art detail.
+- Moving hull guns onto floor tiles: needs changes in every mod, and the guns would sit in the wrong place.
+
+**Settled with it.** A mounted gun stays held even when the vehicle tile it stands on is destroyed: the vehicle is still there ([GD-12](#gd-12--no-vehicle-health)).
+
+### GD-20 · The route search only knows the units its side knows
+
+Decided · 2026-10-29 · built in the Phase 7 fixes · extends [GD-07](#gd-07--units-always-block-in-the-mvp)
+
+**Problem.** Planning a route checked every unit on the map, seen or not: it went around enemies the player hadn't spotted and refused places where one stood, telling the player where hidden enemies were. And a place the vehicle couldn't go to always gave "The vehicle does not fit there!", whatever was in the way, so "A unit is in the way!" only ever showed during a drive (found in testing).
+
+**Decision.**
+
+- The route search goes around the units its side knows of: its own units and, for the player, every unit on screen. This is the rule OXCE uses to plan a walk. Any other unit in the way stops the drive when the vehicle reaches it, with "A unit is in the way!", as bumping into one stops a walk.
+- When the clicked place can't take the vehicle, the message says why: a unit, another vehicle, the map edge, terrain, or ground too steep. What stands in the way is named before the ground.
+- Units still always block ([GD-07](#gd-07--units-always-block-in-the-mvp)).
+
+**Why.** Planning must not reveal what the player can't see, and following the walking rule means players already know what to expect. A specific message tells the player what to do about it: move the soldier, or pick another place.
+
+**Turned down.**
+
+- Every unit blocks the plan, as before: it gives hidden enemies away.
+- One message for every reason: the player can't tell a soldier in the way from a wall.
+
+**Settled with it.** Until AI drivers come in M2, vehicles of the other sides plan knowing every unit.
