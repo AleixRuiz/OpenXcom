@@ -182,6 +182,7 @@ Keys M2 adds, as each phase is built. All are optional, and leaving them out kee
 | `runOverDamageType` | damage type number | 7 (melee) | Damage type of `runOverDamage`, as for items (`damageType`). |
 | `aiKeepDistance` | integer | 6 | Tiles an AI driver keeps between the vehicle's middle and the nearest enemy it knows of, when it advances. |
 | `driverRanks` | list of alien ranks | none | For enemy vehicles: the ranks (as in `alienDeployments`, 4 is the navigator) put on a driver seat first when the battle starts. Without them, any deployed unit allowed by `drivers` but a commander or leader takes the seat. Needs `driverSeats`. |
+| `gunCrew` | `driver` or `none` | `driver` | Who works the vehicle's mounted guns: with `driver` they only act and react while someone on board can drive it; with `none` they work by themselves. A later `gunners` value will give each gun its own seat. |
 | `driverReactionsZeroPoint` | integer | the mod's `pilotReactionsZeroPoint` (55) | Reactions of a soldier who drives with no skill bonus. |
 | `driverReactionsRange` | integer | the mod's `pilotReactionsRange` (60) | A soldier driving changes each step's cost by (reactions − zero point) × range / 100 percent, capped at 50 either way; 0 turns driving skill off. If the craft takes pilots, only its pilots drive with their skill. |
 
@@ -291,7 +292,8 @@ The hull is terrain and the crew are units, so most combat rules already apply; 
 | Explosions | Same as shooting. The terrain under a parked vehicle is covered, so it comes back intact when the vehicle leaves. |
 | Running over | The driver gets the kill: it counts for soldier diaries, score and civilian losses. |
 | Floor destroyed under a unit on board | The unit falls, as on any broken floor. |
-| Driver killed or stunned | The drive stops; another crew member can take the seat. |
+| Driver killed or stunned | The drive stops; another crew member can take the seat. With `gunCrew: driver` (the default) the vehicle's mounted guns fall silent until someone takes the wheel and a new turn starts ([GD-28](GAME_DESIGN_DECISIONS.md#gd-28--a-vehicles-guns-need-its-driver-unless-the-vehicle-says-otherwise)). |
+| Crew down, seat taken by the other side | The vehicle and its mounted guns change sides, with no time units until their new side's turn ([GD-29](GAME_DESIGN_DECISIONS.md#gd-29--hijacking-take-the-seat-once-the-crew-is-down)). |
 | Vehicle disabled | No eligible driver means no movement. Follow-up: `criticalParts`, tile parts whose destruction disables the vehicle (an engine block). |
 
 There is no separate vehicle health: a vehicle is exactly as broken as its tiles. A wreck graphic when it is disabled is left to follow-ups.

@@ -38,8 +38,11 @@ class RuleBattleVehicle
 public:
 	/// How a map is split into vehicles.
 	enum Split { SPLIT_CONNECTED, SPLIT_RECTS, SPLIT_WHOLE };
+	/// Who works the vehicle's mounted guns.
+	enum GunCrew { GUNS_NEED_DRIVER, GUNS_WORK_ALONE };
 private:
-	std::string _splitName;
+	std::string _splitName, _gunCrewName;
+	GunCrew _gunCrew;
 	Split _split;
 	std::vector<std::vector<int> > _pieces;
 	std::vector<std::vector<int> > _driverSeats;
@@ -69,6 +72,8 @@ public:
 	const std::vector<std::vector<int> > &getDriverSeats() const { return _driverSeats; }
 	/// Can a unit with this armor drive?
 	bool canDrive(const Armor *armor) const;
+	/// Gets who works the vehicle's mounted guns.
+	GunCrew getGunCrew() const { return _gunCrew; }
 	/// Gets the alien ranks put on a driver seat first when the battle starts (4 is the navigator).
 	const std::vector<int> &getDriverRanks() const { return _driverRanks; }
 	/// Gets the time unit cost to move the vehicle by one tile, paid by the vehicle and its driver.

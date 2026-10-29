@@ -1193,6 +1193,127 @@ void BattleVehicle::seatDrivers(SavedBattleGame *save, int faction)
 }
 
 /**
+ * Checks whether anyone on board can drive the vehicle right now: on a seat (or anywhere on board
+ * without seats), of its side, allowed by its rule, and not going down.
+ * @param save Battle save.
+ * @return True if the vehicle has a driver.
+ */
+bool BattleVehicle::hasDriver(SavedBattleGame *save) const
+{
+	for (const auto *unit : getPassengers(save))
+	{
+		if (!unit->isOutThresholdExceed() && canDrive(save, unit))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * Takes the time units of the vehicle's mounted guns away while the rule says they need a driver
+ * and the vehicle has none, so they neither act nor react until someone takes the wheel and a
+ * new turn starts.
+ * @param save Battle save.
+ */
+void BattleVehicle::silenceGuns(SavedBattleGame *save) const
+{
+	const RuleBattleVehicle *rule = getRule(save->getMod());
+	if (!rule || rule->getGunCrew() != RuleBattleVehicle::GUNS_NEED_DRIVER || hasDriver(save))
+	{
+		return;
+	}
+	for (auto *unit : getPassengers(save))
+	{
+		if (isMounted(unit) && unit->getFaction() == _faction)
+		{
+			unit->setTimeUnits(0);
+		}
+	}
+}
+
+/**
+ * Hands the vehicle to another side when one of its units sits on a driver seat (anywhere on board
+ * without seats), allowed by the rule to drive, and nobody of the vehicle's side on board can
+ * fight any more, its mounted guns aside: those change sides with the vehicle. The vehicle and
+ * its guns have no time units until their new side's next turn.
+ * @param save Battle save.
+ * @return The side the vehicle belonged to, or -1 if it didn't change hands.
+ */
+int BattleVehicle::checkCapture(SavedBattleGame *save)
+{
+	const RuleBattleVehicle *rule = getRule(save->getMod());
+	if (!rule)
+	{
+		return -1;
+	}
+	const std::vector<BattleUnit*> onBoard = getPassengers(save);
+	BattleUnit *taker = nullptr;
+	for (auto *unit : onBoard)
+	{
+		if (unit->isOut() || unit->isOutThresholdExceed())
+		{
+			continue;
+		}
+		if (unit->getFaction() == _faction)
+		{
+			if (!isMounted(unit))
+			{
+				// its side still holds it
+				return -1;
+			}
+			continue;
+		}
+		const Position offset = unit->getPosition() - _pos;
+		const bool seated = _seats.empty() || std::find(_seats.begin(), _seats.end(), offset) != _seats.end();
+		if (!taker && seated && rule->canDrive(unit->getArmor()))
+		{
+			taker = unit;
+		}
+	}
+	if (!taker)
+	{
+		return -1;
+	}
+	const int from = _faction;
+	_faction = taker->getFaction();
+	_timeUnits = 0;
+	_tuCarry = 0;
+	_aiDecided = true;
+	for (auto *unit : onBoard)
+	{
+		if (unit->getFaction() == from && isMounted(unit) && !unit->isOut())
+		{
+			unit->convertToFaction(taker->getFaction());
+			unit->setTimeUnits(0);
+		}
+	}
+	return from;
+}
+
+/**
+ * Hands over every vehicle whose seat was taken by another side (see checkCapture), then takes
+ * the time units of mounted guns left without a driver (see silenceGuns). Called after units
+ * move or go down.
+ * @param save Battle save.
+ * @return The vehicles that changed hands, each with the side it belonged to.
+ */
+std::vector<std::pair<BattleVehicle*, int> > BattleVehicle::updateCrews(SavedBattleGame *save)
+{
+	std::vector<std::pair<BattleVehicle*, int> > captured;
+	for (auto *vehicle : *save->getVehicles())
+	{
+		const int from = vehicle->checkCapture(save);
+		if (from != -1)
+		{
+			captured.push_back(std::make_pair(vehicle, from));
+		}
+		vehicle->silenceGuns(save);
+	}
+	return captured;
+}
+
+/**
  * Gets the time unit cost of a step, paid by the vehicle and its driver; a diagonal step and
  * climbing a level each cost half as much again.
  * @param mod The mod.

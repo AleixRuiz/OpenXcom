@@ -149,3 +149,14 @@ Same traitor convoy battle.
 - [ ] The traitor on a seat never walks off it; it shoots from there when it can.
 - [ ] Kill or stun a driver (break in, or a grenade through a hatch): that Chimera stops driving for the rest of the battle.
 - [ ] A battle save made before this phase opens; nobody is moved in it.
+
+**Gun crews and hijacking** (Phase 15)
+
+In the convoy showcase:
+
+- [ ] Kill or stun a traitor Chimera's driver: its turret stops firing at once, and doesn't fire or react in the aliens' next turns.
+- [ ] Your own Chimera: with nobody on its driver seat when your turn starts, its turrets have no time units; put a soldier on the seat and they work again from the next turn.
+- [ ] Step a soldier onto the seat of a traitor Chimera with infantry still inside: nothing changes.
+- [ ] Clear the traitors inside (kill or stun them), then step onto the seat: "Vehicle captured!". The Chimera and its turret are yours, with no time units until your next turn; then you drive it and fire its turret.
+- [ ] Save and load after a capture: the Chimera and its turret are still yours.
+- [ ] Set `gunCrew: none` on the traitor convoy in the demo mod: its turrets keep firing after the driver dies.

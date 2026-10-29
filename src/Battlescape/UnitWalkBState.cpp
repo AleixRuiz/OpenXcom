@@ -25,6 +25,7 @@
 #include "Map.h"
 #include "Camera.h"
 #include "../Savegame/BattleUnit.h"
+#include "../Savegame/BattleVehicle.h"
 #include "../Savegame/SavedBattleGame.h"
 #include "../Savegame/Tile.h"
 #include "../Engine/Sound.h"
@@ -510,6 +511,21 @@ void UnitWalkBState::postPathProcedures()
 
 	_terrain->calculateLighting(LL_UNITS, _unit->getPosition());
 	_terrain->calculateFOV(_unit);
+
+	// taking a vehicle's seat may take the vehicle
+	for (const auto &captured : BattleVehicle::updateCrews(_parent->getSave()))
+	{
+		if (captured.first->getFaction() == FACTION_PLAYER)
+		{
+			_parent->getSave()->getBattleState()->warning("STR_VEHICLE_CAPTURED");
+		}
+		else if (captured.second == FACTION_PLAYER)
+		{
+			_parent->getSave()->getBattleState()->warning("STR_VEHICLE_TAKEN_BY_ENEMY");
+		}
+		_terrain->recalculateFOV();
+	}
+
 	if (!_falling)
 		_parent->popState();
 }

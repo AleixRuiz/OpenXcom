@@ -214,6 +214,14 @@ public:
 	void seatDriver(SavedBattleGame *save);
 	/// Puts a driver on the seats of every vehicle of a side, once its units are deployed.
 	static void seatDrivers(SavedBattleGame *save, int faction);
+	/// Is anyone on board able to drive the vehicle right now?
+	bool hasDriver(SavedBattleGame *save) const;
+	/// Takes the time units of the vehicle's mounted guns away while they need a driver and have none.
+	void silenceGuns(SavedBattleGame *save) const;
+	/// Hands the vehicle and its mounted guns to the side that took its seat, if its own side has given it up.
+	int checkCapture(SavedBattleGame *save);
+	/// Hands over the vehicles taken this way and silences the guns without a driver.
+	static std::vector<std::pair<BattleVehicle*, int> > updateCrews(SavedBattleGame *save);
 	/// Gets the time unit cost of a step, paid by the vehicle and its driver.
 	int getStepCost(const Mod *mod, Position delta) const;
 	/// Gets the time unit cost of a step for a driver with a skill bonus, carrying fractions over between steps.
