@@ -173,6 +173,7 @@ Decided in [GD-18](GAME_DESIGN_DECISIONS.md#gd-18--ground-vehicles-rest-on-the-h
 
 - [x] Builds with no new warnings.
 - [x] A battle save made before Phase 7 opens with the Rosigma demo mod, with no messages.
+- [x] Builds on Linux (GCC, with OXCE's strict warnings) and 32-bit Windows on GitHub, with no warnings in our code (2026-10-29). The macOS build got no runner and didn't run.
 - [ ] The reopened lines in [TESTING.md](TESTING.md) ("Route preview" and "Driving").
 
 **Commit:** `Moving vehicles: fixes from testing the hills phase`
