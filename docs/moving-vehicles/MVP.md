@@ -1,6 +1,6 @@
 # Moving Vehicles — MVP
 
-Last updated 2026-10-28 · Aleix Ruiz Sorribes
+Last updated 2026-10-29 · Aleix Ruiz Sorribes
 
 The MVP is milestone M1 of the [design](DESIGN.md#roadmap): the player drives craft maps as vehicles, with the crew and cargo on board, through terrain that blocks or is crushed, and the battle saves and loads with them. It is the first thing we pitch to OXCE, so it must be small, opt-in and clean enough to review.
 
@@ -21,9 +21,9 @@ The MVP is milestone M1 of the [design](DESIGN.md#roadmap): the player drives cr
 | Ruleset | `battleVehicle` block under `crafts`, with `split`, `pieces`, `driverSeats`, `drivers`, `tuPerTile`, `timeUnits`, `crushArmor`; checked when the mod loads | Ruleset design |
 | Vehicles from craft maps | Craft map split into vehicles by connected tiles or by rectangles, at battle start | Core model |
 | What moves | Hull parts (with damage), units on its floors, mounted units, items on its floors, route nodes, discovered tiles | Core model |
-| Driving | A crew member on a seat drives in drive mode; each tile costs `tuPerTile` (x1.5 diagonal) to the driver and to the vehicle's own `timeUnits` per turn, so swapping drivers doesn't take it further | Driving and controls |
+| Driving | A crew member on a seat drives in drive mode; each tile costs `tuPerTile` (x1.5 diagonal, x1.5 climbing) to the driver and to the vehicle's own `timeUnits` per turn, so swapping drivers doesn't take it further | Driving and controls |
 | Route preview | Center path, time units left per step, ghost at the end, second click confirms | Driving and controls |
-| Movement rules | Map edge, other vehicles and all units block; solid terrain up to `crushArmor` is crushed; special terrain blocks; no corner cutting; gravity on tiles left behind and above crushed terrain | Movement rules |
+| Movement rules | Map edge, other vehicles and all units block; solid terrain up to `crushArmor` is crushed; special terrain blocks; no corner cutting; follows hills a level per step, resting on the highest ground, never digging into it; gravity on tiles left behind and above crushed terrain | Movement rules |
 | Interruptions | Driving stops when the driver or the vehicle is out of time units, when a new enemy comes into view, or when the next step is blocked | Driving and controls |
 | Saves | `vehicles` list in the battle save; saves without it load unchanged | Saves, compatibility and performance |
 | Messages | Every message through translatable strings (English first) | Where we are |
@@ -46,6 +46,7 @@ The MVP is milestone M1 of the [design](DESIGN.md#roadmap): the player drives cr
 - **Craft maps only.** UFO vehicles join in M2 together with AI drivers. The ruleset block is the same, so nothing changes for modders later.
 - **No spawned driver.** A crew member drives; a craft without a seat lets anyone on board drive.
 - **Units always block.** Running over comes in M2, so an MVP vehicle never hurts a unit.
+- **Vehicles follow hills.** They rest on the highest ground under them and climb or come down a level per step ([GD-18](GAME_DESIGN_DECISIONS.md#gd-18--ground-vehicles-rest-on-the-highest-ground-under-them)), since most outdoor maps have hills.
 - **No debug shortcuts.** Testing uses the demo mods below, not debug keys.
 
 ## Demo mods
@@ -61,6 +62,7 @@ Both are in [mods](mods/README.md); [TESTING.md](TESTING.md) has the in-game che
 - [ ] Vanilla UFO and TFTD battles with no `battleVehicle` play and save exactly as before.
 - [ ] The vanilla demo craft and the Rosigma Chimera both drive, crush light terrain and are blocked by heavy terrain and units.
 - [ ] Soldiers ride along, walk out in drive mode off, and items left on board ride along too.
+- [ ] On a hilly map, a vehicle climbs onto a hill and comes back down, and doesn't dig into hills or climb cliffs.
 - [ ] A vehicle never drives further in one turn than its `timeUnits`, however many crew take turns driving, and gets them back on the next turn.
 - [ ] A battle saved mid-drive and loaded again keeps every vehicle, crew member, item and crushed tile where it was.
 - [x] A broken `battleVehicle` block (seat outside the map, unknown driver armor) is reported when the mod loads.

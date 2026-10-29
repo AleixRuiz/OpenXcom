@@ -59,7 +59,7 @@ public:
 		PartRef under[O_MAX];
 	};
 	/// What happened to a step of the vehicle.
-	enum MoveResult { MOVE_OK, MOVE_BLOCKED_EDGE, MOVE_BLOCKED_VEHICLE, MOVE_BLOCKED_UNIT, MOVE_BLOCKED_TERRAIN };
+	enum MoveResult { MOVE_OK, MOVE_BLOCKED_EDGE, MOVE_BLOCKED_VEHICLE, MOVE_BLOCKED_UNIT, MOVE_BLOCKED_TERRAIN, MOVE_TOO_STEEP };
 
 	/**
 	 * Finds the vehicles a craft map holds: remembers the terrain of the area before
@@ -89,6 +89,8 @@ private:
 	// cell index for each offset in the vehicle's bounding box, -1 where it has no tile
 	Position _size;
 	std::vector<int> _cellAt;
+	// x and y of each column of the bounding box the vehicle has tiles in, z of its lowest tile there
+	std::vector<Position> _columns;
 
 	/// Is the tileset one of the vehicle's?
 	bool isOwnSet(int setId) const { return setId >= _firstSetId && setId < _lastSetId; }
@@ -96,14 +98,28 @@ private:
 	void buildLookup();
 	/// Gets the index of the cell at a map position for the current vehicle position, -1 if none.
 	int getCellIndex(Position pos) const;
+	/// Is a cell the vehicle's lowest tile in its column?
+	bool isLowest(const Cell &cell) const;
 	/// Gets the map data reference of a tile part.
 	static PartRef getPart(const Tile *tile, TilePart part);
 	/// Sets the map data of a tile part.
 	static void setPart(SavedBattleGame *save, Tile *tile, TilePart part, PartRef ref);
 	/// Gets the map data of a part reference.
 	static const MapData *getMapData(SavedBattleGame *save, PartRef ref);
+	/// Gets a terrain part as if the vehicle were not on the map.
+	const MapData *getTerrain(SavedBattleGame *save, Position pos, TilePart part) const;
 	/// Does terrain block the vehicle?
 	static bool isSolid(const MapData *md);
+	/// Is a terrain object ground the vehicle stands on, rather than something in its way?
+	bool isGround(SavedBattleGame *save, Position pos, const MapData *object) const;
+	/// Gets how high the ground in a tile is.
+	int getGroundRaise(SavedBattleGame *save, Position pos) const;
+	/// Gets the height of the ground under a tile of the vehicle.
+	int getGroundHeight(SavedBattleGame *save, Position pos) const;
+	/// Counts the vehicle's columns standing in the ground of the level above it, at a position.
+	int countBuried(SavedBattleGame *save, Position pos) const;
+	/// Finds the level the vehicle stands on with its lowest corner at a place.
+	int findLevel(SavedBattleGame *save, int x, int y, int fromZ, int fromBuried) const;
 	/// Can the vehicle destroy a terrain part?
 	static bool canDestroy(const MapData *md, SavedBattleGame *save, int crushArmor);
 	/// Can the vehicle crush its way through a terrain part (and whatever it turns into)?
@@ -114,8 +130,8 @@ private:
 	void lift(SavedBattleGame *save, std::vector<PartRef> &carried, std::vector<char> &discovered) const;
 	/// Sets the vehicle down at a position, remembering the terrain under it.
 	void place(SavedBattleGame *save, Position pos, const std::vector<PartRef> &carried, const std::vector<char> &discovered);
-	/// Checks whether the lifted vehicle can be set down at a position, and what it must crush there.
-	MoveResult checkPlace(SavedBattleGame *save, Position pos, const std::vector<PartRef> &carried, const std::vector<BattleUnit*> &passengers, int crushArmor, std::vector<std::pair<Tile*, TilePart> > &toCrush) const;
+	/// Checks whether the vehicle can be set down at a position, and what it must crush there.
+	MoveResult checkPlace(SavedBattleGame *save, Position pos, const std::vector<char> &inside, const std::vector<BattleUnit*> &passengers, int crushArmor, std::vector<std::pair<Tile*, TilePart> > &toCrush) const;
 
 public:
 	/// Creates an empty vehicle, to be loaded from a save.
@@ -160,9 +176,9 @@ public:
 	static BattleVehicle *getDrivenBy(SavedBattleGame *save, const BattleUnit *unit);
 	/// Gets the time unit cost of a step, paid by the vehicle and its driver.
 	int getStepCost(const Mod *mod, Position delta) const;
-	/// Moves the vehicle by one step, with everything on board.
+	/// Moves the vehicle by one step, with everything on board, onto the ground there.
 	MoveResult move(SavedBattleGame *save, Position delta);
-	/// Finds the steps that take the vehicle to a new position on its level.
+	/// Finds the steps that take the vehicle to a new place, following the ground.
 	bool findPath(SavedBattleGame *save, Position target, std::vector<Position> &path, std::string &error) const;
 	/// Gets the message (a string ID) telling why a step failed.
 	static const char *getMoveResultString(MoveResult result);

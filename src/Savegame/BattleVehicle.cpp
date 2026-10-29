@@ -49,6 +49,9 @@ const size_t CELL_STRIDE = 4 + 2 * O_MAX;
 /// The scorched earth floor the battle generator puts on level 0 tiles without a floor.
 const BattleVehicle::PartRef SCORCHED_EARTH = { 1, 0 };
 
+/// Ground height of a column with no ground within reach.
+const int NO_GROUND = INT_MIN;
+
 }
 
 /**
@@ -436,6 +439,21 @@ void BattleVehicle::buildLookup()
 		const Position &o = _cells[i].offset;
 		_cellAt[(o.z * _size.y + o.y) * _size.x + o.x] = (int)i;
 	}
+	_columns.clear();
+	for (int y = 0; y < _size.y; ++y)
+	{
+		for (int x = 0; x < _size.x; ++x)
+		{
+			for (int z = 0; z < _size.z; ++z)
+			{
+				if (_cellAt[(z * _size.y + y) * _size.x + x] != -1)
+				{
+					_columns.push_back(Position(x, y, z));
+					break;
+				}
+			}
+		}
+	}
 }
 
 /**
@@ -451,6 +469,24 @@ int BattleVehicle::getCellIndex(Position pos) const
 		return -1;
 	}
 	return _cellAt[(o.z * _size.y + o.y) * _size.x + o.x];
+}
+
+/**
+ * Checks whether a cell is the vehicle's lowest tile in its column.
+ * @param cell The cell.
+ * @return True if the vehicle has no tile below it.
+ */
+bool BattleVehicle::isLowest(const Cell &cell) const
+{
+	const Position &o = cell.offset;
+	for (int z = 0; z < o.z; ++z)
+	{
+		if (_cellAt[(z * _size.y + o.y) * _size.x + o.x] != -1)
+		{
+			return false;
+		}
+	}
+	return true;
 }
 
 /**
@@ -498,6 +534,28 @@ const MapData *BattleVehicle::getMapData(SavedBattleGame *save, PartRef ref)
 		return save->getMapDataSets()->at(ref.setId)->getObject(ref.id);
 	}
 	return nullptr;
+}
+
+/**
+ * Gets a terrain part as if the vehicle were not on the map: where the vehicle covers it, the part under the vehicle.
+ * @param save Battle save.
+ * @param pos Map position.
+ * @param part Part of the tile.
+ * @return The map data, null for nothing or outside the map.
+ */
+const MapData *BattleVehicle::getTerrain(SavedBattleGame *save, Position pos, TilePart part) const
+{
+	const Tile *tile = save->getTile(pos);
+	if (!tile)
+	{
+		return nullptr;
+	}
+	const int i = getCellIndex(pos);
+	if (i != -1 && (_cells[i].owned & (1 << part)))
+	{
+		return getMapData(save, _cells[i].under[part]);
+	}
+	return tile->getMapData(part);
 }
 
 /**
@@ -557,6 +615,157 @@ int BattleVehicle::getCrushArmor(const Mod *mod) const
 {
 	const RuleBattleVehicle *rule = getRule(mod);
 	return rule ? rule->getCrushArmor() : 0;
+}
+
+/**
+ * Checks whether a terrain object is ground the vehicle stands on rather than something in its way:
+ * raised ground units walk on (slopes, hills), and solid parts filling their tile up to the next level
+ * with a floor on top (hill rock). Other solid parts are obstacles, crushed or blocking.
+ * @param save Battle save.
+ * @param pos Map position of the object.
+ * @param object Map data of the object, or null.
+ * @return True if it is ground.
+ */
+bool BattleVehicle::isGround(SavedBattleGame *save, Position pos, const MapData *object) const
+{
+	if (!object || object->getTerrainLevel() >= 0)
+	{
+		return false;
+	}
+	if (!isSolid(object))
+	{
+		return true;
+	}
+	const MapData *above = getTerrain(save, pos + Position(0, 0, 1), O_FLOOR);
+	return object->getTerrainLevel() <= -Position::TileZ && above && !above->isNoFloor();
+}
+
+/**
+ * Gets how high the ground in a tile is, as the vehicle sees it: its floor, or raised ground on it.
+ * @param save Battle save.
+ * @param pos Map position.
+ * @return Voxels above the bottom of the tile, Position::TileZ for a tile filled up to the next level, -1 if it has no ground.
+ */
+int BattleVehicle::getGroundRaise(SavedBattleGame *save, Position pos) const
+{
+	if (!save->getTile(pos))
+	{
+		return -1;
+	}
+	int raise = -1;
+	const MapData *floor = getTerrain(save, pos, O_FLOOR);
+	if (floor && !floor->isNoFloor())
+	{
+		raise = std::max(0, -floor->getTerrainLevel());
+	}
+	const MapData *object = getTerrain(save, pos, O_OBJECT);
+	if (isGround(save, pos, object))
+	{
+		raise = std::max(raise, -object->getTerrainLevel());
+	}
+	return std::min(raise, (int)Position::TileZ);
+}
+
+/**
+ * Gets the height of the ground under a tile of the vehicle, looking from one level above it down to
+ * one level below it. A tile filled with ground (a hill) gives the ground of the level above it.
+ * @param save Battle save.
+ * @param pos Map position of the vehicle's lowest tile in a column.
+ * @return Height in voxels from the bottom of the map, NO_GROUND if the ground is lower than the level below.
+ */
+int BattleVehicle::getGroundHeight(SavedBattleGame *save, Position pos) const
+{
+	const int raise = getGroundRaise(save, pos);
+	if (raise >= Position::TileZ)
+	{
+		// the ground goes on in the tile above, two levels up if that one is filled too
+		return (pos.z + 1) * Position::TileZ + std::max(0, getGroundRaise(save, pos + Position(0, 0, 1)));
+	}
+	if (raise >= 0)
+	{
+		return pos.z * Position::TileZ + raise;
+	}
+	const int below = getGroundRaise(save, pos - Position(0, 0, 1));
+	if (below >= 0)
+	{
+		return (pos.z - 1) * Position::TileZ + below;
+	}
+	if (getGroundRaise(save, pos - Position(0, 0, 2)) >= Position::TileZ)
+	{
+		return (pos.z - 1) * Position::TileZ;
+	}
+	return NO_GROUND;
+}
+
+/**
+ * Counts the vehicle's columns standing in the ground of the level above it, as they do after it came off a ledge.
+ * @param save Battle save.
+ * @param pos Vehicle position.
+ * @return Number of columns.
+ */
+int BattleVehicle::countBuried(SavedBattleGame *save, Position pos) const
+{
+	int buried = 0;
+	for (const auto &column : _columns)
+	{
+		const Position p = pos + column;
+		if (getGroundHeight(save, p) >= (p.z + 1) * Position::TileZ)
+		{
+			++buried;
+		}
+	}
+	return buried;
+}
+
+/**
+ * Finds the level the vehicle stands on with its lowest corner at a place. It rests on the highest
+ * ground under it, hiding raised ground on its own level and hanging over lower ground, and climbs or
+ * comes down one level per step at most. Its middle must be over ground less than a level below it,
+ * so it can't climb where its middle would hang; at a ledge it tips over instead and comes down a
+ * level, with one end standing in the ledge, and it can drive away from the ledge but not into it.
+ * @param save Battle save.
+ * @param x X of the vehicle's lowest corner.
+ * @param y Y of the vehicle's lowest corner.
+ * @param fromZ The level the vehicle comes from.
+ * @param fromBuried How many of its columns stand in the ground of the level above it where it comes from.
+ * @return The level, or -1 if the ground there is too steep.
+ */
+int BattleVehicle::findLevel(SavedBattleGame *save, int x, int y, int fromZ, int fromBuried) const
+{
+	int highest = INT_MIN, lowest = INT_MAX;
+	for (const auto &column : _columns)
+	{
+		const int ground = getGroundHeight(save, Position(x + column.x, y + column.y, fromZ + column.z));
+		if (ground == NO_GROUND)
+		{
+			return -1;
+		}
+		// a column whose lowest tile is higher up in the vehicle (a craft's belly) can stand on higher ground
+		highest = std::max(highest, ground - column.z * Position::TileZ);
+		lowest = std::min(lowest, ground);
+	}
+	int z = highest / Position::TileZ;
+	if (std::abs(z - fromZ) > 1)
+	{
+		return -1;
+	}
+	const Position middle = getCenter() - _pos;
+	const int middleGround = getGroundHeight(save, Position(x + middle.x, y + middle.y, fromZ));
+	if (middleGround <= (z - 1) * Position::TileZ)
+	{
+		// its middle would hang a level or more over the ground: it tips over and comes down a level
+		const bool tips = z == fromZ;
+		--z;
+		if (middleGround <= (z - 1) * Position::TileZ || (!tips && (z != fromZ || countBuried(save, Position(x, y, z)) > fromBuried)))
+		{
+			return -1;
+		}
+	}
+	if (z < 0 || lowest < (z - 1) * Position::TileZ)
+	{
+		return -1;
+	}
+	return z;
 }
 
 /**
@@ -628,17 +837,19 @@ void BattleVehicle::place(SavedBattleGame *save, Position pos, const std::vector
 }
 
 /**
- * Checks whether the lifted vehicle can be set down at a position. Inside the vehicle (where it
- * has a floor) any solid terrain is in the way; at its edges only the parts it would replace.
+ * Checks whether the vehicle can be set down at a position, judging the terrain as if the vehicle
+ * were not on the map. Inside the vehicle (where it has a floor) any solid terrain is in the way;
+ * at its edges only the parts it would replace. Ground is never crushed: raised ground on the
+ * vehicle's level is hidden under it, and a hill only where the vehicle came off a ledge.
  * @param save Battle save.
  * @param pos New vehicle position.
- * @param carried The vehicle's parts, from lift().
+ * @param inside For each cell, does the vehicle have its floor there?
  * @param passengers Units that move with the vehicle.
  * @param crushArmor Strongest armor the vehicle crushes.
  * @param toCrush Gets the terrain parts to crush to make room.
  * @return MOVE_OK if it fits, otherwise what blocks it.
  */
-BattleVehicle::MoveResult BattleVehicle::checkPlace(SavedBattleGame *save, Position pos, const std::vector<PartRef> &carried, const std::vector<BattleUnit*> &passengers, int crushArmor, std::vector<std::pair<Tile*, TilePart> > &toCrush) const
+BattleVehicle::MoveResult BattleVehicle::checkPlace(SavedBattleGame *save, Position pos, const std::vector<char> &inside, const std::vector<BattleUnit*> &passengers, int crushArmor, std::vector<std::pair<Tile*, TilePart> > &toCrush) const
 {
 	toCrush.clear();
 	for (size_t i = 0; i < _cells.size(); ++i)
@@ -662,14 +873,22 @@ BattleVehicle::MoveResult BattleVehicle::checkPlace(SavedBattleGame *save, Posit
 		{
 			return MOVE_BLOCKED_UNIT;
 		}
-		const bool inside = carried[i * O_MAX + O_FLOOR].id != -1;
 		for (int part = O_WESTWALL; part < O_MAX; ++part)
 		{
-			if (!inside && !(cell.owned & (1 << part)))
+			if (!inside[i] && !(cell.owned & (1 << part)))
 			{
 				continue;
 			}
-			const MapData *md = tile->getMapData((TilePart)part);
+			const MapData *md = getTerrain(save, p, (TilePart)part);
+			if (part == O_OBJECT && md && md->getTerrainLevel() <= -Position::TileZ && isGround(save, p, md))
+			{
+				// a hill: only the bottom of a vehicle that came off a ledge stands in it
+				if (isLowest(cell))
+				{
+					continue;
+				}
+				return MOVE_BLOCKED_TERRAIN;
+			}
 			if (!isSolid(md))
 			{
 				continue;
@@ -783,7 +1002,8 @@ BattleVehicle *BattleVehicle::getDrivenBy(SavedBattleGame *save, const BattleUni
 }
 
 /**
- * Gets the time unit cost of a step, paid by the vehicle and its driver; diagonal steps cost half as much again.
+ * Gets the time unit cost of a step, paid by the vehicle and its driver; a diagonal step and
+ * climbing a level each cost half as much again.
  * @param mod The mod.
  * @param delta The step.
  * @return Time units.
@@ -791,16 +1011,24 @@ BattleVehicle *BattleVehicle::getDrivenBy(SavedBattleGame *save, const BattleUni
 int BattleVehicle::getStepCost(const Mod *mod, Position delta) const
 {
 	const RuleBattleVehicle *rule = getRule(mod);
-	const int tuPerTile = rule ? rule->getTuPerTile() : 0;
-	return (delta.x != 0 && delta.y != 0) ? tuPerTile * 3 / 2 : tuPerTile;
+	int cost = rule ? rule->getTuPerTile() : 0;
+	if (delta.x != 0 && delta.y != 0)
+	{
+		cost = cost * 3 / 2;
+	}
+	if (delta.z > 0)
+	{
+		cost = cost * 3 / 2;
+	}
+	return cost;
 }
 
 /**
- * Moves the vehicle by one step, with the units and items on board and its route nodes.
- * Weak terrain in the way is crushed and stays destroyed. If anything blocks the step,
- * nothing changes.
+ * Moves the vehicle by one step, with the units and items on board and its route nodes. It
+ * goes up or down to the level of the ground there (see findLevel). Weak terrain in the way
+ * is crushed and stays destroyed. If anything blocks the step, nothing changes.
  * @param save Battle save.
- * @param delta The step.
+ * @param delta The step; its level is ignored, the ground decides it.
  * @return MOVE_OK, or what blocked the step.
  */
 BattleVehicle::MoveResult BattleVehicle::move(SavedBattleGame *save, Position delta)
@@ -809,11 +1037,17 @@ BattleVehicle::MoveResult BattleVehicle::move(SavedBattleGame *save, Position de
 	{
 		return MOVE_BLOCKED_EDGE;
 	}
-	if (delta == Position(0, 0, 0))
+	if (delta.x == 0 && delta.y == 0)
 	{
 		return MOVE_OK;
 	}
 	const Position oldPos = _pos;
+	const int z = findLevel(save, oldPos.x + delta.x, oldPos.y + delta.y, oldPos.z, countBuried(save, oldPos));
+	if (z < 0)
+	{
+		return MOVE_TOO_STEEP;
+	}
+	delta.z = z - oldPos.z;
 	const Position newPos = _pos + delta;
 	const std::vector<BattleUnit*> passengers = getPassengers(save);
 
@@ -833,8 +1067,13 @@ BattleVehicle::MoveResult BattleVehicle::move(SavedBattleGame *save, Position de
 	std::vector<PartRef> carried;
 	std::vector<char> discovered;
 	lift(save, carried, discovered);
+	std::vector<char> inside(_cells.size(), 0);
+	for (size_t i = 0; i < _cells.size(); ++i)
+	{
+		inside[i] = carried[i * O_MAX + O_FLOOR].id != -1;
+	}
 	std::vector<std::pair<Tile*, TilePart> > toCrush;
-	const MoveResult result = checkPlace(save, newPos, carried, passengers, getCrushArmor(save->getMod()), toCrush);
+	const MoveResult result = checkPlace(save, newPos, inside, passengers, getCrushArmor(save->getMod()), toCrush);
 	if (result != MOVE_OK)
 	{
 		place(save, oldPos, carried, discovered);
@@ -898,9 +1137,10 @@ BattleVehicle::MoveResult BattleVehicle::move(SavedBattleGame *save, Position de
 }
 
 /**
- * Finds the steps that take the vehicle to a new position on its level, with A* over vehicle
- * positions: straight steps cost 2, diagonal steps 3 (they can't cut corners), and a step
- * that crushes terrain 2 more. Tiles the vehicle covers now are judged by the terrain under it.
+ * Finds the steps that take the vehicle to a new place, with A* over vehicle positions; the level
+ * of each position follows from the ground there (see findLevel). Straight steps cost 2, diagonal
+ * steps 3 (they can't cut corners), climbing a level half as much again, and a step that crushes
+ * terrain 2 more. Tiles the vehicle covers now are judged by the terrain under it.
  * @param save Battle save.
  * @param target New vehicle position (its level is ignored).
  * @param path Gets the vehicle positions after each step, the last one being the target.
@@ -910,8 +1150,7 @@ BattleVehicle::MoveResult BattleVehicle::move(SavedBattleGame *save, Position de
 bool BattleVehicle::findPath(SavedBattleGame *save, Position target, std::vector<Position> &path, std::string &error) const
 {
 	path.clear();
-	target.z = _pos.z;
-	if (_cells.empty() || target == _pos)
+	if (_cells.empty() || (target.x == _pos.x && target.y == _pos.y))
 	{
 		error = "STR_VEHICLE_ALREADY_THERE";
 		return false;
@@ -924,65 +1163,49 @@ bool BattleVehicle::findPath(SavedBattleGame *save, Position target, std::vector
 		inside[i] = isOnBoard(save, _pos + _cells[i].offset);
 	}
 
-	// -1 if the vehicle doesn't fit with its corner at (x, y), otherwise the number of parts it crushes there
-	const int width = save->getMapSizeX(), length = save->getMapSizeY();
-	std::unordered_map<int, int> fits;
-	auto fitsAt = [&](int x, int y)
+	// where the vehicle stands with its corner at (x, y), coming from a level with some columns in the ground above it:
+	// its level (-1 if it doesn't fit there) and the number of parts it crushes
+	struct Fit
 	{
+		int z, crushed;
+	};
+	const int width = save->getMapSizeX(), length = save->getMapSizeY(), height = save->getMapSizeZ();
+	std::unordered_map<long long, Fit> fits;
+	auto fitsAt = [&](int x, int y, int fromZ, int fromBuried)
+	{
+		Fit fit = { -1, 0 };
 		if (x < 0 || y < 0 || x >= width || y >= length)
 		{
-			return -1;
+			return fit;
 		}
-		auto known = fits.find(y * width + x);
+		const long long key = (((long long)fromBuried * height + fromZ) * length + y) * width + x;
+		auto known = fits.find(key);
 		if (known != fits.end())
 		{
 			return known->second;
 		}
-		int crushed = 0;
-		for (size_t i = 0; i < _cells.size() && crushed >= 0; ++i)
+		fit.z = findLevel(save, x, y, fromZ, fromBuried);
+		if (fit.z >= 0)
 		{
-			const Cell &cell = _cells[i];
-			const Position p = Position(x, y, _pos.z) + cell.offset;
-			const Tile *tile = save->getTile(p);
-			const BattleUnit *unit = tile ? tile->getUnit() : nullptr;
-			if (!tile || (unit && std::find(passengers.begin(), passengers.end(), unit) == passengers.end()))
+			std::vector<std::pair<Tile*, TilePart> > toCrush;
+			if (checkPlace(save, Position(x, y, fit.z), inside, passengers, crushArmor, toCrush) == MOVE_OK)
 			{
-				crushed = -1;
-				break;
+				fit.crushed = (int)toCrush.size();
 			}
-			for (const auto *other : *save->getVehicles())
+			else
 			{
-				if (other != this && other->covers(p))
-				{
-					crushed = -1;
-				}
-			}
-			const int current = getCellIndex(p);
-			for (int part = O_WESTWALL; part < O_MAX && crushed >= 0; ++part)
-			{
-				if (!inside[i] && !(cell.owned & (1 << part)))
-				{
-					continue;
-				}
-				const MapData *md = tile->getMapData((TilePart)part);
-				if (current != -1 && (_cells[current].owned & (1 << part)))
-				{
-					md = getMapData(save, _cells[current].under[part]);
-				}
-				if (isSolid(md))
-				{
-					crushed = canCrush(md, save, crushArmor) ? crushed + 1 : -1;
-				}
+				fit.z = -1;
 			}
 		}
-		fits[y * width + x] = crushed;
-		return crushed;
+		fits[key] = fit;
+		return fit;
 	};
-	auto canStep = [&](int x, int y, Position v)
+	bool fitsTarget = false;
+	for (int z = 0; z < height && !fitsTarget; ++z)
 	{
-		return fitsAt(x + v.x, y + v.y) >= 0 && (v.x == 0 || v.y == 0 || (fitsAt(x + v.x, y) >= 0 && fitsAt(x, y + v.y) >= 0));
-	};
-	if (fitsAt(target.x, target.y) < 0)
+		fitsTarget = fitsAt(target.x, target.y, z, (int)_columns.size()).z >= 0;
+	}
+	if (!fitsTarget)
 	{
 		error = "STR_VEHICLE_DOES_NOT_FIT_THERE";
 		return false;
@@ -993,12 +1216,17 @@ bool BattleVehicle::findPath(SavedBattleGame *save, Position target, std::vector
 		const int dx = std::abs(x - target.x), dy = std::abs(y - target.y);
 		return 2 * std::max(dx, dy) + std::min(dx, dy);
 	};
-	const int start = _pos.y * width + _pos.x;
-	const int goal = target.y * width + target.x;
-	std::unordered_map<int, int> cost, from;
+	auto nodeAt = [&](int x, int y, int z)
+	{
+		return (z * length + y) * width + x;
+	};
+	const int start = nodeAt(_pos.x, _pos.y, _pos.z);
+	int goal = -1;
+	std::unordered_map<int, int> cost, from, buried;
 	using Entry = std::pair<int, int>;
 	std::priority_queue<Entry, std::vector<Entry>, std::greater<Entry> > open;
 	cost[start] = 0;
+	buried[start] = countBuried(save, _pos);
 	open.push(std::make_pair(estimate(_pos.x, _pos.y), start));
 	int expanded = 0;
 	while (!open.empty() && expanded < 20000)
@@ -1006,9 +1234,10 @@ bool BattleVehicle::findPath(SavedBattleGame *save, Position target, std::vector
 		const Entry top = open.top();
 		open.pop();
 		const int current = top.second;
-		const int cx = current % width, cy = current / width;
-		if (current == goal)
+		const int cx = current % width, cy = current / width % length, cz = current / (width * length);
+		if (cx == target.x && cy == target.y)
 		{
+			goal = current;
 			break;
 		}
 		if (top.first - estimate(cx, cy) > cost[current])
@@ -1016,33 +1245,45 @@ bool BattleVehicle::findPath(SavedBattleGame *save, Position target, std::vector
 			continue; // a better way to this position was found after this entry
 		}
 		++expanded;
+		const int currentBuried = buried[current];
 		for (int dir = 0; dir < 8; ++dir)
 		{
 			Position v;
 			Pathfinding::directionToVector(dir, &v);
-			if (!canStep(cx, cy, v))
+			const Fit fit = fitsAt(cx + v.x, cy + v.y, cz, currentBuried);
+			const bool diagonal = v.x != 0 && v.y != 0;
+			if (fit.z < 0 || (diagonal && (fitsAt(cx + v.x, cy, cz, currentBuried).z < 0 || fitsAt(cx, cy + v.y, cz, currentBuried).z < 0)))
 			{
 				continue;
 			}
-			const int next = (cy + v.y) * width + (cx + v.x);
-			const int newCost = cost[current] + ((v.x != 0 && v.y != 0) ? 3 : 2) + (fitsAt(cx + v.x, cy + v.y) > 0 ? 2 : 0);
+			const int next = nodeAt(cx + v.x, cy + v.y, fit.z);
+			int step = diagonal ? 3 : 2;
+			if (fit.z > cz)
+			{
+				step = step * 3 / 2;
+			}
+			const int newCost = cost[current] + step + (fit.crushed > 0 ? 2 : 0);
 			auto known = cost.find(next);
 			if (known == cost.end() || newCost < known->second)
 			{
+				if (known == cost.end())
+				{
+					buried[next] = countBuried(save, Position(cx + v.x, cy + v.y, fit.z));
+				}
 				cost[next] = newCost;
 				from[next] = current;
 				open.push(std::make_pair(newCost + estimate(cx + v.x, cy + v.y), next));
 			}
 		}
 	}
-	if (from.find(goal) == from.end())
+	if (goal == -1)
 	{
 		error = "STR_VEHICLE_NO_ROUTE";
 		return false;
 	}
 	for (int at = goal; at != start; at = from[at])
 	{
-		path.push_back(Position(at % width, at / width, _pos.z));
+		path.push_back(Position(at % width, at / width % length, at / (width * length)));
 	}
 	std::reverse(path.begin(), path.end());
 	return true;
@@ -1065,6 +1306,8 @@ const char *BattleVehicle::getMoveResultString(MoveResult result)
 		return "STR_VEHICLE_BLOCKED_BY_UNIT";
 	case MOVE_BLOCKED_TERRAIN:
 		return "STR_VEHICLE_BLOCKED_BY_TERRAIN";
+	case MOVE_TOO_STEEP:
+		return "STR_VEHICLE_TOO_STEEP";
 	default:
 		return "";
 	}

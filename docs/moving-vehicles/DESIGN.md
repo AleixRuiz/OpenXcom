@@ -1,6 +1,6 @@
 # Moving Vehicles for OXCE — Design
 
-Last updated 2026-10-28 · Aleix Ruiz Sorribes
+Last updated 2026-10-29 · Aleix Ruiz Sorribes
 
 Why each game design choice was made, and what we turned down, is logged in [GAME_DESIGN_DECISIONS.md](GAME_DESIGN_DECISIONS.md).
 
@@ -112,7 +112,7 @@ crafts:
       pieces: []              # rectangles [x, y, width, length] in map tiles, for split: rects
       driverSeats: [[2, 4, 0]] # map tiles a unit must stand on to drive; empty = any tile of the vehicle
       drivers: []             # armor types allowed to drive; empty = any unit of the owner's side that can walk
-      tuPerTile: 4            # time units per tile, paid by the vehicle and its driver (diagonal x1.5)
+      tuPerTile: 4            # time units per tile, paid by the vehicle and its driver (diagonal or climbing x1.5)
       timeUnits: 48           # the vehicle's own time units per turn; default 10 x tuPerTile
       tuPerQuarterTurn: 8     # time units per quarter turn
       crushArmor: 100         # terrain parts with this armor or less are crushed
@@ -150,7 +150,7 @@ What the MVP build reads, ready for the wiki. All keys are optional; a craft wit
 | `pieces` | list of `[x, y, width, length]` | none | Rectangles in craft map tiles, for `split: rects`. Each must fit inside every map block of the craft. |
 | `driverSeats` | list of `[x, y, z]` | none | Craft map tiles a unit must stand on to drive the vehicle they belong to. Without seats, any unit on board can drive. Seats outside every vehicle are ignored with a warning in the log. |
 | `drivers` | list of armor types | none | Armors allowed to drive. Without it, any unit of the vehicle's side that can walk drives; units that can't walk (mounted guns) only drive when their armor is listed. |
-| `tuPerTile` | integer | 4 | Time units per straight step, paid by both the vehicle and its driver; a diagonal step costs half as much again. |
+| `tuPerTile` | integer | 4 | Time units per straight step, paid by both the vehicle and its driver; a diagonal step and climbing a level each cost half as much again. |
 | `timeUnits` | integer | 10 × `tuPerTile` | The vehicle's own time units per turn, filled up at the start of its side's turn. However many crew take turns driving, the vehicle never goes further than this in one turn. |
 | `crushArmor` | integer | 0 | Terrain parts with this armor or less are destroyed when the vehicle drives through them, with whatever they turn into. Indestructible (255), explosive, lift, exit, start and mission objective parts always block. |
 
@@ -187,7 +187,7 @@ Any crew member standing on a driver seat can drive, using a drive mode they swi
 
 **Time units and interruptions**
 
-- Each step costs `tuPerTile` per tile (x1.5 diagonal) and `tuPerQuarterTurn` per quarter turn, paid both by the driver and by the vehicle's own `timeUnits`, which fill up at the start of its side's turn. Swapping drivers lets a fresh crew member take over, but never takes the vehicle further than its time units in one turn (see [GD-16](GAME_DESIGN_DECISIONS.md#gd-16--vehicles-have-their-own-time-units-per-turn)).
+- Each step costs `tuPerTile` per tile (x1.5 diagonal, x1.5 climbing a level) and `tuPerQuarterTurn` per quarter turn, paid both by the driver and by the vehicle's own `timeUnits`, which fill up at the start of its side's turn. Swapping drivers lets a fresh crew member take over, but never takes the vehicle further than its time units in one turn (see [GD-16](GAME_DESIGN_DECISIONS.md#gd-16--vehicles-have-their-own-time-units-per-turn)).
 - The route preview counts down whichever is lower, the driver's or the vehicle's time units.
 - Driving stops like walking does: the driver or the vehicle out of time units, a new enemy spotted, reaction fire, or something in the way.
 - Later, the driver's skill can make each tile cheaper, rewarding dedicated drivers (see [GD-17](GAME_DESIGN_DECISIONS.md#gd-17--skilled-and-dedicated-drivers-make-a-vehicle-go-further)).
@@ -205,14 +205,23 @@ A step is allowed only when every tile of the vehicle's new footprint is free, c
 | An enemy or civilian unit | Run over if `runOverDamage` > 0, else blocked; a survivor stops the vehicle ("rammed") |
 | Solid terrain with armor up to `crushArmor` | Crushed, along with whatever it turns into when destroyed |
 | Solid terrain that is indestructible (armor 255), explosive, a lift, an exit, a start tile or a mission objective | Blocked |
+| Raised ground on the vehicle's level (slopes, bumps) | Hidden under the vehicle while it stands there |
+| Ground of the level above (a hilltop, or ground filling the tile) | The vehicle climbs onto it if its middle stays over ground; otherwise blocked. Never crushed |
 
 **Where terrain counts as solid.** Inside the vehicle (tiles with its floor), any wall or object in the way blocks or is crushed. At its edges, only the parts the vehicle itself would occupy count, so it can drive alongside a fence.
 
-**Levels.** A ground vehicle never changes level; slopes and stairs are out of scope. A flying vehicle (`fly: true`) climbs or descends one level per step, and needs the same free footprint to land.
+**Levels.** A ground vehicle rests on the highest ground under it ([GD-18](GAME_DESIGN_DECISIONS.md#gd-18--ground-vehicles-rest-on-the-highest-ground-under-them)):
+
+- Ground is floors, raised parts units walk on, and solid parts filling their tile with a floor on top (hill rock). A part filling its tile is the ground of the level above. Other solid parts are obstacles, as above.
+- Raised ground on the vehicle's own level is hidden under it; lower ground is bridged, as under a landed Skyranger; the next level's ground lifts it. Each column counts from the vehicle's lowest tile in it, so a craft stands on its landing gear.
+- It climbs or comes down one level per step, and no part of it may be over ground two levels or more below it.
+- The ground under its middle must be less than a level below it, so it can't climb where its middle would hang. At a ledge it tips over and comes down a level, its back end standing in the ledge; it can then drive away from the ledge, never further into higher ground.
+
+A flying vehicle (`fly: true`, M3) climbs or descends one level per step, and needs the same free footprint to land.
 
 **Gravity.** Units and items left behind on tiles the vehicle leaves fall, and so does anything standing on terrain it crushes.
 
-**Steps.** Diagonal steps cost 1.5 times a straight one and can't cut corners: the vehicle must also fit on both straight steps around a diagonal.
+**Steps.** Diagonal steps cost 1.5 times a straight one, and so does climbing a level (2.25 times for a diagonal climb). Diagonal steps can't cut corners: the vehicle must also fit on both straight steps around a diagonal.
 
 ## Turning and facing
 

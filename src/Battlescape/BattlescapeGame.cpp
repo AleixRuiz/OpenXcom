@@ -2088,8 +2088,8 @@ const BattleVehicle *BattlescapeGame::getDrivePreview(Position &stop) const
 }
 
 /**
- * Drives the selected unit's vehicle so that the unit ends up at the clicked tile, on the vehicle's
- * level. With path preview on, the first click shows the route of the vehicle's center, the time
+ * Drives the selected unit's vehicle so that the unit ends up over the clicked tile, on whatever
+ * level the ground there takes it to. With path preview on, the first click shows the route of the vehicle's center, the time
  * units left after each step and a see-through vehicle where it stops; a second click on the same
  * tile drives. Shift drives on past newly spotted enemies, as for walking.
  * @param pos Clicked position on the map.

@@ -114,6 +114,7 @@ void VehicleDriveBState::think()
 		return;
 	}
 
+	const int level = _vehicle->getPosition().z;
 	const BattleVehicle::MoveResult result = _vehicle->move(save, delta);
 	if (result != BattleVehicle::MOVE_OK)
 	{
@@ -134,6 +135,11 @@ void VehicleDriveBState::think()
 	if (driver->getFaction() == FACTION_PLAYER && !camera->isOnScreen(driver->getPosition(), true, 0, false))
 	{
 		camera->centerOnPosition(driver->getPosition());
+	}
+	if (driver->getFaction() == FACTION_PLAYER && _vehicle->getPosition().z != level)
+	{
+		// the camera goes up or down a level with the vehicle, as it does with a walking unit
+		camera->setViewLevel(driver->getPosition().z);
 	}
 	save->getBattleState()->updateSoldierInfo(false);
 

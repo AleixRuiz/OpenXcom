@@ -1,6 +1,6 @@
 # Moving Vehicles — MVP test plan
 
-Last updated 2026-10-28 · Aleix Ruiz Sorribes
+Last updated 2026-10-29 · Aleix Ruiz Sorribes
 
 OXCE has no automated tests (see [NOTES.md](NOTES.md)), so the MVP is checked in two ways: scripted launches for what can be checked without playing, and this in-game plan for the rest. Each line says what to do and what should happen; tick it when it does.
 
@@ -63,6 +63,19 @@ The game takes `-user <folder>` and `-cfg <folder>` on the command line, so a te
 - [ ] The drive stops when a soldier on board spots a new enemy; Shift+click drives on past them.
 - [ ] Where the vehicle stood when the battle started, the ground is back after it drives away: no holes in the floor.
 
+**Hills**
+
+Use a hilly map: a vanilla mountain or forest Quick Battle, or a Rosigma outdoor map.
+
+- [ ] Drive up a gentle hill: the vehicle stays level, the slope disappears under it and comes back after it leaves, and it goes up a level when its front reaches the hilltop. The camera goes up with it.
+- [ ] The route preview over a hill shows its arrows on the levels the vehicle will be on, and the ghost stands on the hilltop.
+- [ ] A step that climbs a level costs half as much again (6 instead of 4 for a Chimera); coming down costs the usual.
+- [ ] A cliff (a whole level up in one tile) can't be climbed: the route goes around it, or "No route for the vehicle!".
+- [ ] Drive off a one-level ledge: the vehicle comes down when its middle passes the edge, its back end in the ledge until it drives on.
+- [ ] The vehicle never digs into a hill: mountain rock is never crushed.
+- [ ] Soldiers on board ride up and down with it. A soldier standing under the raised end of a vehicle stops it from coming down onto them.
+- [ ] Save on a hilltop and load: the vehicle is still there and drives on.
+
 **Saves**
 
 - [ ] Drive, save, and load the save: every vehicle, soldier, item and crushed tile is where it was, and the vehicle can keep driving.
@@ -71,4 +84,5 @@ The game takes `-user <folder>` and `-cfg <folder>` on the command line, so a te
 
 - [ ] Start several Quick Battles in a row, on different missions, with the demo mod on and off: the battle screen opens every time.
 - [ ] With drive mode off, soldiers walk, kneel, shoot and open doors as usual, also inside the vehicle.
+- [ ] On flat ground, driving works and costs exactly as before the hills phase.
 - [ ] A battle without the demo mods plays exactly as before.

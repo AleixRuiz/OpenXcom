@@ -28,14 +28,14 @@ Why moving vehicles plays the way it does. Each entry records a game design choi
 | [GD-08](#gd-08--light-terrain-is-crushed-special-terrain-always-blocks) | Light terrain is crushed, special terrain always blocks | Decided | M1 |
 | [GD-09](#gd-09--driving-stops-when-a-new-enemy-is-seen) | Driving stops when a new enemy is seen | Decided | M1 |
 | [GD-10](#gd-10--vehicles-never-push-or-crush-each-other) | Vehicles never push or crush each other | Decided | M1 |
-| [GD-11](#gd-11--ground-vehicles-stay-on-their-level) | Ground vehicles stay on their level | Decided, GD-18 would replace it | M1 |
+| [GD-11](#gd-11--ground-vehicles-stay-on-their-level) | Ground vehicles stay on their level | Replaced by GD-18 | M1 |
 | [GD-12](#gd-12--no-vehicle-health) | No vehicle health | Decided | M1 |
 | [GD-13](#gd-13--craft-maps-first-ufo-vehicles-with-ai-drivers) | Craft maps first, UFO vehicles with AI drivers | Decided | M1, M2 |
 | [GD-14](#gd-14--ai-drivers-follow-the-players-rules) | AI drivers follow the player's rules | Decided | M2 |
 | [GD-15](#gd-15--turning-only-to-facings-the-art-can-show) | Turning only to facings the art can show | Decided | M3 |
 | [GD-16](#gd-16--vehicles-have-their-own-time-units-per-turn) | Vehicles have their own time units per turn | Decided | M1 |
 | [GD-17](#gd-17--skilled-and-dedicated-drivers-make-a-vehicle-go-further) | Skilled and dedicated drivers make a vehicle go further | Direction agreed | M2 and later |
-| [GD-18](#gd-18--ground-vehicles-rest-on-the-highest-ground-under-them) | Ground vehicles rest on the highest ground under them | Proposed | M1, Phase 7 |
+| [GD-18](#gd-18--ground-vehicles-rest-on-the-highest-ground-under-them) | Ground vehicles rest on the highest ground under them | Decided | M1, Phase 7 |
 
 ## Decisions
 
@@ -137,13 +137,13 @@ Decided · 2026-10-28
 
 ### GD-11 · Ground vehicles stay on their level
 
-Decided · 2026-10-28
+*Replaced by [GD-18](#gd-18--ground-vehicles-rest-on-the-highest-ground-under-them)* · 2026-10-29 · decided 2026-10-28
 
 **Decision.** A ground vehicle never changes level; slopes and stairs are out of scope. Only flying vehicles (M3) climb or descend.
 
 **Why.** Craft maps are flat, and a vehicle that tilts has no art.
 
-**Revisit.** Hilly maps change level all the time; [GD-18](#gd-18--ground-vehicles-rest-on-the-highest-ground-under-them) proposes how ground vehicles follow them.
+**Replaced.** Hilly maps change level all the time, and a vehicle that stays on its level drives into hills. [GD-18](#gd-18--ground-vehicles-rest-on-the-highest-ground-under-them) lets ground vehicles follow the ground.
 
 ### GD-12 · No vehicle health
 
@@ -241,22 +241,23 @@ Direction agreed · 2026-10-28 · not for the MVP
 
 ### GD-18 · Ground vehicles rest on the highest ground under them
 
-Proposed · 2026-10-29 · would replace [GD-11](#gd-11--ground-vehicles-stay-on-their-level)
+Decided · 2026-10-29 · built in Phase 7 · replaces [GD-11](#gd-11--ground-vehicles-stay-on-their-level)
 
-**Problem.** OXCE builds a hill from raised ground: terrain parts with a negative terrain level, in steps of a few voxels (a level is 24), rising over two or three tiles until the hilltop, which is the floor of the level above. Units take it one tile at a time: they step up at most 8 voxels and move up a level once the ground under them is raised 16 or more. A vehicle can't do that. It is a flat, rigid block several tiles long that always sits on a whole level, because its art can't tilt, so on a slope it covers ground of different heights, and on a terraced hill ground of two or three levels.
+**Problem.** OXCE builds a hill from raised ground (terrain parts with a negative terrain level, rising 4 to 8 voxels per tile; a level is 24) up to a hilltop: the floor of the level above, resting on parts that fill their tile up to it. In vanilla that fill is solid rock in the mountain blocks and ground units walk onto in the forest blocks. Hills rise a level over 3 or 4 tiles, and some mountain blocks go up to level 2, with cliffs. Units take it one tile at a time: they step up at most 8 voxels and move up a level once the ground under them is raised 16 or more. A vehicle can't: it is a flat, rigid block several tiles long that always sits on a whole level, because its art can't tilt, so on a slope it covers ground of different heights, and on a terraced hill ground of two or three levels.
 
-Today a ground vehicle never changes level, and raised ground isn't in its way, since units can walk on it. So it drives into slopes and they stay inside it: they show through its floor and lift the passengers standing on them. Hilltops are solid terrain below the next level's floor, and stop it or get crushed. This isn't rare: the vanilla terrain files have about 190 raised parts units walk on, in 13 sets (MOUNT, FOREST, DESERT, MARS, POLAR and URBAN among them), and Rosigma's about 3,400, most of them low bumps of 2 to 8 voxels.
+Under GD-11 a vehicle stayed on its level. Raised ground under it was already hidden, since a vehicle takes the object slot of every tile it covers, but it drove into hills: walkable hill fill was hidden like a slope, and solid hill rock was crushed when weak enough (vanilla mountain rock has armor 50, the Rosigma Chimera crushes up to 100), digging a tunnel under the hilltop. Raised ground is common: the terrain files have about 190 raised parts units walk on in 13 vanilla sets, and about 3,400 in Rosigma.
 
-**Proposal.** The vehicle rests on the highest ground under it, like a box on an uneven floor.
+**Decision.** The vehicle rests on the highest ground under it, like a box on an uneven floor.
 
-- **Its level.** For each column of its footprint, find the ground under the vehicle's lowest part in that column, and put the vehicle on the level of the highest. Ground raised less than a full level doesn't lift it; the next level's floor does. Measuring under the lowest part means a Skyranger stands on its landing gear, not on its belly.
-- **Raised ground under it is hidden, not crushed.** Slopes and bumps on the vehicle's own level are covered by it while it stands there and come back when it leaves, as floors do today. Walls and objects in the way follow the crush rules ([GD-08](#gd-08--light-terrain-is-crushed-special-terrain-always-blocks)) as before.
-- **Lower ground is bridged.** Where the ground falls away, the vehicle hangs over it, as a landed Skyranger's body does. Units can walk underneath; if the vehicle would come down onto them, they block it ([GD-07](#gd-07--units-always-block-in-the-mvp)).
-- **Two levels at most.** Its footprint may cover ground of two neighbouring levels, so it climbs or drops one level per step. A drop of two levels or more under any part of it blocks it, so a long vehicle can't cross terraces narrower than it is long.
-- **When it climbs.** Uphill, the vehicle goes up a level when its front reaches the hilltop; downhill, it comes down when its rear leaves it.
-- **Route.** The route search stays a search over tiles, since the level at each step follows from the ground there. The preview and the ghost show the level the vehicle will be on.
+- **What is ground.** Floors; raised parts units walk on (slopes, forest hills); and solid parts filling their tile up to the next level with a floor on top (mountain rock). A part that fills its tile is the ground of the level above. Other solid parts (crates, sandbags, walls) stay obstacles, crushed or blocking as before ([GD-08](#gd-08--light-terrain-is-crushed-special-terrain-always-blocks)). Ground is never crushed.
+- **Its level.** For each column of its footprint, take the ground under the vehicle's lowest tile there, and put the vehicle on the level of the highest. Raised ground on its own level is hidden under it while it stands there and comes back when it leaves; lower ground is bridged, as under a landed Skyranger's body. Measuring under the lowest tile means a Skyranger stands on its landing gear, not on its belly.
+- **One level per step**, and no part of it over ground two levels or more below it.
+- **Its middle needs ground.** The ground under its middle must be less than a level below it, so it can't climb where its middle would hang, and a long vehicle can't climb a hill that rises a level in less than about half its length.
+- **Coming off a ledge.** Where its middle would hang, it tips over instead and comes down a level, its back end standing in the ledge (hidden under it). It can drive on away from the ledge but never further into higher ground, so it can't climb a cliff that way. It can also come down slopes it couldn't climb.
+- **Climbing costs more.** A step that climbs a level costs half as much again; a diagonal climb costs 2.25 times `tuPerTile`. Coming down costs the usual.
+- **Driving it.** The route search plans over tiles and levels, the level of each step following from the ground. The preview and the ghost show the levels, and the camera goes up and down a level with the vehicle, as it does with a walking unit. If the ground has changed since the route was planned, the step is refused with "The ground is too steep for the vehicle!".
 
-**Why.** Everything higher than the vehicle's own level is a real obstacle, so it never has to hide another level's floor or the units standing on it. One rule covers bumps, slopes, ramps and terraces, the vehicle stays level as its art requires, and players can predict it: a vehicle gets onto a hill when its front does.
+**Why.** A vehicle resting on the highest ground only stands in higher ground where it came off a ledge, so it climbs hills instead of digging into them, and never hides another level's floor or the units on it while driving uphill. One rule covers bumps, slopes, ramps and terraces, the vehicle stays level as its art requires, and players can predict it: a vehicle gets onto a hill when its front does. A simulation of the rule on the vanilla mountain and forest blocks showed a 3x4 and a 4x6 vehicle climbing mountain hills to level 2 and forest hills to level 1, coming down cliffs, and able to drive back from every place they reached.
 
 **Turned down.**
 
@@ -266,8 +267,12 @@ Today a ground vehicle never changes level, and raised ground isn't in its way, 
 - Tilting vehicles, or a map per slope: art nobody has.
 - Vehicles in sections that follow the ground separately: a vehicle is one map with an interior, and splitting it breaks the interior.
 
-**Open.**
+**Settled with it.**
 
-- Whether climbing a level costs more than a normal step.
-- Whether a long vehicle needs ground under its middle, so it can't balance on its bumper over a drop.
-- Whether it may drive off a one-level ledge, or only down slopes.
+- Climbing a level costs 1.5 times a normal step; coming down costs the same as on flat ground.
+- The middle needs ground less than a level below it.
+- A vehicle may drive off a one-level ledge (it tips), but never climbs one.
+- Solid parts filling a tile with nothing on top (sandbags, crates) stay obstacles, so a sandbag line is crushed, not climbed.
+- Parts filling a tile that units walk onto are ground even when they stand alone (a crate soldiers climb), so a vehicle that can't climb onto one is blocked rather than crushing it.
+
+**Revisit when.** Rosigma maps show lone walkable crates blocking vehicles where players expect them crushed.

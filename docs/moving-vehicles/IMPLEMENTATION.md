@@ -1,10 +1,10 @@
 # Moving Vehicles — MVP implementation plan
 
-Last updated 2026-10-28 · Aleix Ruiz Sorribes
+Last updated 2026-10-29 · Aleix Ruiz Sorribes
 
 The [MVP](MVP.md) is built in phases on the `moving-vehicles` branch. Each phase builds cleanly and lands as its own commit (pushed to the fork), so the history reads as a series of reviewable steps that can be rolled back one by one. Findings and ideas met on the way go to [NOTES.md](NOTES.md); the in-game checks are collected in [TESTING.md](TESTING.md).
 
-All six phases are written, built and committed. Everything that can be checked without playing passed; the in-game checks are still to do. Phase 6 was added after the first five, when testing showed that swapping drivers let a vehicle drive without limit.
+All seven phases are written, built and committed. Everything that can be checked without playing passed; the in-game checks are still to do. Phase 6 was added after the first five, when testing showed that swapping drivers let a vehicle drive without limit, and Phase 7 when we looked at hilly maps, where a vehicle staying on its level drove into hills.
 
 | Phase | Delivers | Playable result | Commit |
 | --- | --- | --- | --- |
@@ -13,7 +13,8 @@ All six phases are written, built and committed. Everything that can be checked 
 | 3. Driving engine | The drive step, route search and the drive state | A crew member on a seat drives by clicking a tile | `587225250` |
 | 4. Controls | Drive mode, Drive button and hotkey, route preview and ghost | The full MVP driving experience | `38139c20f` |
 | 5. Finish | Messages, demo mods, ruleset reference, test plan | The MVP "Done when" list is ticked | `c9b3a4e4d` |
-| 6. Vehicle time units | The vehicle's own `timeUnits` per turn, paid with the driver's | Swapping drivers no longer takes a vehicle further | the commit that adds this row |
+| 6. Vehicle time units | The vehicle's own `timeUnits` per turn, paid with the driver's | Swapping drivers no longer takes a vehicle further | `296b0782c` |
+| 7. Hills | Ground vehicles rest on the highest ground under them and change level as they drive | Vehicles drive up and down hills instead of into them | the commit that adds this row |
 
 Rules for every phase:
 
@@ -137,3 +138,27 @@ Decided in [GD-16](GAME_DESIGN_DECISIONS.md#gd-16--vehicles-have-their-own-time-
 - [ ] The in-game checks under "Vehicle time units" in [TESTING.md](TESTING.md).
 
 **Commit:** `Moving vehicles: vehicles have their own time units per turn`
+
+## Phase 7: Hills
+
+Decided in [GD-18](GAME_DESIGN_DECISIONS.md#gd-18--ground-vehicles-rest-on-the-highest-ground-under-them): a vehicle staying on its level drove into hills, hiding walkable hill fill and digging through weak hill rock.
+
+**Approach**
+
+- All in `BattleVehicle`, reading terrain as if the vehicle weren't there (`getTerrain`: under its own tiles, the terrain it covers), so planning and driving use the same rules.
+- `isGround` tells ground (floors, walkable raised parts, solid parts filling their tile under a floor) from obstacles; `getGroundRaise` and `getGroundHeight` give the ground of a tile and of a column, a filled tile counting as the ground of the level above.
+- `findLevel` picks the level for a place: the highest ground under the footprint (each column from the vehicle's lowest tile there), one level per step, nothing two levels below, ground under the middle, tipping at ledges, and never further into higher ground (`countBuried`).
+- `checkPlace` judges the terrain the same way and never crushes ground; a vehicle's lowest tiles may stand in hill fill only after coming off a ledge.
+- `move` takes the level from `findLevel` and moves passengers, items and route nodes up or down with it; a step whose ground changed since planning is refused with `STR_VEHICLE_TOO_STEEP`.
+- The route search plans over tiles and levels, climbing a level costing half as much again; `getStepCost` charges climbing the same way.
+- `VehicleDriveBState` moves the camera's view level with the driver when the vehicle changes level, as walking does.
+- No ruleset keys and no save changes: a vehicle's position already has its level.
+
+**Checks**
+
+- [x] Builds with no new warnings.
+- [x] The rule, simulated on the vanilla mountain and forest blocks (MCD and MAP files read by a script), lets a 3x4 and a 4x6 vehicle climb hills to levels 1 and 2 and come down cliffs, and never strands it where it can't drive back.
+- [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
+- [ ] The in-game checks under "Hills" in [TESTING.md](TESTING.md).
+
+**Commit:** `Moving vehicles: ground vehicles follow hills`
