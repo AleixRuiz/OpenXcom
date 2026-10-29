@@ -4,7 +4,7 @@ Last updated 2026-10-29 · Aleix Ruiz Sorribes
 
 The [MVP](MVP.md) is built in phases on the `moving-vehicles` branch. Each phase builds cleanly and lands as its own commit (pushed to the fork), so the history reads as a series of reviewable steps that can be rolled back one by one. Findings and ideas met on the way go to [NOTES.md](NOTES.md); the in-game checks are collected in [TESTING.md](TESTING.md).
 
-All seven phases are written, built and committed. Everything that can be checked without playing passed; the in-game checks are still to do. Phase 6 was added after the first five, when testing showed that swapping drivers let a vehicle drive without limit, and Phase 7 when we looked at hilly maps, where a vehicle staying on its level drove into hills.
+All seven phases are written, built and committed, and the test plan was played on 2026-10-29; the two problems it found are fixed (see Phase 7), and the reopened lines are to play again. Phase 6 was added after the first five, when testing showed that swapping drivers let a vehicle drive without limit, and Phase 7 when we looked at hilly maps, where a vehicle staying on its level drove into hills.
 
 | Phase | Delivers | Playable result | Commit |
 | --- | --- | --- | --- |
@@ -14,7 +14,7 @@ All seven phases are written, built and committed. Everything that can be checke
 | 4. Controls | Drive mode, Drive button and hotkey, route preview and ghost | The full MVP driving experience | `38139c20f` |
 | 5. Finish | Messages, demo mods, ruleset reference, test plan | The MVP "Done when" list is ticked | `c9b3a4e4d` |
 | 6. Vehicle time units | The vehicle's own `timeUnits` per turn, paid with the driver's | Swapping drivers no longer takes a vehicle further | `296b0782c` |
-| 7. Hills | Ground vehicles rest on the highest ground under them and change level as they drive | Vehicles drive up and down hills instead of into them | the commit that adds this row |
+| 7. Hills | Ground vehicles rest on the highest ground under them and change level as they drive | Vehicles drive up and down hills instead of into them | `1f3e5ed95`, fixes `ec5f200dd` |
 
 Rules for every phase:
 
@@ -114,7 +114,7 @@ Rules for every phase:
 - [x] Both demo mods load with no validation messages (the Rosigma seats are checked against the real Chimera, Steel Legion Chimera and Baneblade maps).
 - [ ] Every item of the MVP "Done when" list is ticked.
 
-**Commit:** `Moving vehicles: messages, demo mods and ruleset reference` (one or more commits, then the MVP is ready to pitch)
+**Commit:** `Moving vehicles: messages, demo mods and ruleset reference` (one or more commits)
 
 ## Phase 6: Vehicle time units
 

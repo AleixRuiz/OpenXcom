@@ -53,13 +53,17 @@ The Rosigma prototype proved the concept works on real mod art, but it was built
 
 ## Upstream strategy
 
-We offer OXCE a small core first and keep everything else as separate follow-ups, so each piece can be accepted or declined on its own. Only OXCE collaborators can open pull requests, so the work lives on our fork (`AleixRuiz/OpenXcom`, branch `moving-vehicles`) and is pitched on the openxcom.org forum.
+We show OXCE the whole mechanic, and offer it in pieces. The fork (`AleixRuiz/OpenXcom`, branch `moving-vehicles`) builds M1 to M3 first, and the forum pitch shows them working in a real Rosigma tank battle: the convoy interception showcase, with vehicles that turn. The offer stays split: the core first, then each follow-up on its own, so OXCE can accept or decline any piece. Only OXCE collaborators can open pull requests, so the work lives on our fork and is pitched on the openxcom.org forum.
+
+**Why show it all first** (decided 2026-10-29). A core that only drives is hard to judge: what makes vehicles worth having is the battle around them, with the AI driving, running over, reaction fire and turning. Showing the full mechanic offers OXCE the best version; if they take less, for art limits or any other reason, that is a scale-down decided with the whole feature in view, not one we made for them in advance.
+
+**The risk we accept.** M2 and M3 are built before OXCE answers, so some of that work may need redoing if they reshape the core. Each follow-up stays its own series of commits on top of the core, never changing it in passing, so the core can still be offered alone.
 
 | Tier | Contents | Where it lives |
 | --- | --- | --- |
-| Core | Craft maps that move with what's on board, driving by a crew member, route preview, terrain that blocks or is crushed, saves (see [MVP](MVP.md)) | Pitched to OXCE first |
-| Follow-ups | Running over units, reaction fire rules, UFO vehicles with AI driving, turning, flying, choosing where drop pods land | Pitched one by one after the core |
-| Mod side | Rosigma vehicles, showcase missions, any art-specific tricks | Rosigma rulesets, never in the engine |
+| Core | Craft maps that move with what's on board, driving by a crew member, route preview, terrain that blocks or is crushed, hills, saves (see [MVP](MVP.md)) | Offered to OXCE first |
+| Follow-ups | Running over units, reaction fire rules, UFO vehicles with AI driving, turning, flying, choosing where drop pods land | Built and shown before the pitch, offered one by one after the core |
+| Mod side | Rosigma vehicles, showcase missions, the art for facings Rosigma's vehicles lack, any art-specific tricks | Rosigma rulesets and art, never in the engine |
 
 If OXCE declines or reshapes the core, the fork keeps working and Rosigma can ship it as a custom build. That choice belongs to the Rosigma team.
 
@@ -244,6 +248,8 @@ The north map must keep the same layout turned 180 degrees, so units, items and 
 
 **Rules for a turn.** The turned footprint must fit like any step: it crushes, runs over or is blocked. Units on board turn with the vehicle, and mounted guns face its front.
 
+**Art for the showcase.** Rosigma's Chimera has no art from behind. For the pitch, its north-facing map is drafted with AI image tools from its existing tiles, then cut into tiles, brought into the game's palette and checked in game. It is Rosigma's art, so the drafts stay in the showcase mod; using them in Rosigma is the Rosigma team's call. The engine only reads `facingMaps`, whoever draws them.
+
 **Out of scope.** Diagonal facings need art drawn at 45 degrees. The prototype's yellow facing arrow is a showcase hack and stays out of the engine.
 
 ## Combat interactions
@@ -362,16 +368,17 @@ The titan idea (one huge unit made of part units) stays parked: it is a separate
 
 ## Roadmap
 
-The core MVP (M1) is the first thing we ask OXCE to take; each later phase, the drop pod side track and the showcase missions follow only what they depend on.
+M1, the core, is built and tested. M2, the convoy interception showcase and M3 come next, all before the pitch (see [Upstream strategy](#upstream-strategy)). The pitch then offers the core first and each follow-up after it.
 
 ```mermaid
 flowchart LR
-    M0["M0 Design<br/>This document<br/>Forum pitch<br/>Fork branch ready"] -- OXCE answers --> M1["M1 Core MVP<br/>Moving maps<br/>Crew driving<br/>Crushing and saves"]
-    M1 -- Demo on vanilla and Rosigma --> M2["M2 Combat, AI<br/>Reaction fire<br/>Running over<br/>AI drivers"]
-    M2 -- Convoy plays --> M3["M3 Turn and fly<br/>Mirror turning<br/>Per-facing maps<br/>Flying"]
-    M1 --> PODS["Side track: drop pod landing<br/>its own pitch, right after the core"]
-    M2 --> CONVOY["Showcase: convoy mission"]
+    M1["M1 Core MVP<br/>Moving maps, crew driving<br/>Crushing, hills, saves<br/>Done"] --> M2["M2 Combat, AI<br/>Reaction fire<br/>Running over<br/>AI drivers"]
+    M2 -- Convoy plays --> CONVOY["Showcase:<br/>convoy interception"]
+    CONVOY --> M3["M3 Turn and fly<br/>Mirror turning<br/>Per-facing maps<br/>Flying"]
+    M3 -- Tank battle on video --> PITCH["Forum pitch<br/>Whole mechanic shown<br/>Offered in pieces"]
+    PITCH -- OXCE answers --> PIECES["Core first,<br/>then each follow-up"]
     M3 --> AIR["Showcase: air boarding"]
+    M1 --> PODS["Side track: drop pod landing<br/>its own pitch"]
 ```
 
 Phases are in order, not to scale: no dates are set yet. Each gate is what must be true before the next phase starts.

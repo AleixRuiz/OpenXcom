@@ -165,6 +165,8 @@ Decided · 2026-10-28
 
 **Why.** An enemy vehicle is pointless until the AI can drive it, and a smaller first pitch is easier for OXCE to accept.
 
+*2026-10-29:* the pitch now waits for M2 and M3 ([upstream strategy](DESIGN.md#upstream-strategy)), so the second reason no longer applies; the first still holds, and the core is still offered first.
+
 ### GD-14 · AI drivers follow the player's rules
 
 Decided · 2026-10-28

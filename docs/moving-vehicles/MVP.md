@@ -2,7 +2,7 @@
 
 Last updated 2026-10-29 · Aleix Ruiz Sorribes
 
-The MVP is milestone M1 of the [design](DESIGN.md#roadmap): the player drives craft maps as vehicles, with the crew and cargo on board, through terrain that blocks or is crushed, and the battle saves and loads with them. It is the first thing we pitch to OXCE, so it must be small, opt-in and clean enough to review.
+The MVP is milestone M1 of the [design](DESIGN.md#roadmap): the player drives craft maps as vehicles, with the crew and cargo on board, through terrain that blocks or is crushed, and the battle saves and loads with them. It is the first piece we offer OXCE, shown together with M2 and M3, so it must be small, opt-in and clean enough to review on its own.
 
 ## What the player can do
 
@@ -31,12 +31,14 @@ The MVP is milestone M1 of the [design](DESIGN.md#roadmap): the player drives cr
 
 ## Not in the MVP
 
+Since 2026-10-29 the pitch waits for M2, the convoy showcase and M3 ([upstream strategy](DESIGN.md#upstream-strategy)), so these are built before OXCE sees the feature, and still offered separately from the core.
+
 | Left out | Comes in | Why it waits |
 | --- | --- | --- |
 | Running over units (units only block) | M2 | Needs damage, kill credit and morale rules |
-| Reaction fire against a driving vehicle | M2 | The rule needs agreement with OXCE first |
+| Reaction fire against a driving vehicle | M2 | Needs its own rule, proposed in the pitch |
 | UFO vehicles and AI drivers | M2 | A UFO vehicle is pointless until the AI can drive it |
-| Turning | M3 | Needs the mirrored-tile engine change, which OXCE should agree to first |
+| Turning | M3 | Needs mirrored tiles in the engine, and art for the facings a vehicle lacks |
 | Flying | M3 | Not needed to prove the core |
 | Choosing where drop pods land | Side track after M1 | Its own feature, pitched separately |
 | Showcase missions, mounted gun lists, extraction and the other ideas | Later | Built on top of M2 and M3 |
