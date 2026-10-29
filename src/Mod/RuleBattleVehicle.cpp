@@ -34,7 +34,7 @@ namespace OpenXcom
  * anyone on board can drive, nothing is crushed, units block it, and the vehicle's time
  * units are set from its cost per tile once the rule is loaded.
  */
-RuleBattleVehicle::RuleBattleVehicle() : _split(SPLIT_CONNECTED), _tuPerTile(4), _timeUnits(-1), _crushArmor(0),
+RuleBattleVehicle::RuleBattleVehicle() : _gunCrew(GUNS_NEED_DRIVER), _split(SPLIT_CONNECTED), _tuPerTile(4), _timeUnits(-1), _crushArmor(0),
 	_runOverDamage(0), _runOverDamageType(DT_MELEE), _aiKeepDistance(6), _driverReactionsZeroPoint(-1), _driverReactionsRange(-1),
 	_runOverDamageRule(nullptr)
 {
@@ -52,6 +52,7 @@ void RuleBattleVehicle::load(const YAML::YamlNodeReader &node)
 	node.tryRead("driverSeats", _driverSeats);
 	node.tryRead("drivers", _driverNames);
 	node.tryRead("driverRanks", _driverRanks);
+	node.tryRead("gunCrew", _gunCrewName);
 	node.tryRead("tuPerTile", _tuPerTile);
 	node.tryRead("timeUnits", _timeUnits);
 	node.tryRead("crushArmor", _crushArmor);
@@ -88,6 +89,19 @@ void RuleBattleVehicle::afterLoad(const Mod *mod, const std::string &type, RuleT
 	else if (mod->checkForSoftError(true, type, "battleVehicle: unknown split '" + _splitName + "', expected connected, rects or whole.", LOG_ERROR))
 	{
 		_split = SPLIT_CONNECTED;
+	}
+
+	if (_gunCrewName.empty() || _gunCrewName == "driver")
+	{
+		_gunCrew = GUNS_NEED_DRIVER;
+	}
+	else if (_gunCrewName == "none")
+	{
+		_gunCrew = GUNS_WORK_ALONE;
+	}
+	else if (mod->checkForSoftError(true, type, "battleVehicle: unknown gunCrew '" + _gunCrewName + "', expected driver or none.", LOG_ERROR))
+	{
+		_gunCrew = GUNS_NEED_DRIVER;
 	}
 
 	if (mod->checkForSoftError(_tuPerTile < 0, type, "battleVehicle: tuPerTile cannot be negative.", LOG_ERROR))

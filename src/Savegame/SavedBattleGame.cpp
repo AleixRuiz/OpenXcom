@@ -1633,13 +1633,14 @@ void SavedBattleGame::endTurn()
 		}
 	}
 
-	// vehicles get their time units back with their side
+	// vehicles get their time units back with their side; guns that need a driver and have none stay silent
 	for (auto* vehicle : _vehicles)
 	{
 		if (vehicle->getFaction() == _side)
 		{
 			vehicle->prepareNewTurn(_rule);
 		}
+		vehicle->silenceGuns(this);
 	}
 
 	//scripts update

@@ -190,7 +190,8 @@ Decided in [GD-18](GAME_DESIGN_DECISIONS.md#gd-18--ground-vehicles-rest-on-the-h
 | 11. AI drivers | Hold, advance or park, once per turn per vehicle | The traitor Chimeras close in on the squad | `13ee31083` |
 | 12. Convoy | Settles [GD-25](GAME_DESIGN_DECISIONS.md#gd-25--convoys-drive-for-the-map-edge); `aiExit` and escaping at the map edge | The convoy tries to drive off the map | built last, after 14 |
 | 13. Driver skill | Layers 1 and 2 of [GD-17](GAME_DESIGN_DECISIONS.md#gd-17--skilled-and-dedicated-drivers-make-a-vehicle-go-further) | A good driver gets further | `0b374aca1` |
-| 14. Enemy drivers | One of the deployed enemies put on each enemy vehicle's seat; `driverRanks`; AI drivers keep their seat | The traitor Chimeras are driven by traitors inside | the commit that ticks this phase |
+| 14. Enemy drivers | One of the deployed enemies put on each enemy vehicle's seat; `driverRanks`; AI drivers keep their seat | The traitor Chimeras are driven by traitors inside | `da4cbb1eb` |
+| 15. Gun crews and hijacking | `gunCrew`; silent guns without a driver; capturing a vehicle and its guns | Killing a driver silences its turrets; taking its seat takes the vehicle | the commit that ticks this phase |
 
 ## Phase 8: Running over
 
@@ -314,3 +315,23 @@ Decided in [GD-27](GAME_DESIGN_DECISIONS.md#gd-27--enemy-vehicles-get-their-driv
 - [ ] The in-game checks under "Enemy drivers" in [TESTING.md](TESTING.md).
 
 **Commit:** `Moving vehicles: enemy vehicles get a driver from their crew`
+
+## Phase 15: Gun crews and hijacking
+
+Decided in [GD-28](GAME_DESIGN_DECISIONS.md#gd-28--a-vehicles-guns-need-its-driver-unless-the-vehicle-says-otherwise) and [GD-29](GAME_DESIGN_DECISIONS.md#gd-29--hijacking-take-the-seat-once-the-crew-is-down). Built before the convoy (Phase 12), whose "board the command vehicle" needs a capture rule.
+
+**Approach**
+
+- `RuleBattleVehicle` reads `gunCrew` (`driver` or `none`).
+- `BattleVehicle::hasDriver` tells whether anyone on board can drive; `silenceGuns` sets the mounted guns' time units to 0 while they need a driver and have none.
+- `BattleVehicle::checkCapture` hands the vehicle to the side whose unit took a seat once its own side on board is down, converts its mounted guns (`BattleUnit::convertToFaction`, as mind control does) and leaves them all without time units; `updateCrews` does both for every vehicle.
+- Called after casualties (`BattlescapeGame::checkForCasualties`) and after every walk (`UnitWalkBState::postPathProcedures`), with the messages `STR_VEHICLE_CAPTURED` and `STR_VEHICLE_TAKEN_BY_ENEMY`; `SavedBattleGame::endTurn` silences guns without a driver when each turn starts.
+- No save changes: the vehicle's side is already saved, and units save their own side.
+
+**Checks**
+
+- [x] Builds with no new warnings.
+- [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
+- [ ] The in-game checks under "Gun crews and hijacking" in [TESTING.md](TESTING.md).
+
+**Commit:** `Moving vehicles: guns need a driver, and vehicles can be hijacked`

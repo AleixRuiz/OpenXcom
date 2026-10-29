@@ -45,6 +45,8 @@ Why moving vehicles plays the way it does. Each entry records a game design choi
 | [GD-25](#gd-25--convoys-drive-for-the-map-edge) | Convoys drive for the map edge | Proposed | M2, Phase 12 |
 | [GD-26](#gd-26--how-driving-skill-counts) | How driving skill counts | Decided | M2, Phase 13 |
 | [GD-27](#gd-27--enemy-vehicles-get-their-driver-from-the-deployed-crew) | Enemy vehicles get their driver from the deployed crew | Decided | M2, Phase 14 |
+| [GD-28](#gd-28--a-vehicles-guns-need-its-driver-unless-the-vehicle-says-otherwise) | A vehicle's guns need its driver, unless the vehicle says otherwise | Decided | M2, Phase 15 |
+| [GD-29](#gd-29--hijacking-take-the-seat-once-the-crew-is-down) | Hijacking: take the seat once the crew is down | Decided | M2, Phase 15 |
 
 ## Decisions
 
@@ -456,3 +458,46 @@ Decided · 2026-10-29 · M2, Phase 14 · follows [GD-02](#gd-02--a-crew-member-d
 - A driver unit spawned by the engine: [GD-02](#gd-02--a-crew-member-drives-no-spawned-driver) turned down spawned drivers.
 
 **Settled with it.** When the driver dies, nobody takes over yet. A crew member walking to the empty seat is a follow-up, judged once this has been played.
+
+### GD-28 · A vehicle's guns need its driver, unless the vehicle says otherwise
+
+Decided · 2026-10-30 · M2, Phase 15
+
+**Problem.** Killing a vehicle's driver stopped it moving, but its mounted guns (Rosigma's turrets, which are units of their own) kept fighting, so the driver mattered little. Some vehicles should still have guns that work by themselves, and a later gunner role may give each gun its own crew.
+
+**Decision.**
+
+- `gunCrew` says who works a vehicle's mounted guns. **`driver`** (the default): the guns work only while someone on board can drive the vehicle; without a driver they have no time units, so they neither act nor react. **`none`**: the guns work by themselves (automated turrets, servitors).
+- A gun silenced during a turn stays silent until a new turn starts, even if someone takes the wheel at once.
+- The same rule for both sides. For the player, a Chimera's turrets work only while a soldier sits on its driver seat; the craft deployment preview lets you put one there from the start.
+- **Later:** `gunners`, each gun worked by a unit on its own gunner seat, and settings per gun, so one vehicle can mix a manned turret and an automated one. The key gets more values then; `driver` stays the default.
+
+**Why.** The driver is the vehicle's crew, so taking them out silences the whole vehicle, which makes boarding or killing the driver the decisive move, as the convoy showcase wants. A default that fits crewed vehicles, with a switch for automated ones, covers mods without per-gun setup for now.
+
+**Turned down.**
+
+- Guns that always keep fighting, the first recommendation: the driver's death should matter more.
+- Silencing guns some other way, such as stunning them: they would drop as bodies or items.
+
+**Settled with it.** Silencing works through time units, so a mod's own scripts that hand turrets time units can override it.
+
+### GD-29 · Hijacking: take the seat once the crew is down
+
+Decided · 2026-10-30 · M2, Phase 15
+
+**Decision.**
+
+- A vehicle changes sides when a unit of another side sits on one of its driver seats (anywhere on board if it has none), allowed by the vehicle's `drivers`, and nobody of the vehicle's side on board can still fight (dead, stunned or gone), its mounted guns aside.
+- **Its mounted guns change sides with it**, as if mind controlled. At the end of the mission they count as mind-controlled enemies do.
+- The vehicle and its guns have no time units until their new side's next turn, so a vehicle can't be taken and driven off in the same turn.
+- The player sees "Vehicle captured!", or "The enemy has taken one of your vehicles!".
+- The same rule holds for both sides, though the AI doesn't go looking for seats yet (a follow-up, with the crew taking over an empty seat).
+- Nothing changes on the Geoscape: a captured vehicle isn't added to your crafts.
+- A mod keeps a vehicle from being hijacked by listing in `drivers` only armors the other side doesn't have.
+
+**Why.** "Clear the crew, take the wheel" is a goal players read at once. Taking the guns along makes a capture worth the fight. Waiting a turn keeps it from being a free escape.
+
+**Turned down.**
+
+- Taking the seat with enemies still on board: they would ride along and could take it straight back.
+- No hijacking: boarding the command vehicle is the heart of the convoy showcase.

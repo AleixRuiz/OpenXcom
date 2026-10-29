@@ -1,0 +1,56 @@
+# The convoy showcase: a New Battle mission, last in the list, against the traitor convoy
+# (the STR_TRAITOR_CHIMERA UFO: three Chimeras, each an enemy vehicle with a traitor at the
+# wheel). Pick the Chimera craft, so both sides drive. Same crew as Rosigma's own convoy battle.
+# It grows into the convoy interception showcase once convoys drive for the map edge (M2 Phase 12).
+alienDeployments:
+  - type: STR_MV_CONVOY_SHOWCASE
+    customUfo: STR_TRAITOR_CHIMERA
+    race: STR_SNAKEMAN  # the traitor guard
+    terrains: [CULTA, PLAINSGRASS]
+    width: 50  # a deployment without a size gets an empty map; Rosigma's convoy battle is 50 x 50
+    length: 50
+    height: 9
+    briefing:
+      title: STR_MV_CONVOY_SHOWCASE
+      desc: STR_MV_CONVOY_SHOWCASE_BRIEFING
+    data:
+      - alienRank: 5
+        lowQty: 9
+        highQty: 9
+        dQty: 4
+        percentageOutsideUfo: 90
+        itemSets: [[], [], []]
+      - alienRank: 5  # guardsmen with alternate weapons
+        lowQty: 3
+        highQty: 3
+        dQty: 0
+        percentageOutsideUfo: 65
+        itemSets: [[], [], []]
+      - alienRank: 3
+        lowQty: 1
+        highQty: 1
+        dQty: 2
+        percentageOutsideUfo: 60
+        itemSets: [[], [], []]
+      - alienRank: 1
+        lowQty: 0
+        highQty: 0
+        dQty: 1
+        percentageOutsideUfo: 0
+        itemSets: [[], [], []]
+      - alienRank: 7
+        lowQty: 0
+        highQty: 0
+        dQty: 1
+        percentageOutsideUfo: 100
+        itemSets: [[], [], []]
+
+extraStrings:
+  - type: en-US
+    strings:
+      STR_MV_CONVOY_SHOWCASE: "Moving vehicles: convoy showcase"
+      STR_MV_CONVOY_SHOWCASE_BRIEFING: "A traitor convoy of three Chimeras is crossing the area. Each is driven by a traitor inside, and two carry a manned turret. Take your own Chimeras, cut the convoy off and destroy it: run its infantry over, ram it, or break in and kill its drivers."
+  - type: en-GB
+    strings:
+      STR_MV_CONVOY_SHOWCASE: "Moving vehicles: convoy showcase"
+      STR_MV_CONVOY_SHOWCASE_BRIEFING: "A traitor convoy of three Chimeras is crossing the area. Each is driven by a traitor inside, and two carry a manned turret. Take your own Chimeras, cut the convoy off and destroy it: run its infantry over, ram it, or break in and kill its drivers."

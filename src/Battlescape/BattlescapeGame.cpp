@@ -1009,6 +1009,20 @@ void BattlescapeGame::checkForCasualties(const RuleDamageType *damageType, Battl
 		}
 	}
 
+	// a vehicle whose crew is down may change hands, and its guns fall silent without a driver
+	for (const auto &captured : BattleVehicle::updateCrews(_save))
+	{
+		if (captured.first->getFaction() == FACTION_PLAYER)
+		{
+			_parentState->warning("STR_VEHICLE_CAPTURED");
+		}
+		else if (captured.second == FACTION_PLAYER)
+		{
+			_parentState->warning("STR_VEHICLE_TAKEN_BY_ENEMY");
+		}
+		_save->getTileEngine()->recalculateFOV();
+	}
+
 	BattleUnit *bu = _save->getSelectedUnit();
 	if (_save->getSide() == FACTION_PLAYER)
 	{
