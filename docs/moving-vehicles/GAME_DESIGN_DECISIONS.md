@@ -34,7 +34,7 @@ Why moving vehicles plays the way it does. Each entry records a game design choi
 | [GD-14](#gd-14--ai-drivers-follow-the-players-rules) | AI drivers follow the player's rules | Decided | M2 |
 | [GD-15](#gd-15--turning-only-to-facings-the-art-can-show) | Turning only to facings the art can show | Decided | M3 |
 | [GD-16](#gd-16--vehicles-have-their-own-time-units-per-turn) | Vehicles have their own time units per turn | Decided | M1 |
-| [GD-17](#gd-17--skilled-and-dedicated-drivers-make-a-vehicle-go-further) | Skilled and dedicated drivers make a vehicle go further | Direction agreed | M2 and later |
+| [GD-17](#gd-17--skilled-and-dedicated-drivers-make-a-vehicle-go-further) | Skilled and dedicated drivers make a vehicle go further | Direction agreed; layers 1 and 2 decided in GD-26 | M2 and later |
 | [GD-18](#gd-18--ground-vehicles-rest-on-the-highest-ground-under-them) | Ground vehicles rest on the highest ground under them | Decided | M1, Phase 7 |
 | [GD-19](#gd-19--mounted-guns-are-held-by-their-vehicle) | Mounted guns are held by their vehicle | Decided | M1, Phase 7 fixes |
 | [GD-20](#gd-20--the-route-search-only-knows-the-units-its-side-knows) | The route search only knows the units its side knows | Decided | M1, Phase 7 fixes |
@@ -43,6 +43,7 @@ Why moving vehicles plays the way it does. Each entry records a game design choi
 | [GD-23](#gd-23--enemy-vehicles-come-from-ufo-maps) | Enemy vehicles come from UFO maps | Decided | M2, Phase 10 |
 | [GD-24](#gd-24--ai-drivers-hold-advance-or-stay-parked) | AI drivers hold, advance or stay parked | Decided | M2, Phase 11 |
 | [GD-25](#gd-25--convoys-drive-for-the-map-edge) | Convoys drive for the map edge | Proposed | M2, Phase 12 |
+| [GD-26](#gd-26--how-driving-skill-counts) | How driving skill counts | Decided | M2, Phase 13 |
 
 ## Decisions
 
@@ -406,3 +407,25 @@ Proposed · 2026-10-29 · M2, Phase 12 · settled after the AI drivers of Phase 
 **Proposal.** A vehicle marked as a convoy (`aiExit`, a map direction) drives toward that edge of the map whenever its crew has nothing to hold for, following [GD-24](#gd-24--ai-drivers-hold-advance-or-stay-parked) otherwise. When its footprint reaches the edge, it leaves the battle with everyone and everything on board: aliens on board escape (removed, not killed) and items on board are lost. The player stops it by blocking the road with a vehicle, ramming it, killing or stunning whoever can drive it, or taking its seat. The Rosigma traitor convoy is set up this way in the demo mod.
 
 **Why proposed, not decided.** Whether the convoy should stop to fight, how an escape counts for the mission, and how far it may drive in a turn are best judged once AI driving has been seen in play.
+
+### GD-26 · How driving skill counts
+
+Decided · 2026-10-29 · M2, Phase 13 · settles layers 1 and 2 of [GD-17](#gd-17--skilled-and-dedicated-drivers-make-a-vehicle-go-further)
+
+**Decision.**
+
+- **The bonus** is the air combat pilot formula: (driver's reactions − zero point) × range / 100 percent, capped at 50 either way. Each step's cost (diagonal and climbing included) is that much cheaper, or dearer when the bonus is negative, for both the driver and the vehicle.
+- **The numbers** default to the mod's pilot values (`pilotReactionsZeroPoint` 55, `pilotReactionsRange` 60), so a driver with 75 reactions gets 12% further and one with 35 gets 12% less far. A vehicle can set its own with `driverReactionsZeroPoint` and `driverReactionsRange`; a range of 0 turns skill off.
+- **Fractions of a time unit carry over** to the next step, within the turn, and are saved: with steps of 4 time units, a 12% bonus saves a time unit about every other step instead of never.
+- **Only soldiers have driving skill.** Aliens, tanks and mounted guns drive with no bonus, so AI vehicles go exactly as far as their ruleset says.
+- **Assigned pilots.** If the vehicle's craft takes pilots, only its pilots (as OXCE picks them for air combat: those assigned in the Pilots screen, or the qualified crew when there are just enough) drive with their skill; any other soldier drives as a novice, with no bonus and no penalty. A craft without pilot slots lets every soldier drive with their skill.
+- The route preview counts down the same costs.
+
+**Why.** Reusing the pilot formula and numbers means nothing new for players or modders to learn (GD-17). Carrying fractions is what makes the usual small bonuses count at all with steps of a few time units. Keeping skill to soldiers leaves AI vehicles predictable for modders.
+
+**Turned down.**
+
+- Rounding each step's cost: bonuses under about 12% would never change anything with 4 time unit steps, which is most soldiers.
+- A malus for non-pilots in a craft with pilot slots: being a novice is penalty enough, and a malus would make swapping seats feel punishing.
+
+**Revisit when.** Play shows the bonus too small or too big to notice; the default range and the cap are the knobs (GD-17's open question).

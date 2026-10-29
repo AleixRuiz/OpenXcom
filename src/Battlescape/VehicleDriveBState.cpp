@@ -96,8 +96,9 @@ size_t VehicleDriveBState::countSpotted() const
  * @param victims The units in the way.
  * @param delta The step.
  * @param cost Time units of the step.
+ * @param carry Hundredths of a time unit carried over after the step.
  */
-void VehicleDriveBState::runOver(const std::vector<BattleUnit*> &victims, Position delta, int cost)
+void VehicleDriveBState::runOver(const std::vector<BattleUnit*> &victims, Position delta, int cost, int carry)
 {
 	SavedBattleGame *save = _parent->getSave();
 	const RuleBattleVehicle *rule = _vehicle->getRule(save->getMod());
@@ -115,6 +116,7 @@ void VehicleDriveBState::runOver(const std::vector<BattleUnit*> &victims, Positi
 	{
 		_action.actor->spendTimeUnits(cost);
 		_vehicle->spendTimeUnits(cost);
+		_vehicle->setTuCarry(carry);
 		_action.result = "STR_VEHICLE_RAMMED";
 		_parent->popState();
 		return;
@@ -171,7 +173,9 @@ void VehicleDriveBState::think()
 	}
 
 	const Position delta = _path[_step] - _vehicle->getPosition();
-	const int cost = _vehicle->getStepCost(save->getMod(), delta);
+	// the driver's skill makes the step cheaper or dearer, fractions carrying over to the next step
+	int carry = _vehicle->getTuCarry();
+	const int cost = _vehicle->getStepCost(save->getMod(), delta, _vehicle->getDriverBonus(save, driver), carry);
 	if (_vehicle->getTimeUnits() < cost)
 	{
 		// another driver wouldn't help either
@@ -191,7 +195,7 @@ void VehicleDriveBState::think()
 	const BattleVehicle::MoveResult result = _vehicle->move(save, delta, victims);
 	if (result == BattleVehicle::MOVE_RUN_OVER)
 	{
-		runOver(victims, delta, cost);
+		runOver(victims, delta, cost, carry);
 		return;
 	}
 	if (result != BattleVehicle::MOVE_OK)
@@ -203,6 +207,7 @@ void VehicleDriveBState::think()
 	}
 	driver->spendTimeUnits(cost);
 	_vehicle->spendTimeUnits(cost);
+	_vehicle->setTuCarry(carry);
 	++_step;
 
 	TileEngine *tileEngine = save->getTileEngine();

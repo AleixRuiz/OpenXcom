@@ -132,3 +132,11 @@ Same traitor convoy battle.
 - [ ] Your soldiers standing in its way are run over or ram it; its own infantry never are.
 - [ ] Each traitor Chimera drives at most once per aliens' turn, and no further than its time units allow.
 - [ ] The parked third Chimera (no turret) never moves.
+
+**Driver skill** (Phase 13)
+
+- [ ] Put a soldier with high reactions (75 or more) on the seat and preview a long drive: the time units left go down more slowly than with a soldier near 55, and the vehicle gets further in a turn.
+- [ ] A soldier with low reactions (35 or less) gets less far.
+- [ ] On a craft that takes pilots, a soldier who isn't one of its pilots drives as a 55-reactions soldier would, whatever their reactions.
+- [ ] Save in the middle of a turn and load: the time units left and the next steps' costs are the same.
+- [ ] The traitor Chimeras (driven by turrets) go exactly as far as before.

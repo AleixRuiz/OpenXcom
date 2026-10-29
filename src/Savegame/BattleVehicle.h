@@ -98,6 +98,7 @@ private:
 	int _faction;
 	int _timeUnits;
 	bool _aiDecided;
+	int _tuCarry;
 	Position _pos;
 	int _firstSetId, _lastSetId;
 	std::vector<Cell> _cells;
@@ -209,6 +210,14 @@ public:
 	static BattleVehicle *getDrivenBy(SavedBattleGame *save, const BattleUnit *unit);
 	/// Gets the time unit cost of a step, paid by the vehicle and its driver.
 	int getStepCost(const Mod *mod, Position delta) const;
+	/// Gets the time unit cost of a step for a driver with a skill bonus, carrying fractions over between steps.
+	int getStepCost(const Mod *mod, Position delta, int bonus, int &carry) const;
+	/// Gets how much a driver's skill makes each step cheaper, in percent (negative: dearer).
+	int getDriverBonus(SavedBattleGame *save, const BattleUnit *driver) const;
+	/// Gets the hundredths of a time unit carried over from the last step.
+	int getTuCarry() const { return _tuCarry; }
+	/// Sets the hundredths of a time unit carried over to the next step.
+	void setTuCarry(int carry) { _tuCarry = carry; }
 	/// Moves the vehicle by one step, with everything on board, onto the ground there.
 	MoveResult move(SavedBattleGame *save, Position delta, std::vector<BattleUnit*> &victims);
 	/// Finds the steps that take the vehicle to a new place, following the ground.
