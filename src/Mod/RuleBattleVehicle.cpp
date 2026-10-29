@@ -30,7 +30,7 @@ namespace OpenXcom
 {
 
 /**
- * Creates a blank battle vehicle ruleset: the craft map splits into its connected pieces,
+ * Creates a blank battle vehicle ruleset: the map splits into its connected pieces,
  * anyone on board can drive, nothing is crushed, units block it, and the vehicle's time
  * units are set from its cost per tile once the rule is loaded.
  */
@@ -58,15 +58,15 @@ void RuleBattleVehicle::load(const YAML::YamlNodeReader &node)
 }
 
 /**
- * Checks the rule against its craft's battle map blocks and links the driver armors
+ * Checks the rule against its craft's or UFO's battle map blocks and links the driver armors
  * and the damage type of running over.
  * The height of a map block is only known once its map is loaded, so seat levels are
  * checked when the battle starts instead.
  * @param mod Mod for the rule.
- * @param craftType Type of the craft, for error messages.
- * @param terrain The craft's battle terrain.
+ * @param type Type of the craft or UFO, for error messages.
+ * @param terrain The craft's or UFO's battle terrain.
  */
-void RuleBattleVehicle::afterLoad(const Mod *mod, const std::string &craftType, RuleTerrain *terrain)
+void RuleBattleVehicle::afterLoad(const Mod *mod, const std::string &type, RuleTerrain *terrain)
 {
 	if (_splitName.empty() || _splitName == "connected")
 	{
@@ -80,24 +80,24 @@ void RuleBattleVehicle::afterLoad(const Mod *mod, const std::string &craftType, 
 	{
 		_split = SPLIT_WHOLE;
 	}
-	else if (mod->checkForSoftError(true, craftType, "battleVehicle: unknown split '" + _splitName + "', expected connected, rects or whole.", LOG_ERROR))
+	else if (mod->checkForSoftError(true, type, "battleVehicle: unknown split '" + _splitName + "', expected connected, rects or whole.", LOG_ERROR))
 	{
 		_split = SPLIT_CONNECTED;
 	}
 
-	if (mod->checkForSoftError(_tuPerTile < 0, craftType, "battleVehicle: tuPerTile cannot be negative.", LOG_ERROR))
+	if (mod->checkForSoftError(_tuPerTile < 0, type, "battleVehicle: tuPerTile cannot be negative.", LOG_ERROR))
 	{
 		_tuPerTile = 0;
 	}
-	if (mod->checkForSoftError(_crushArmor < 0, craftType, "battleVehicle: crushArmor cannot be negative.", LOG_ERROR))
+	if (mod->checkForSoftError(_crushArmor < 0, type, "battleVehicle: crushArmor cannot be negative.", LOG_ERROR))
 	{
 		_crushArmor = 0;
 	}
-	if (mod->checkForSoftError(_runOverDamage < 0, craftType, "battleVehicle: runOverDamage cannot be negative.", LOG_ERROR))
+	if (mod->checkForSoftError(_runOverDamage < 0, type, "battleVehicle: runOverDamage cannot be negative.", LOG_ERROR))
 	{
 		_runOverDamage = 0;
 	}
-	if (mod->checkForSoftError(_runOverDamageType < DT_NONE || _runOverDamageType >= DAMAGE_TYPES, craftType, "battleVehicle: unknown runOverDamageType.", LOG_ERROR))
+	if (mod->checkForSoftError(_runOverDamageType < DT_NONE || _runOverDamageType >= DAMAGE_TYPES, type, "battleVehicle: unknown runOverDamageType.", LOG_ERROR))
 	{
 		_runOverDamageType = DT_MELEE;
 	}
@@ -110,9 +110,9 @@ void RuleBattleVehicle::afterLoad(const Mod *mod, const std::string &craftType, 
 
 	std::vector<MapBlock*> noBlocks;
 	const std::vector<MapBlock*> &blocks = terrain ? *terrain->getMapBlocks() : noBlocks;
-	mod->checkForSoftError(blocks.empty(), craftType, "battleVehicle: the craft has no battle map blocks.", LOG_ERROR);
+	mod->checkForSoftError(blocks.empty(), type, "battleVehicle: there are no battle map blocks.", LOG_ERROR);
 
-	// every piece and seat must fit in every map block the craft may use
+	// every piece and seat must fit in every map block the craft or UFO may use
 	auto fits = [&](int x, int y, int width, int length)
 	{
 		return std::all_of(blocks.begin(), blocks.end(), [&](const MapBlock *block)
@@ -134,7 +134,7 @@ void RuleBattleVehicle::afterLoad(const Mod *mod, const std::string &craftType, 
 	for (auto piece = _pieces.begin(); piece != _pieces.end();)
 	{
 		const bool ok = piece->size() == 4 && fits(piece->at(0), piece->at(1), piece->at(2), piece->at(3));
-		if (!ok && mod->checkForSoftError(true, craftType, "battleVehicle: piece " + describe(*piece) + " is not [x, y, width, length] inside the craft map.", LOG_ERROR))
+		if (!ok && mod->checkForSoftError(true, type, "battleVehicle: piece " + describe(*piece) + " is not [x, y, width, length] inside the map.", LOG_ERROR))
 		{
 			piece = _pieces.erase(piece);
 			continue;
@@ -144,14 +144,14 @@ void RuleBattleVehicle::afterLoad(const Mod *mod, const std::string &craftType, 
 	for (auto seat = _driverSeats.begin(); seat != _driverSeats.end();)
 	{
 		const bool ok = seat->size() == 3 && seat->at(2) >= 0 && fits(seat->at(0), seat->at(1), 1, 1);
-		if (!ok && mod->checkForSoftError(true, craftType, "battleVehicle: driver seat " + describe(*seat) + " is not [x, y, z] inside the craft map.", LOG_ERROR))
+		if (!ok && mod->checkForSoftError(true, type, "battleVehicle: driver seat " + describe(*seat) + " is not [x, y, z] inside the map.", LOG_ERROR))
 		{
 			seat = _driverSeats.erase(seat);
 			continue;
 		}
 		++seat;
 	}
-	if (_split == SPLIT_RECTS && mod->checkForSoftError(_pieces.empty(), craftType, "battleVehicle: split rects needs at least one piece.", LOG_ERROR))
+	if (_split == SPLIT_RECTS && mod->checkForSoftError(_pieces.empty(), type, "battleVehicle: split rects needs at least one piece.", LOG_ERROR))
 	{
 		_split = SPLIT_CONNECTED;
 	}

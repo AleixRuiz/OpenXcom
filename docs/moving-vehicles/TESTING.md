@@ -109,3 +109,13 @@ The M2 checks use the same demo mods, updated with each phase.
 - [ ] The same drive with everyone inside a closed vehicle (Chimera hatches shut): no reaction fire, the hull hides them.
 - [ ] The Chimera's turrets draw reaction fire like the roof crew.
 - [ ] A drive that draws no fire goes on to its end as before.
+
+**Enemy vehicles** (Phase 10)
+
+Fight the traitor convoy: in debug mode, a Quick Battle or a mission against the `STR_TRAITOR_CHIMERA` UFO.
+
+- [ ] The battle opens; the save file's `vehicles:` list has three entries with `ufo: STR_TRAITOR_CHIMERA` and `faction: 1`, next to the player's own vehicles with `craft:`.
+- [ ] The traitor Chimeras don't move yet (no AI drivers until Phase 11), and nothing else about the battle changes.
+- [ ] Shooting a traitor Chimera damages its hull as before; the turrets fight as before.
+- [ ] Your soldiers can't drive an enemy vehicle: no Drive button on its tiles.
+- [ ] Save and load: the enemy vehicles are still there.

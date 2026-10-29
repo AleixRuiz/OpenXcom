@@ -27,6 +27,7 @@ namespace OpenXcom
 {
 
 class RuleTerrain;
+class RuleBattleVehicle;
 class Mod;
 
 struct RuleUfoStats : RuleCraftStats
@@ -86,6 +87,7 @@ private:
 	int _huntAlertSound;
 	int _hitSound;
 	RuleTerrain *_battlescapeTerrainData;
+	RuleBattleVehicle *_battleVehicle;
 	RuleUfoStats _stats;
 	std::map<std::string, RuleUfoStats> _statsRaceBonus;
 	std::string _modSprite;
@@ -106,6 +108,8 @@ public:
 	~RuleUfo();
 	/// Loads UFO data from YAML.
 	void load(const YAML::YamlNodeReader& reader, Mod *mod, const ModScript &parsers);
+	/// Cross links with other rules.
+	void afterLoad(const Mod *mod);
 	/// Gets the UFO's type.
 	const std::string &getType() const;
 	/// Gets the UFO's size.
@@ -132,6 +136,8 @@ public:
 	int getScore() const;
 	/// Sets the battlescape terrain data ruleset for this UFO
 	RuleTerrain *getBattlescapeTerrainData() const;
+	/// Gets how the UFO's map drives during a battle (null if it doesn't).
+	const RuleBattleVehicle *getBattleVehicle() const { return _battleVehicle; }
 	/// Gets the reload time of the UFO's weapon.
 	int getWeaponReload() const;
 	/// Gets the UFO's escape time.

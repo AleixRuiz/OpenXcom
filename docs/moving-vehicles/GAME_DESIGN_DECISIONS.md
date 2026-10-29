@@ -372,7 +372,7 @@ Decided · 2026-10-29 · M2, Phase 10 · carries out [GD-13](#gd-13--craft-maps-
 
 **Decision.** The same `battleVehicle` block under `ufos` turns the UFO's map into vehicles of the alien side, by the same rules as crafts: tile parts from the UFO's tilesets, split into vehicles, seats and drivers, with mounted guns driving when their armor is in `drivers`. Every UFO map placed in the battle (a map script can place several) gives its own vehicles. Their time units fill at the start of the aliens' turn. Saves record `ufo:` instead of `craft:`, so a craft and a UFO with the same name can't be confused.
 
-**Why.** One block for crafts and UFOs was settled in the design. Rosigma's traitor convoy is a UFO whose map holds two Chimeras, so enemy vehicles need no new map art.
+**Why.** One block for crafts and UFOs was settled in the design. Rosigma's traitor convoy is a UFO whose map holds three Chimeras, so enemy vehicles need no new map art.
 
 **Turned down.** Vehicles inside ordinary terrain map blocks: it needs ownership of single tile parts (the hijack idea), and UFO maps already cover the showcase.
 

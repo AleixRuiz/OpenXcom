@@ -185,7 +185,7 @@ Decided in [GD-18](GAME_DESIGN_DECISIONS.md#gd-18--ground-vehicles-rest-on-the-h
 | Phase | Delivers | Playable result | Commit |
 | --- | --- | --- | --- |
 | 8. Running over | `runOverDamage`, `runOverDamageType`; damage, kill credit, ramming | A Chimera runs over the infantry it is driven onto | `377183df4` |
-| 9. Reaction fire | Reaction checks for every unit on board after each step | Crew showing on a driving vehicle draw fire | the commit that ticks this phase |
+| 9. Reaction fire | Reaction checks for every unit on board after each step | Crew showing on a driving vehicle draw fire | `8264a1c8b` |
 | 10. Enemy vehicles | `battleVehicle` under `ufos`, alien-side vehicles, `ufo:` in saves | The traitor convoy's Chimeras are vehicles (not driven yet) | |
 | 11. AI drivers | Hold, advance or park, once per turn per vehicle | The traitor Chimeras close in on the squad | |
 | 12. Convoy | Settles [GD-25](GAME_DESIGN_DECISIONS.md#gd-25--convoys-drive-for-the-map-edge); `aiExit` and escaping at the map edge | The convoy tries to drive off the map | |
@@ -237,11 +237,11 @@ Decided in [GD-23](GAME_DESIGN_DECISIONS.md#gd-23--enemy-vehicles-come-from-ufo-
 - `RuleUfo` reads `battleVehicle`, checked against the UFO's map blocks like a craft's.
 - `BattlescapeGenerator` runs `BattleVehicle::Placement` around each UFO map it loads, with the UFO's tileset range and the alien side.
 - `BattleVehicle` remembers whether it came from a UFO; `getRule` looks in the right list, and saves write `ufo:` instead of `craft:`.
-- Rosigma demo: the traitor convoy (`STR_TRAITOR_CHIMERA`) gets a block with its turrets as drivers.
+- Rosigma demo: the traitor convoy (`STR_TRAITOR_CHIMERA`) gets a block with its turrets as drivers. Its map holds three Chimeras, not two: the third has no turret, so it can't drive and stays parked.
 
 **Checks**
 
-- [ ] Builds with no new warnings.
+- [x] Builds with no new warnings.
 - [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
 - [ ] The in-game checks under "Enemy vehicles" in [TESTING.md](TESTING.md).
 

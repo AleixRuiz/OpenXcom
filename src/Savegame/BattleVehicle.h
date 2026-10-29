@@ -35,7 +35,7 @@ class SavedBattleGame;
 class Tile;
 
 /**
- * A piece of a craft map that drives during the battle, with the units and items on board.
+ * A piece of a craft or UFO map that drives during the battle, with the units and items on board.
  * The vehicle stays plain terrain inside the tiles: this remembers which tile parts belong
  * to it (by tileset, a craft map has its own copy of its tilesets) and what terrain they
  * cover, so it can be lifted off the map and set down somewhere else.
@@ -79,11 +79,12 @@ public:
 		/// Remembers the terrain of an area, call before the craft map is placed there.
 		void begin(SavedBattleGame *save, Position corner, Position size);
 		/// Makes the vehicles out of what the craft map placed, call after its map and routes are loaded.
-		std::vector<BattleVehicle*> finish(SavedBattleGame *save, const RuleBattleVehicle &rule, const std::string &craftType, int faction, int firstSetId, int lastSetId, Position origin) const;
+		std::vector<BattleVehicle*> finish(SavedBattleGame *save, const RuleBattleVehicle &rule, const std::string &type, bool ufo, int faction, int firstSetId, int lastSetId, Position origin) const;
 	};
 
 private:
-	std::string _craftType;
+	std::string _type;
+	bool _ufo;
 	int _faction;
 	int _timeUnits;
 	Position _pos;
@@ -145,8 +146,8 @@ private:
 public:
 	/// Creates an empty vehicle, to be loaded from a save.
 	BattleVehicle();
-	/// Creates a vehicle of a craft, owning the tilesets in [firstSetId, lastSetId).
-	BattleVehicle(const std::string &craftType, int faction, int firstSetId, int lastSetId);
+	/// Creates a vehicle of a craft or UFO, owning the tilesets in [firstSetId, lastSetId).
+	BattleVehicle(const std::string &type, bool ufo, int faction, int firstSetId, int lastSetId);
 	/// Cleans up the vehicle.
 	~BattleVehicle();
 	/// Loads the vehicle from YAML.
@@ -154,9 +155,11 @@ public:
 	/// Saves the vehicle to YAML.
 	void save(YAML::YamlNodeWriter writer) const;
 
-	/// Gets the type of the craft the vehicle belongs to.
-	const std::string &getCraftType() const { return _craftType; }
-	/// Gets the rule of the vehicle (null if its craft no longer defines one).
+	/// Gets the type of the craft or UFO the vehicle belongs to.
+	const std::string &getType() const { return _type; }
+	/// Does the vehicle belong to a UFO rather than a craft?
+	bool isUfo() const { return _ufo; }
+	/// Gets the rule of the vehicle (null if its craft or UFO no longer defines one).
 	const RuleBattleVehicle *getRule(const Mod *mod) const;
 	/// Gets the faction the vehicle belongs to.
 	int getFaction() const { return _faction; }

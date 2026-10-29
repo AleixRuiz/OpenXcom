@@ -36,6 +36,7 @@
 #include "../Mod/Mod.h"
 #include "../Mod/RuleBattleVehicle.h"
 #include "../Mod/RuleCraft.h"
+#include "../Mod/RuleUfo.h"
 
 namespace OpenXcom
 {
@@ -88,18 +89,19 @@ void BattleVehicle::Placement::begin(SavedBattleGame *save, Position corner, Pos
 }
 
 /**
- * Makes the vehicles out of the tile parts the craft map placed in the area, splitting them
- * as the rule says, and gives each vehicle its driver seats and route nodes.
+ * Makes the vehicles out of the tile parts the craft or UFO map placed in the area, splitting
+ * them as the rule says, and gives each vehicle its driver seats and route nodes.
  * @param save Battle save.
- * @param rule The craft's vehicle rule.
- * @param craftType Type of the craft.
+ * @param rule The craft's or UFO's vehicle rule.
+ * @param type Type of the craft or UFO.
+ * @param ufo Is it a UFO's map?
  * @param faction Faction the vehicles belong to.
  * @param firstSetId Index of the craft's first tileset in the battle.
  * @param lastSetId Index after the craft's last tileset in the battle.
  * @param origin Where the craft map's first tile was placed (seats and pieces are relative to it).
  * @return The new vehicles, owned by the caller.
  */
-std::vector<BattleVehicle*> BattleVehicle::Placement::finish(SavedBattleGame *save, const RuleBattleVehicle &rule, const std::string &craftType, int faction, int firstSetId, int lastSetId, Position origin) const
+std::vector<BattleVehicle*> BattleVehicle::Placement::finish(SavedBattleGame *save, const RuleBattleVehicle &rule, const std::string &type, bool ufo, int faction, int firstSetId, int lastSetId, Position origin) const
 {
 	// index of a position in the area, -1 outside
 	auto areaIndex = [&](Position p)
@@ -168,7 +170,7 @@ std::vector<BattleVehicle*> BattleVehicle::Placement::finish(SavedBattleGame *sa
 	}
 	if (cells.empty())
 	{
-		Log(LOG_WARNING) << "battleVehicle of " << craftType << ": the craft map placed no tiles, no vehicles made.";
+		Log(LOG_WARNING) << "battleVehicle of " << type << ": its map placed no tiles, no vehicles made.";
 		return {};
 	}
 
@@ -240,7 +242,7 @@ std::vector<BattleVehicle*> BattleVehicle::Placement::finish(SavedBattleGame *sa
 	std::vector<Position> low(pieceCount, Position(SHRT_MAX, SHRT_MAX, SHRT_MAX));
 	for (int k = 0; k < pieceCount; ++k)
 	{
-		vehicles.push_back(new BattleVehicle(craftType, faction, firstSetId, lastSetId));
+		vehicles.push_back(new BattleVehicle(type, ufo, faction, firstSetId, lastSetId));
 		vehicles.back()->_timeUnits = rule.getTimeUnits();
 	}
 	for (size_t i = 0; i < cells.size(); ++i)
@@ -272,7 +274,7 @@ std::vector<BattleVehicle*> BattleVehicle::Placement::finish(SavedBattleGame *sa
 		}
 		else
 		{
-			Log(LOG_WARNING) << "battleVehicle of " << craftType << ": driver seat [" << seat[0] << ", " << seat[1] << ", " << seat[2] << "] is not on any of its vehicles, ignored.";
+			Log(LOG_WARNING) << "battleVehicle of " << type << ": driver seat [" << seat[0] << ", " << seat[1] << ", " << seat[2] << "] is not on any of its vehicles, ignored.";
 		}
 	}
 
@@ -293,19 +295,20 @@ std::vector<BattleVehicle*> BattleVehicle::Placement::finish(SavedBattleGame *sa
 /**
  * Creates an empty vehicle, to be loaded from a save.
  */
-BattleVehicle::BattleVehicle() : _faction(0), _timeUnits(0), _firstSetId(-1), _lastSetId(-1)
+BattleVehicle::BattleVehicle() : _ufo(false), _faction(0), _timeUnits(0), _firstSetId(-1), _lastSetId(-1)
 {
 }
 
 /**
- * Creates a vehicle of a craft.
- * @param craftType Type of the craft.
+ * Creates a vehicle of a craft or UFO.
+ * @param type Type of the craft or UFO.
+ * @param ufo Is it a UFO?
  * @param faction Faction the vehicle belongs to.
- * @param firstSetId Index of the craft's first tileset in the battle.
- * @param lastSetId Index after the craft's last tileset in the battle.
+ * @param firstSetId Index of the map's first tileset in the battle.
+ * @param lastSetId Index after the map's last tileset in the battle.
  */
-BattleVehicle::BattleVehicle(const std::string &craftType, int faction, int firstSetId, int lastSetId) :
-	_craftType(craftType), _faction(faction), _timeUnits(0), _firstSetId(firstSetId), _lastSetId(lastSetId)
+BattleVehicle::BattleVehicle(const std::string &type, bool ufo, int faction, int firstSetId, int lastSetId) :
+	_type(type), _ufo(ufo), _faction(faction), _timeUnits(0), _firstSetId(firstSetId), _lastSetId(lastSetId)
 {
 }
 
@@ -323,7 +326,8 @@ BattleVehicle::~BattleVehicle()
  */
 void BattleVehicle::load(const YAML::YamlNodeReader &reader, const Mod *mod)
 {
-	reader.tryRead("craft", _craftType);
+	_ufo = (bool)reader["ufo"];
+	reader.tryRead(_ufo ? "ufo" : "craft", _type);
 	reader.tryRead("faction", _faction);
 	prepareNewTurn(mod);
 	reader.tryRead("timeUnits", _timeUnits);
@@ -365,7 +369,7 @@ void BattleVehicle::load(const YAML::YamlNodeReader &reader, const Mod *mod)
 void BattleVehicle::save(YAML::YamlNodeWriter writer) const
 {
 	writer.setAsMap();
-	writer.write("craft", _craftType);
+	writer.write(_ufo ? "ufo" : "craft", _type);
 	writer.write("faction", _faction);
 	writer.write("timeUnits", _timeUnits);
 	writer.write("position", _pos);
@@ -394,13 +398,18 @@ void BattleVehicle::save(YAML::YamlNodeWriter writer) const
 }
 
 /**
- * Gets the rule of the vehicle, from its craft.
+ * Gets the rule of the vehicle, from its craft or UFO.
  * @param mod The mod.
- * @return The rule, or null if the craft (or its battleVehicle block) is gone.
+ * @return The rule, or null if the craft or UFO (or its battleVehicle block) is gone.
  */
 const RuleBattleVehicle *BattleVehicle::getRule(const Mod *mod) const
 {
-	const RuleCraft *craft = mod->getCraft(_craftType);
+	if (_ufo)
+	{
+		const RuleUfo *ufo = mod->getUfo(_type);
+		return ufo ? ufo->getBattleVehicle() : nullptr;
+	}
+	const RuleCraft *craft = mod->getCraft(_type);
 	return craft ? craft->getBattleVehicle() : nullptr;
 }
 

@@ -17,6 +17,7 @@
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "RuleUfo.h"
+#include "RuleBattleVehicle.h"
 #include "RuleTerrain.h"
 #include "Mod.h"
 #include "../Engine/ScriptBind.h"
@@ -39,7 +40,7 @@ RuleUfo::RuleUfo(const std::string &type) :
 	_unmanned(false), _instaHyper(false), _noAlert(false),
 	_splashdownSurvivalChance(100), _fakeWaterLandingChance(0),
 	_fireSound(-1), _alertSound(-1), _huntAlertSound(-1), _hitSound(-1),
-	_battlescapeTerrainData(0), _stats(), _statsRaceBonus()
+	_battlescapeTerrainData(0), _battleVehicle(nullptr), _stats(), _statsRaceBonus()
 {
 	_stats.sightRange = 268;
 	_stats.radarRange = 672; // same default as in RuleCraft (used by hunter-killers)
@@ -52,6 +53,7 @@ RuleUfo::RuleUfo(const std::string &type) :
 RuleUfo::~RuleUfo()
 {
 	delete _battlescapeTerrainData;
+	delete _battleVehicle;
 }
 
 /**
@@ -121,6 +123,14 @@ void RuleUfo::load(const YAML::YamlNodeReader& node, Mod *mod, const ModScript &
 		RuleTerrain *rule = new RuleTerrain(terrain["name"].readVal<std::string>());
 		rule->load(terrain, mod);
 		_battlescapeTerrainData = rule;
+	}
+	if (const auto& vehicle = reader["battleVehicle"])
+	{
+		if (!_battleVehicle)
+		{
+			_battleVehicle = new RuleBattleVehicle();
+		}
+		_battleVehicle->load(vehicle);
 	}
 	reader.tryRead("modSprite", _modSprite);
 	reader.tryRead("hitImage", _hitImage);
@@ -329,6 +339,18 @@ int RuleUfo::getScore() const
 RuleTerrain *RuleUfo::getBattlescapeTerrainData() const
 {
 	return _battlescapeTerrainData;
+}
+
+/**
+ * Cross links with other rules: checks the UFO's battle vehicle block against its map blocks.
+ * @param mod The mod.
+ */
+void RuleUfo::afterLoad(const Mod *mod)
+{
+	if (_battleVehicle)
+	{
+		_battleVehicle->afterLoad(mod, _type, _battlescapeTerrainData);
+	}
 }
 
 /**

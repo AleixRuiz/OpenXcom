@@ -2328,6 +2328,7 @@ void Mod::loadAll()
 	afterLoadHelper("craftWeapons", this, _craftWeapons, &RuleCraftWeapon::afterLoad);
 	afterLoadHelper("countries", this, _countries, &RuleCountry::afterLoad);
 	afterLoadHelper("crafts", this, _crafts, &RuleCraft::afterLoad);
+	afterLoadHelper("ufos", this, _ufos, &RuleUfo::afterLoad);
 	afterLoadHelper("events", this, _events, &RuleEvent::afterLoad);
 	afterLoadHelper("voiceSets", this, _voiceSets, &RuleVoiceSet::afterLoad);
 	afterLoadHelper("missionScripts", this, _missionScripts, &RuleMissionScript::afterLoad);

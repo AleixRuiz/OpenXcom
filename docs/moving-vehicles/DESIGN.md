@@ -181,6 +181,19 @@ Keys M2 adds, as each phase is built. All are optional, and leaving them out kee
 | `runOverDamage` | integer | 0 | Damage dealt to an enemy or civilian the vehicle is driven onto, once per unit, credited to the driver. If a unit survives, the vehicle has rammed it and stops. 0 means units block the vehicle. The player's route only runs over the units under the place clicked. |
 | `runOverDamageType` | damage type number | 7 (melee) | Damage type of `runOverDamage`, as for items (`damageType`). |
 
+The whole block is also read under `ufos`: the UFO's map becomes vehicles of the alien side, with the same keys and checks as a craft's. Example, Rosigma's traitor convoy, driven by its turrets:
+
+```yaml
+ufos:
+  - type: STR_TRAITOR_CHIMERA
+    battleVehicle:
+      drivers: [STR_TRAITOR_CHIMERA_TURRET_ARMOR]   # mounted guns drive only when listed
+      tuPerTile: 4
+      timeUnits: 48
+      crushArmor: 100
+      runOverDamage: 150
+```
+
 ## Driving and controls
 
 Any crew member standing on a driver seat can drive, using a drive mode they switch on and off, so the same soldier can drive, then climb out and fight. This replaces the prototype's spawned skull unit.
