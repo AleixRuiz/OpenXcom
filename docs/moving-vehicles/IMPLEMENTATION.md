@@ -345,6 +345,6 @@ Decided in [GD-28](GAME_DESIGN_DECISIONS.md#gd-28--a-vehicles-guns-need-its-driv
 
 - [x] Builds with no new warnings.
 - [x] Builds on Linux (GCC), macOS (Clang) and 32-bit Windows on GitHub, with no warnings in our code (2026-10-30).
-- [ ] The reopened lines under "Gun crews and hijacking" in [TESTING.md](TESTING.md).
+- [x] The captured turret stays yours and fires on the turns after the capture (played 2026-10-30).
 
 **Commit:** `Moving vehicles: a captured vehicle keeps its guns` (`ec84ebb27`)
