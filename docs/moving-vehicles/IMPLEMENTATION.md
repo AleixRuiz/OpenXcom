@@ -344,7 +344,7 @@ Decided in [GD-28](GAME_DESIGN_DECISIONS.md#gd-28--a-vehicles-guns-need-its-driv
 **Checks**
 
 - [x] Builds with no new warnings.
-- [ ] Builds on Linux, macOS and 32-bit Windows on GitHub.
+- [x] Builds on Linux (GCC), macOS (Clang) and 32-bit Windows on GitHub, with no warnings in our code (2026-10-30).
 - [ ] The reopened lines under "Gun crews and hijacking" in [TESTING.md](TESTING.md).
 
-**Commit:** `Moving vehicles: a captured vehicle keeps its guns`
+**Commit:** `Moving vehicles: a captured vehicle keeps its guns` (`ec84ebb27`)
