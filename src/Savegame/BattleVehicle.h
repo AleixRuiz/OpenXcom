@@ -220,6 +220,8 @@ public:
 	void silenceGuns(SavedBattleGame *save) const;
 	/// Hands the vehicle and its mounted guns to the side that took its seat, if its own side has given it up.
 	int checkCapture(SavedBattleGame *save);
+	/// Brings back the mounted guns that went back to their own side when the vehicle's side's turn started.
+	void keepGuns(SavedBattleGame *save) const;
 	/// Hands over the vehicles taken this way and silences the guns without a driver.
 	static std::vector<std::pair<BattleVehicle*, int> > updateCrews(SavedBattleGame *save);
 	/// Gets the time unit cost of a step, paid by the vehicle and its driver.

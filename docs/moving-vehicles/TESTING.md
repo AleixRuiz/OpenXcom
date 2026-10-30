@@ -157,6 +157,7 @@ In the convoy showcase:
 - [ ] Kill or stun a traitor Chimera's driver: its turret stops firing at once, and doesn't fire or react in the aliens' next turns.
 - [ ] Your own Chimera: with nobody on its driver seat when your turn starts, its turrets have no time units; put a soldier on the seat and they work again from the next turn.
 - [ ] Step a soldier onto the seat of a traitor Chimera with infantry still inside: nothing changes.
-- [ ] Clear the traitors inside (kill or stun them), then step onto the seat: "Vehicle captured!". The Chimera and its turret are yours, with no time units until your next turn; then you drive it and fire its turret.
+- [ ] Clear the traitors inside (kill or stun them), then step onto the seat: "Vehicle captured! Ready next turn.". The Chimera and its turret are yours, with no time units until your next turn. The traitors may shoot at the turret now: it's yours.
+- [ ] On your next turn, and the turn after, the turret is still yours: select it and fire it, and drive the Chimera with the soldier on the seat. (Reopened 2026-10-30: the turret went back to the traitors.)
 - [ ] Save and load after a capture: the Chimera and its turret are still yours.
 - [ ] Set `gunCrew: none` on the traitor convoy in the demo mod: its turrets keep firing after the driver dies.

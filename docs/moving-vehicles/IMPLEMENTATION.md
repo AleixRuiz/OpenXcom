@@ -191,7 +191,7 @@ Decided in [GD-18](GAME_DESIGN_DECISIONS.md#gd-18--ground-vehicles-rest-on-the-h
 | 12. Convoy | Settles [GD-25](GAME_DESIGN_DECISIONS.md#gd-25--convoys-drive-for-the-map-edge); `aiExit` and escaping at the map edge | The convoy tries to drive off the map | built last, after 14 |
 | 13. Driver skill | Layers 1 and 2 of [GD-17](GAME_DESIGN_DECISIONS.md#gd-17--skilled-and-dedicated-drivers-make-a-vehicle-go-further) | A good driver gets further | `0b374aca1` |
 | 14. Enemy drivers | One of the deployed enemies put on each enemy vehicle's seat; `driverRanks`; AI drivers keep their seat | The traitor Chimeras are driven by traitors inside | `da4cbb1eb` |
-| 15. Gun crews and hijacking | `gunCrew`; silent guns without a driver; capturing a vehicle and its guns | Killing a driver silences its turrets; taking its seat takes the vehicle | the commit that ticks this phase |
+| 15. Gun crews and hijacking | `gunCrew`; silent guns without a driver; capturing a vehicle and its guns | Killing a driver silences its turrets; taking its seat takes the vehicle | `ae3466baf` |
 
 ## Phase 8: Running over
 
@@ -332,6 +332,19 @@ Decided in [GD-28](GAME_DESIGN_DECISIONS.md#gd-28--a-vehicles-guns-need-its-driv
 
 - [x] Builds with no new warnings.
 - [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
-- [ ] The in-game checks under "Gun crews and hijacking" in [TESTING.md](TESTING.md).
+- [ ] The in-game checks under "Gun crews and hijacking" in [TESTING.md](TESTING.md). First play on 2026-10-30: the capture works, but the turret went back to the traitors when the player's next turn started; fixed below.
 
-**Commit:** `Moving vehicles: guns need a driver, and vehicles can be hijacked`
+**Commit:** `Moving vehicles: guns need a driver, and vehicles can be hijacked` (`ae3466baf`)
+
+### Fixes after testing
+
+- A captured turret went back to its old side when the captor's next turn started: `convertToFaction` is mind control, which `BattleUnit::prepareNewTurn` undoes. `BattleVehicle::keepGuns`, called from `SavedBattleGame::endTurn` after the units' turn start, converts the vehicle's mounted guns back and gives them their time units (`BattleUnit::updateUnitStats`). Guns another side controls right now are left alone. ([GD-29](GAME_DESIGN_DECISIONS.md#gd-29--hijacking-take-the-seat-once-the-crew-is-down))
+- `STR_VEHICLE_CAPTURED` now says the vehicle is ready next turn.
+
+**Checks**
+
+- [x] Builds with no new warnings.
+- [ ] Builds on Linux, macOS and 32-bit Windows on GitHub.
+- [ ] The reopened lines under "Gun crews and hijacking" in [TESTING.md](TESTING.md).
+
+**Commit:** `Moving vehicles: a captured vehicle keeps its guns`
