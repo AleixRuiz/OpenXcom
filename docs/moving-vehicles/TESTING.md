@@ -205,6 +205,7 @@ With `facings.rul` and the showcase Chimera's tiles in the Rosigma demo mod, and
 - [ ] Right click west of it: it faces west, showing its back and its left side. Right click east: it faces east (its south art mirrored). Right click south: back as it started.
 - [ ] In each facing, shots hit the hull where it is drawn, and soldiers walk in and out of the open rear door.
 - [ ] Soldiers, the roof turret and the hull gun on board stay on board and turn with it; the soldier on the seat still drives.
+- [ ] Turn half round, then drive: the hull gun comes along. (Reopened 2026-10-30: it was left behind.)
 - [ ] Lower the camera a level: the troop bay inside looks plausible in each facing (it keeps its old art).
 - [ ] Destroy a part of the hull, then turn: it is still gone.
 - [ ] Save in each facing and load: same facing, same look.
