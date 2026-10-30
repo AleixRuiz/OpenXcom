@@ -332,6 +332,19 @@ Decided in [GD-28](GAME_DESIGN_DECISIONS.md#gd-28--a-vehicles-guns-need-its-driv
 
 - [x] Builds with no new warnings.
 - [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
-- [ ] The in-game checks under "Gun crews and hijacking" in [TESTING.md](TESTING.md).
+- [ ] The in-game checks under "Gun crews and hijacking" in [TESTING.md](TESTING.md). First play on 2026-10-30: the capture works, but the turret went back to the traitors when the player's next turn started; fixed below.
 
-**Commit:** `Moving vehicles: guns need a driver, and vehicles can be hijacked`
+**Commit:** `Moving vehicles: guns need a driver, and vehicles can be hijacked` (`ae3466baf`)
+
+### Fixes after testing
+
+- A captured turret went back to its old side when the captor's next turn started: `convertToFaction` is mind control, which `BattleUnit::prepareNewTurn` undoes. `BattleVehicle::keepGuns`, called from `SavedBattleGame::endTurn` after the units' turn start, converts the vehicle's mounted guns back and gives them their time units (`BattleUnit::updateUnitStats`). Guns another side controls right now are left alone. ([GD-29](GAME_DESIGN_DECISIONS.md#gd-29--hijacking-take-the-seat-once-the-crew-is-down))
+- `STR_VEHICLE_CAPTURED` now says the vehicle is ready next turn.
+
+**Checks**
+
+- [x] Builds with no new warnings.
+- [ ] Builds on Linux, macOS and 32-bit Windows on GitHub.
+- [ ] The reopened lines under "Gun crews and hijacking" in [TESTING.md](TESTING.md).
+
+**Commit:** `Moving vehicles: a captured vehicle keeps its guns`

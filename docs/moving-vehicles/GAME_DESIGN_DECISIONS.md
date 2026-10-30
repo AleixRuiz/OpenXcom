@@ -501,3 +501,9 @@ Decided · 2026-10-30 · M2, Phase 15
 
 - Taking the seat with enemies still on board: they would ride along and could take it straight back.
 - No hijacking: boarding the command vehicle is the heart of the convoy showcase.
+
+**Settled after the first play (2026-10-30).**
+
+- The guns stay with the vehicle for good. Converted as mind control does, they went back to their old side when the captor's next turn started, so the player never used them. Now, whenever the vehicle's side starts a turn, its mounted guns that went back come over again, with their time units.
+- A gun another side mind-controls right now stays theirs until their control ends, then comes back to the vehicle's side. If the old side mind-controls a captured gun, the gun comes back when the vehicle's side starts its next turn, one turn sooner than a mind-controlled soldier would.
+- The message says when the vehicle is ready: "Vehicle captured! Ready next turn."

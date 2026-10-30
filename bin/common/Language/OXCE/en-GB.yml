@@ -605,7 +605,7 @@ en-GB:
   STR_VEHICLE_OUT_OF_TIME_UNITS: "The vehicle can't move any further this turn!"
   STR_VEHICLE_TOO_STEEP: "The ground is too steep for the vehicle!"
   STR_VEHICLE_RAMMED: "The vehicle rammed a unit!"
-  STR_VEHICLE_CAPTURED: "Vehicle captured!"
+  STR_VEHICLE_CAPTURED: "Vehicle captured! Ready next turn."
   STR_VEHICLE_TAKEN_BY_ENEMY: "The enemy has taken one of your vehicles!"
 #Soldier.cpp
   STR_RANK_NONE: "-"

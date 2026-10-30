@@ -1292,6 +1292,29 @@ int BattleVehicle::checkCapture(SavedBattleGame *save)
 }
 
 /**
+ * Brings back the vehicle's mounted guns that went back to their own side when its side's turn
+ * started, and gives them the time units they missed. A captured gun changes sides as a
+ * mind-controlled unit does, and those go back at the start of their controller's turn; a
+ * captured vehicle keeps its guns instead. Guns another side controls right now are left alone.
+ * @param save Battle save.
+ */
+void BattleVehicle::keepGuns(SavedBattleGame *save) const
+{
+	for (auto *unit : getPassengers(save))
+	{
+		if (isMounted(unit) && !unit->isOut() && unit->getFaction() != _faction && unit->getFaction() == unit->getOriginalFaction())
+		{
+			unit->convertToFaction((UnitFaction)_faction);
+			unit->updateUnitStats(true, false);
+			if (_faction != FACTION_PLAYER)
+			{
+				unit->setVisible(false);
+			}
+		}
+	}
+}
+
+/**
  * Hands over every vehicle whose seat was taken by another side (see checkCapture), then takes
  * the time units of mounted guns left without a driver (see silenceGuns). Called after units
  * move or go down.
