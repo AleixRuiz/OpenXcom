@@ -188,7 +188,7 @@ Decided in [GD-18](GAME_DESIGN_DECISIONS.md#gd-18--ground-vehicles-rest-on-the-h
 | 9. Reaction fire | Reaction checks for every unit on board after each step | Crew showing on a driving vehicle draw fire | `8264a1c8b` |
 | 10. Enemy vehicles | `battleVehicle` under `ufos`, alien-side vehicles, `ufo:` in saves | The traitor convoy's Chimeras are vehicles (not driven yet) | `a7d9f8c3d` |
 | 11. AI drivers | Hold, advance or park, once per turn per vehicle | The traitor Chimeras close in on the squad | `13ee31083` |
-| 12. Convoy | Settles [GD-25](GAME_DESIGN_DECISIONS.md#gd-25--convoys-drive-for-the-map-edge); `aiExit` and escaping at the map edge | The convoy tries to drive off the map | this phase's commit |
+| 12. Convoy | Settles [GD-25](GAME_DESIGN_DECISIONS.md#gd-25--convoys-drive-for-the-map-edge); `aiExit` and escaping at the map edge | The convoy tries to drive off the map | `0064f27ba` |
 | 13. Driver skill | Layers 1 and 2 of [GD-17](GAME_DESIGN_DECISIONS.md#gd-17--skilled-and-dedicated-drivers-make-a-vehicle-go-further) | A good driver gets further | `0b374aca1` |
 | 14. Enemy drivers | One of the deployed enemies put on each enemy vehicle's seat; `driverRanks`; AI drivers keep their seat | The traitor Chimeras are driven by traitors inside | `da4cbb1eb` |
 | 15. Gun crews and hijacking | `gunCrew`; silent guns without a driver; capturing a vehicle and its guns | Killing a driver silences its turrets; taking its seat takes the vehicle | `ae3466baf` |
@@ -297,11 +297,11 @@ Decided in [GD-25](GAME_DESIGN_DECISIONS.md#gd-25--convoys-drive-for-the-map-edg
 **Checks**
 
 - [x] Builds with no new warnings.
-- [ ] Builds on Linux, macOS and 32-bit Windows on GitHub.
+- [x] Builds on Linux (GCC), macOS (Clang) and 32-bit Windows on GitHub, with no warnings in our code (2026-10-30).
 - [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
 - [ ] The in-game checks under "Convoy" in [TESTING.md](TESTING.md).
 
-**Commit:** `Moving vehicles: convoys drive for the map edge`
+**Commit:** `Moving vehicles: convoys drive for the map edge` (`0064f27ba`)
 
 ## Phase 13: Driver skill
 
