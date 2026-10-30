@@ -48,7 +48,7 @@ Why moving vehicles plays the way it does. Each entry records a game design choi
 | [GD-28](#gd-28--a-vehicles-guns-need-its-driver-unless-the-vehicle-says-otherwise) | A vehicle's guns need its driver, unless the vehicle says otherwise | Decided | M2, Phase 15 |
 | [GD-29](#gd-29--hijacking-take-the-seat-once-the-crew-is-down) | Hijacking: take the seat once the crew is down | Decided | M2, Phase 15 |
 | [GD-30](#gd-30--turning-is-a-step-and-mirroring-is-free-art) | Turning is a step, and mirroring is free art | Decided | M3, Phase 16 |
-| [GD-31](#gd-31--drives-turn-the-vehicle-toward-where-it-goes) | Drives turn the vehicle toward where it goes | Proposed | M3, Phase 17 |
+| [GD-31](#gd-31--drives-turn-the-vehicle-toward-where-it-goes) | Drives turn the vehicle toward where it goes | Decided | M3, Phase 17 |
 | [GD-32](#gd-32--up-to-four-drawn-facings-mirroring-fills-the-gaps) | Up to four drawn facings, mirroring fills the gaps | Decided | M3, Phase 18 |
 
 ## Decisions
@@ -566,11 +566,17 @@ Decided · 2026-10-30 · M3, Phase 16 · details [GD-15](#gd-15--turning-only-to
 
 ### GD-31 · Drives turn the vehicle toward where it goes
 
-Proposed · 2026-10-30 · M3, Phase 17 · settled after mirror turning (Phase 16) has been played
+Decided · 2026-10-30 · M3, Phase 17 · the user's call, after playing mirror turning and drawn facings
 
-**Proposal.** A drive first turns the vehicle to face its main direction of travel, when it can face that way and has room, then drives as now. A vehicle that can't face that way (no art for its back) lines up with it and drives in reverse. The route preview shows the turn and its cost, and AI drivers turn the same way. Turning by hand (right click) stays, for parking a vehicle the way the player wants.
+**Decision.**
 
-**Why proposed, not decided.** Whether turning on its own feels right, and whether it should be skipped when it costs more than it's worth, is best judged once turning has been played.
+- **Vehicles that can turn drive along their axis** (`axisLocked`, on by default for a vehicle with `front`): forward or back, also diagonally within 45 degrees, never sideways. A vehicle without `front` slides as before, having no other way to get anywhere.
+- **The route plans the turns:** each costs `tuPerQuarterTurn` and needs room for the turned vehicle, like a turn by hand. The preview shows them, and the see-through vehicle stands in its final facing. Turning by hand (right click) stays, for parking.
+- **Backing up costs more,** `reverseCost` percent of a step (150 by default), so a long drive turns round and a short one backs up. A vehicle backing toward a facing its art can't show (no back drawn) pays the normal cost.
+- **AI drivers use the same routes.**
+- **Reversible:** a separate path in the code, its own commits, and `axisLocked: false` per vehicle.
+
+**Why.** With drawn facings, sliding sideways looks wrong, and turning becomes part of driving, with its cost and the room it needs. Long vehicles get less nimble in tight places, which makes positioning matter; play will tell if it feels clunky.
 
 ### GD-32 · Up to four drawn facings, mirroring fills the gaps
 
