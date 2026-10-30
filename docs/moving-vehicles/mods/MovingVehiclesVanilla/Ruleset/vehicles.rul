@@ -8,6 +8,7 @@ crafts:
   - type: STR_SKYRANGER
     battleVehicle:
       driverSeats: [[4, 9, 1]]
+      front: 0  # the nose points north; turns west by mirroring (a right click in drive mode)
       tuPerTile: 4
       timeUnits: 40
       crushArmor: 30

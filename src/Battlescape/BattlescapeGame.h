@@ -165,6 +165,8 @@ private:
 	bool noActionsPending(BattleUnit *bu);
 	/// Previews, or starts, a drive of the selected unit's vehicle to a tile.
 	void driveVehicle(Position pos, bool previewed);
+	/// Turns the selected unit's vehicle toward a tile.
+	bool turnVehicle(Position pos);
 	std::vector<InfoboxOKState*> _infoboxQueue;
 	/// Shows the infoboxes in the queue (if any).
 	void showInfoBoxQueue();

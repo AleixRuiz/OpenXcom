@@ -21,6 +21,7 @@
 #include <sstream>
 #include <SDL_endian.h>
 #include "../Engine/Exception.h"
+#include "../Engine/Surface.h"
 #include "../Engine/SurfaceSet.h"
 #include "../Engine/FileMap.h"
 #include "../Engine/Logger.h"
@@ -96,6 +97,38 @@ MapData *MapDataSet::getObject(size_t i)
 SurfaceSet *MapDataSet::getSurfaceset() const
 {
 	return _surfaceSet;
+}
+
+/**
+ * Gets a frame of the dataset drawn mirrored left to right, for the tile parts of a vehicle
+ * turned by mirroring its map. Each frame is mirrored the first time it is asked for, and kept.
+ * @param i Frame index.
+ * @return The mirrored frame, or null if there is no such frame.
+ */
+Surface *MapDataSet::getFlippedFrame(int i)
+{
+	Surface *frame = (_surfaceSet && i >= 0) ? _surfaceSet->getFrame(i) : nullptr;
+	if (!frame)
+	{
+		return nullptr;
+	}
+	if ((size_t)i >= _flippedFrames.size())
+	{
+		_flippedFrames.resize(i + 1, nullptr);
+	}
+	if (!_flippedFrames[i])
+	{
+		Surface *flipped = new Surface(frame->getWidth(), frame->getHeight());
+		for (int y = 0; y < frame->getHeight(); ++y)
+		{
+			for (int x = 0; x < frame->getWidth(); ++x)
+			{
+				flipped->setPixel(frame->getWidth() - 1 - x, y, frame->getPixel(x, y));
+			}
+		}
+		_flippedFrames[i] = flipped;
+	}
+	return _flippedFrames[i];
 }
 
 /**
@@ -260,6 +293,11 @@ void MapDataSet::unloadData()
 		}
 		_objects.clear();
 		delete _surfaceSet;
+		for (auto *frame : _flippedFrames)
+		{
+			delete frame;
+		}
+		_flippedFrames.clear();
 		_loaded = false;
 	}
 }

@@ -16,6 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <cstdlib>
 #include <sstream>
 #include "BattlescapeGame.h"
 #include "BattlescapeState.h"
@@ -2085,6 +2086,11 @@ void BattlescapeGame::primaryAction(Position pos)
  */
 void BattlescapeGame::secondaryAction(Position pos)
 {
+	// in drive mode, a right click turns the vehicle, if it can turn
+	if (isDriveMode() && turnVehicle(pos))
+	{
+		return;
+	}
 	//  -= turn to or open door =-
 	_currentAction.target = pos;
 	_currentAction.actor = _save->getSelectedUnit();
@@ -2207,6 +2213,46 @@ void BattlescapeGame::driveVehicle(Position pos, bool previewed)
 	statePushBack(new VehicleDriveBState(this, drive, vehicle, _drivePath));
 	_driveVehicle = nullptr;
 	_drivePath.clear();
+}
+
+/**
+ * Turns the selected unit's vehicle toward the clicked tile, as a right click turns a unit: the
+ * vehicle lines up with the main direction from its middle to the tile, its front that way, or
+ * its back where its art can't show its front (see BattleVehicle::getFacingToward). A vehicle
+ * that can't turn leaves the click to the unit.
+ * @param pos Clicked position on the map.
+ * @return True if the click was used for the vehicle.
+ */
+bool BattlescapeGame::turnVehicle(Position pos)
+{
+	BattleUnit *driver = _save->getSelectedUnit();
+	BattleVehicle *vehicle = BattleVehicle::getDrivenBy(_save, driver);
+	const int facing = vehicle ? vehicle->getFacing(_save->getMod()) : -1;
+	if (facing == -1)
+	{
+		return false;
+	}
+	const Position offset = pos - vehicle->getCenter();
+	if (offset.x == 0 && offset.y == 0)
+	{
+		return true;
+	}
+	const int direction = std::abs(offset.x) >= std::abs(offset.y) ? (offset.x > 0 ? 2 : 6) : (offset.y > 0 ? 4 : 0);
+	const int turnTo = vehicle->getFacingToward(_save->getMod(), direction);
+	if (turnTo == facing)
+	{
+		// already lined up that way
+		return true;
+	}
+	_driveVehicle = nullptr;
+	_drivePath.clear();
+	BattleAction turn;
+	turn.actor = driver;
+	turn.type = BA_NONE;
+	getMap()->setCursorType(CT_NONE);
+	_parentState->getGame()->getCursor()->setVisible(false);
+	statePushBack(new VehicleDriveBState(this, turn, vehicle, std::vector<Position>(), turnTo));
+	return true;
 }
 
 /**

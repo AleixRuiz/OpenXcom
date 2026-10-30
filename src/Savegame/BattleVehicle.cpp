@@ -298,7 +298,7 @@ std::vector<BattleVehicle*> BattleVehicle::Placement::finish(SavedBattleGame *sa
 /**
  * Creates an empty vehicle, to be loaded from a save.
  */
-BattleVehicle::BattleVehicle() : _ufo(false), _faction(0), _timeUnits(0), _aiDecided(false), _tuCarry(0), _firstSetId(-1), _lastSetId(-1)
+BattleVehicle::BattleVehicle() : _ufo(false), _faction(0), _timeUnits(0), _aiDecided(false), _tuCarry(0), _mirrored(false), _firstSetId(-1), _lastSetId(-1)
 {
 }
 
@@ -311,7 +311,7 @@ BattleVehicle::BattleVehicle() : _ufo(false), _faction(0), _timeUnits(0), _aiDec
  * @param lastSetId Index after the map's last tileset in the battle.
  */
 BattleVehicle::BattleVehicle(const std::string &type, bool ufo, int faction, int firstSetId, int lastSetId) :
-	_type(type), _ufo(ufo), _faction(faction), _timeUnits(0), _aiDecided(false), _tuCarry(0), _firstSetId(firstSetId), _lastSetId(lastSetId)
+	_type(type), _ufo(ufo), _faction(faction), _timeUnits(0), _aiDecided(false), _tuCarry(0), _mirrored(false), _firstSetId(firstSetId), _lastSetId(lastSetId)
 {
 }
 
@@ -335,6 +335,7 @@ void BattleVehicle::load(const YAML::YamlNodeReader &reader, const Mod *mod)
 	prepareNewTurn(mod);
 	reader.tryRead("timeUnits", _timeUnits);
 	reader.tryRead("tuCarry", _tuCarry);
+	reader.tryRead("mirrored", _mirrored);
 	reader.tryRead("position", _pos);
 	reader.tryRead("firstSetId", _firstSetId);
 	reader.tryRead("lastSetId", _lastSetId);
@@ -379,6 +380,10 @@ void BattleVehicle::save(YAML::YamlNodeWriter writer) const
 	if (_tuCarry != 0)
 	{
 		writer.write("tuCarry", _tuCarry);
+	}
+	if (_mirrored)
+	{
+		writer.write("mirrored", _mirrored);
 	}
 	writer.write("position", _pos);
 	writer.write("firstSetId", _firstSetId);
@@ -528,8 +533,9 @@ BattleVehicle::PartRef BattleVehicle::getPart(const Tile *tile, TilePart part)
  * @param tile The tile.
  * @param part Part of the tile.
  * @param ref Map data and tileset indexes, -1 for nothing.
+ * @param flipped Is the part drawn mirrored (see Tile::setFlipped)?
  */
-void BattleVehicle::setPart(SavedBattleGame *save, Tile *tile, TilePart part, PartRef ref)
+void BattleVehicle::setPart(SavedBattleGame *save, Tile *tile, TilePart part, PartRef ref, bool flipped)
 {
 	if (ref.id >= 0 && ref.setId >= 0 && (size_t)ref.setId < save->getMapDataSets()->size())
 	{
@@ -539,6 +545,7 @@ void BattleVehicle::setPart(SavedBattleGame *save, Tile *tile, TilePart part, Pa
 	{
 		tile->setMapData(nullptr, -1, -1, part);
 	}
+	tile->setFlipped(part, flipped);
 }
 
 /**
@@ -845,7 +852,7 @@ void BattleVehicle::place(SavedBattleGame *save, Position pos, const std::vector
 			if (cell.owned & (1 << part))
 			{
 				cell.under[part] = getPart(tile, (TilePart)part);
-				setPart(save, tile, (TilePart)part, carried[i * O_MAX + part]);
+				setPart(save, tile, (TilePart)part, carried[i * O_MAX + part], _mirrored);
 			}
 		}
 		if (discovered[i])
@@ -1643,6 +1650,279 @@ BattleVehicle::MoveResult BattleVehicle::move(SavedBattleGame *save, Position de
 		save->getTileEngine()->applyGravity(save->getTile(tilePart.first->getPosition() + Position(0, 0, 1)));
 	}
 	return MOVE_OK;
+}
+
+/**
+ * Mirrors a direction along the map's diagonal: north and west swap, south and east too, and so
+ * do north-east and south-west. Units on a vehicle turned by mirroring its map turn this way.
+ * @param direction Direction, 0 to 7.
+ * @return The mirrored direction.
+ */
+int BattleVehicle::mirrorDirection(int direction)
+{
+	return (14 - direction) % 8;
+}
+
+/**
+ * Gets the direction the vehicle's front points to now: its map's front, mirrored if its layout is.
+ * @param mod The mod.
+ * @return The facing (0 north, 2 east, 4 south, 6 west), or -1 if the vehicle can't turn.
+ */
+int BattleVehicle::getFacing(const Mod *mod) const
+{
+	const RuleBattleVehicle *rule = getRule(mod);
+	if (!rule || rule->getFront() == -1)
+	{
+		return -1;
+	}
+	return _mirrored ? mirrorDirection(rule->getFront()) : rule->getFront();
+}
+
+/**
+ * Gets the facing the vehicle takes when turned toward a direction. Mirroring only swaps the two
+ * facings drawn from the same side, so the vehicle lines up with the direction: where its front
+ * can't point that way, its back does.
+ * @param mod The mod.
+ * @param direction The direction (0 north, 2 east, 4 south, 6 west).
+ * @return The facing it takes, its current one if it is already lined up, or -1 if it can't turn.
+ */
+int BattleVehicle::getFacingToward(const Mod *mod, int direction) const
+{
+	const int facing = getFacing(mod);
+	if (facing == -1 || facing % 4 == direction % 4)
+	{
+		return facing;
+	}
+	return mirrorDirection(facing);
+}
+
+/**
+ * Gets the time unit cost of turning the vehicle to a facing, paid by the vehicle and its driver:
+ * tuPerQuarterTurn for each quarter turn, made cheaper or dearer by the driver's skill as a step is.
+ * @param mod The mod.
+ * @param facing The facing to turn to.
+ * @param bonus The driver's bonus, in percent (see getDriverBonus).
+ * @param carry Hundredths of a time unit carried over from the last step; gets what carries over to the next.
+ * @return Time units.
+ */
+int BattleVehicle::getTurnCost(const Mod *mod, int facing, int bonus, int &carry) const
+{
+	const RuleBattleVehicle *rule = getRule(mod);
+	const int current = getFacing(mod);
+	if (!rule || current == -1)
+	{
+		return 0;
+	}
+	const int eighths = (facing - current + 8) % 8;
+	const int quarters = std::min(eighths, 8 - eighths) / 2;
+	const int hundredths = quarters * rule->getTuPerQuarterTurn() * (100 - bonus) + carry;
+	carry = hundredths % 100;
+	return hundredths / 100;
+}
+
+/**
+ * Remembers what lies on the map under the vehicle's layout, at its position, as the terrain under
+ * it. Only right after lifting the vehicle, when the map shows the terrain again and the layout
+ * has changed (see turn).
+ * @param save Battle save.
+ */
+void BattleVehicle::readUnder(SavedBattleGame *save)
+{
+	for (auto &cell : _cells)
+	{
+		const Tile *tile = save->getTile(_pos + cell.offset);
+		for (int part = O_FLOOR; part < O_MAX; ++part)
+		{
+			if (cell.owned & (1 << part))
+			{
+				cell.under[part] = tile ? getPart(tile, (TilePart)part) : PartRef();
+			}
+		}
+	}
+}
+
+/**
+ * Mirrors the vehicle's layout along its diagonal, as for a quarter turn between two facings drawn
+ * from the same side: each cell goes to the transposed offset, and its west and north walls swap
+ * places, with the parts carried for it. Driver seats follow.
+ * @param carried The vehicle's parts, from lift(), swapped along.
+ */
+void BattleVehicle::mirrorLayout(std::vector<PartRef> &carried)
+{
+	for (size_t i = 0; i < _cells.size(); ++i)
+	{
+		Cell &cell = _cells[i];
+		cell.offset = Position(cell.offset.y, cell.offset.x, cell.offset.z);
+		const bool west = (cell.owned & (1 << O_WESTWALL)) != 0;
+		const bool north = (cell.owned & (1 << O_NORTHWALL)) != 0;
+		cell.owned &= ~((1 << O_WESTWALL) | (1 << O_NORTHWALL));
+		cell.owned |= (west ? 1 << O_NORTHWALL : 0) | (north ? 1 << O_WESTWALL : 0);
+		std::swap(cell.under[O_WESTWALL], cell.under[O_NORTHWALL]);
+		std::swap(carried[i * O_MAX + O_WESTWALL], carried[i * O_MAX + O_NORTHWALL]);
+	}
+	for (auto &seat : _seats)
+	{
+		seat = Position(seat.y, seat.x, seat.z);
+	}
+	_mirrored = !_mirrored;
+	buildLookup();
+}
+
+/**
+ * Turns the vehicle to a facing round its middle, with the units and items on board and its route
+ * nodes, onto the ground there. Turning between the two facings drawn from the same side mirrors
+ * its layout (see mirrorLayout): its parts are drawn flipped, and everything on board goes to the
+ * mirrored tile and turns by the same mirror. A turn is a step: weak terrain in the way is crushed,
+ * and if anything blocks it nothing changes; units to run over are handed back without turning,
+ * for the caller to deal with first.
+ * @param save Battle save.
+ * @param facing The facing to turn to (see getFacingToward).
+ * @param victims Gets the units in the way to run over, with MOVE_RUN_OVER.
+ * @return MOVE_OK, MOVE_RUN_OVER, or what blocked the turn.
+ */
+BattleVehicle::MoveResult BattleVehicle::turn(SavedBattleGame *save, int facing, std::vector<BattleUnit*> &victims)
+{
+	victims.clear();
+	const int current = getFacing(save->getMod());
+	if (_cells.empty() || current == -1)
+	{
+		return MOVE_BLOCKED_EDGE;
+	}
+	if (facing == current)
+	{
+		return MOVE_OK;
+	}
+	const Position oldPos = _pos;
+	const Position middle = getCenter();
+	const int buried = countBuried(save, oldPos);
+	const std::vector<BattleUnit*> passengers = getPassengers(save);
+
+	std::vector<BattleItem*> cargo;
+	for (const auto &cell : _cells)
+	{
+		const Position p = oldPos + cell.offset;
+		if (isOnBoard(save, p))
+		{
+			for (auto *item : *save->getTile(p)->getInventory())
+			{
+				cargo.push_back(item);
+			}
+		}
+	}
+
+	std::vector<PartRef> carried;
+	std::vector<char> discovered;
+	lift(save, carried, discovered);
+	std::vector<char> inside(_cells.size(), 0);
+	for (size_t i = 0; i < _cells.size(); ++i)
+	{
+		inside[i] = carried[i * O_MAX + O_FLOOR].id != -1;
+	}
+	mirrorLayout(carried);
+	readUnder(save);
+
+	// round its middle, onto the ground there
+	Position newPos = middle - Position((_size.x - 1) / 2, (_size.y - 1) / 2, 0);
+	newPos.z = oldPos.z;
+	MoveResult result = MOVE_BLOCKED_EDGE;
+	std::vector<std::pair<Tile*, TilePart> > toCrush;
+	if (newPos.x >= 0 && newPos.y >= 0 && newPos.x + _size.x <= save->getMapSizeX() && newPos.y + _size.y <= save->getMapSizeY())
+	{
+		newPos.z = findLevel(save, newPos.x, newPos.y, oldPos.z, buried);
+		result = newPos.z < 0 ? MOVE_TOO_STEEP : checkPlace(save, newPos, inside, passengers, getCrushArmor(save->getMod()), [&](const BattleUnit *unit) { return judgeUnit(save, unit); }, toCrush, victims);
+	}
+	if (result != MOVE_OK || !victims.empty())
+	{
+		mirrorLayout(carried);
+		place(save, oldPos, carried, discovered);
+		return result != MOVE_OK ? result : MOVE_RUN_OVER;
+	}
+	for (const auto &tilePart : toCrush)
+	{
+		for (int i = 0; i < 8 && isSolid(tilePart.first->getMapData(tilePart.second)); ++i)
+		{
+			tilePart.first->destroy(tilePart.second, TILE);
+		}
+	}
+	place(save, newPos, carried, discovered);
+
+	// everything on board goes to its mirrored tile
+	auto mirrored = [&](Position p)
+	{
+		const Position offset = p - oldPos;
+		return newPos + Position(offset.y, offset.x, offset.z);
+	};
+	// free every old tile first, so passengers don't clear each other's new tiles
+	for (auto *unit : passengers)
+	{
+		unit->setTile(nullptr, save);
+	}
+	for (auto *unit : passengers)
+	{
+		const Position p = mirrored(unit->getPosition());
+		unit->setTile(save->getTile(p), save);
+		unit->setPosition(p);
+		unit->setPosition(p); // it did not walk, so its last position is the new one too
+		unit->setDirection(mirrorDirection(unit->getDirection()));
+	}
+
+	const RuleInventory *ground = save->getMod()->getInventoryGround();
+	for (auto *item : cargo)
+	{
+		Tile *from = item->getTile();
+		const Position p = mirrored(from->getPosition());
+		from->removeItem(item);
+		save->getTile(p)->addItem(item, ground);
+		if (item->getUnit() && item->getUnit()->getPosition() == from->getPosition())
+		{
+			item->getUnit()->setPosition(p);
+		}
+	}
+
+	auto *nodes = save->getNodes();
+	for (int id : _nodeIds)
+	{
+		if (id >= 0 && (size_t)id < nodes->size())
+		{
+			Node *node = nodes->at(id);
+			node->setPosition(mirrored(node->getPosition()));
+		}
+	}
+
+	// what was left behind on the tiles the vehicle left falls, and so does anything on top of crushed terrain
+	for (const auto &cell : _cells)
+	{
+		save->getTileEngine()->applyGravity(save->getTile(oldPos + Position(cell.offset.y, cell.offset.x, cell.offset.z)));
+	}
+	for (const auto &tilePart : toCrush)
+	{
+		save->getTileEngine()->applyGravity(save->getTile(tilePart.first->getPosition() + Position(0, 0, 1)));
+	}
+	return MOVE_OK;
+}
+
+/**
+ * Draws the vehicle's parts mirrored again if its layout is, after a battle is loaded: tiles
+ * don't save it.
+ * @param save Battle save.
+ */
+void BattleVehicle::flipParts(SavedBattleGame *save) const
+{
+	if (!_mirrored)
+	{
+		return;
+	}
+	for (const auto &cell : _cells)
+	{
+		Tile *tile = save->getTile(_pos + cell.offset);
+		for (int part = O_FLOOR; part < O_MAX && tile; ++part)
+		{
+			if (cell.owned & (1 << part))
+			{
+				tile->setFlipped((TilePart)part, true);
+			}
+		}
+	}
 }
 
 /**

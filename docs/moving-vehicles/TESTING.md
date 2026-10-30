@@ -167,14 +167,32 @@ In the convoy showcase:
 
 In the convoy showcase (New Battle, last mission, with the Chimera craft):
 
-- [ ] The map is farmland. The traitor convoy starts at the west edge, on the middle rows, facing east, with most of its traitors inside and a few on foot; your Chimeras land north of it, in the middle.
-- [ ] On the aliens' first turn, before they know where you are, the convoy already drives east, the lead Chimera first. None of them stops to fight, and their turrets still shoot at what they see.
-- [ ] Each Chimera goes about 5 to 7 tiles a turn, around barns and through fences and crops.
-- [ ] Park one of your Chimeras across its way: the convoy goes around it, or stops as close as it can get.
-- [ ] A soldier on foot in its way is run over, or rams it to a stop if they survive.
-- [ ] Kill or stun a convoy Chimera's driver: that Chimera stops for good, and the others drive on.
-- [ ] Capture a convoy Chimera and drive it to the east edge: it stays.
-- [ ] Let a convoy Chimera reach the east edge: "An enemy vehicle escaped!", and it disappears with the traitors inside and its turret; the ground under it comes back. A soldier of yours on its roof stays behind, on the ground.
-- [ ] When every traitor has escaped or is down, the battle ends as usual. The debriefing counts no kill or capture for those who escaped, and nothing they carried.
-- [ ] Save after an escape and load: the escaped Chimera stays gone.
+- [x] The map is farmland. The traitor convoy starts at the west edge, on the middle rows, facing east, with most of its traitors inside and a few on foot; your Chimeras land north of it, in the middle.
+- [x] On the aliens' first turn, before they know where you are, the convoy already drives east, the lead Chimera first. None of them stops to fight, and their turrets still shoot at what they see.
+- [x] Each Chimera goes about 5 to 7 tiles a turn, around barns and through fences and crops.
+- [x] Park one of your Chimeras across its way: the convoy goes around it, or stops as close as it can get.
+- [x] A soldier on foot in its way is run over, or rams it to a stop if they survive.
+- [x] Kill or stun a convoy Chimera's driver: that Chimera stops for good, and the others drive on.
+- [x] Capture a convoy Chimera and drive it to the east edge: it stays.
+- [x] Let a convoy Chimera reach the east edge: "An enemy vehicle escaped!", and it disappears with the traitors inside and its turret; the ground under it comes back. A soldier of yours on its roof stays behind, on the ground.
+- [x] When every traitor has escaped or is down, the battle ends as usual. The debriefing counts no kill or capture for those who escaped, and nothing they carried.
+- [x] Save after an escape and load: the escaped Chimera stays gone.
+- [ ] A battle save made before this phase opens.
+
+**Mirror turning** (Phase 16)
+
+With the Rosigma Chimera craft (the convoy showcase works too):
+
+- [ ] Select the soldier on a Chimera's seat and switch drive mode on. Right click a tile east of the Chimera: it turns to face east, mirrored, and the driver and the vehicle pay 8 time units. Right click a tile north of it: it turns back, lined up north to south with its front to the south (it has no art for its back).
+- [ ] Right click a tile it already lines up with, ahead of it or behind it: nothing happens.
+- [ ] The turned Chimera looks right: hull, walls, ramp, turrets and the hull gun in their places, nothing missing or doubled. Its doors and ramp open and look right.
+- [ ] Shots hit the turned hull where it is drawn and pass where it isn't; soldiers inside are covered by its walls as before.
+- [ ] Soldiers, turrets and items on board turn with it and stay on board; the soldier on the seat still drives it.
+- [ ] A turn without room (a wall or another vehicle where the turned Chimera would stand) is blocked with the reason, and nothing changes. Fences and bushes in the way are crushed, and an enemy in the way is run over.
+- [ ] A turn draws reaction fire like a step.
+- [ ] With path preview on, a right click removes the preview first, as before; the next right click turns.
+- [ ] Drive the turned Chimera: the see-through vehicle of the route preview is drawn turned, and it drives as before.
+- [ ] Save with a turned Chimera and load: it is still turned and looks the same.
+- [ ] The traitor convoy (facing east) still drives east and never turns: the AI doesn't turn yet.
+- [ ] Remove `front` from the Chimera in the demo mod: a right click in drive mode turns the driver, as before.
 - [ ] A battle save made before this phase opens.

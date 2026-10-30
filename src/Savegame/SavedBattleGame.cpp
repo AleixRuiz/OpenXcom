@@ -247,6 +247,7 @@ void SavedBattleGame::load(const YAML::YamlNodeReader& node, Mod *mod, SavedGame
 	{
 		BattleVehicle *vehicle = new BattleVehicle();
 		vehicle->load(vehicleReader, mod);
+		vehicle->flipParts(this);
 		_vehicles.push_back(vehicle);
 	}
 

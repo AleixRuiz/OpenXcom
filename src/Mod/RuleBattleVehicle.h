@@ -49,7 +49,7 @@ private:
 	std::vector<std::string> _driverNames;
 	std::vector<const Armor*> _drivers;
 	std::vector<int> _driverRanks;
-	int _tuPerTile, _timeUnits, _crushArmor;
+	int _tuPerTile, _timeUnits, _crushArmor, _front, _tuPerQuarterTurn;
 	int _runOverDamage, _runOverDamageType, _aiKeepDistance, _aiExit;
 	int _driverReactionsZeroPoint, _driverReactionsRange;
 	const RuleDamageType *_runOverDamageRule;
@@ -80,6 +80,10 @@ public:
 	int getTuPerTile() const { return _tuPerTile; }
 	/// Gets the vehicle's own time units per turn.
 	int getTimeUnits() const { return _timeUnits; }
+	/// Gets the direction the front of the vehicle's map points to (0 north, 2 east, 4 south, 6 west), or -1 if the vehicle can't turn.
+	int getFront() const { return _front; }
+	/// Gets the time unit cost to turn the vehicle by a quarter turn, paid by the vehicle and its driver.
+	int getTuPerQuarterTurn() const { return _tuPerQuarterTurn; }
 	/// Gets the strongest terrain armor the vehicle crushes when driving through.
 	int getCrushArmor() const { return _crushArmor; }
 	/// Gets the damage dealt to a unit the vehicle is driven onto; 0 means units block it.

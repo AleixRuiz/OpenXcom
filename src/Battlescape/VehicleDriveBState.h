@@ -39,6 +39,7 @@ private:
 	size_t _step;
 	size_t _spotted;
 	bool _cancelled;
+	int _turnTo;
 	/// Counts the enemies the crew has spotted this turn.
 	size_t countSpotted() const;
 	/// Runs over the units in the way of a step.
@@ -47,7 +48,7 @@ private:
 	bool checkReactionFire();
 public:
 	/// Creates a new VehicleDriveBState.
-	VehicleDriveBState(BattlescapeGame *parent, BattleAction action, BattleVehicle *vehicle, const std::vector<Position> &path);
+	VehicleDriveBState(BattlescapeGame *parent, BattleAction action, BattleVehicle *vehicle, const std::vector<Position> &path, int turnTo = -1);
 	/// Cleans up the VehicleDriveBState.
 	~VehicleDriveBState();
 	/// Initializes the state.

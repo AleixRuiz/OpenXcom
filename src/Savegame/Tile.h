@@ -93,6 +93,7 @@ public:
 		Uint8 isUfoDoor:1;
 		Uint8 isDoor:1;
 		Uint8 isBackTileObject:1;
+		Uint8 isFlipped:1;
 	};
 	/**
 	 * Cached data that belongs to whole tile
@@ -320,6 +321,10 @@ public:
 	void animate();
 	/// Update cached value of sprite.
 	void updateSprite(TilePart part);
+	/// Is a tile part drawn mirrored, on a vehicle turned by mirroring its map?
+	bool isFlipped(TilePart part) const { return _objectsCache[part].isFlipped; }
+	/// Sets whether a tile part is drawn mirrored.
+	void setFlipped(TilePart part, bool flipped);
 	/// Get object sprites.
 	SurfaceRaw<const Uint8> getSprite(TilePart part) const
 	{
