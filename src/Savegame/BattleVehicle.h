@@ -17,6 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with OpenXcom.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <algorithm>
 #include <functional>
 #include <string>
 #include <utility>
@@ -76,6 +77,16 @@ public:
 		int crushing;
 	};
 
+	/// A part of a vehicle drawn in more facings: where it is in its map's own layout, and its part in each drawn facing.
+	struct FacingPart
+	{
+		Position offset;
+		int slot = 0;
+		/// Destroyed in some facing, so gone in all of them.
+		bool lost = false;
+		std::vector<PartRef> art;
+	};
+
 	/**
 	 * Finds the vehicles a craft map holds: remembers the terrain of the area before
 	 * the map is placed, then looks at which tile parts came from the craft's tilesets.
@@ -110,9 +121,18 @@ private:
 	std::vector<int> _cellAt;
 	// x and y of each column of the bounding box the vehicle has tiles in, z of its lowest tile there
 	std::vector<Position> _columns;
+	// a vehicle drawn in more facings: the facing it has now, the facings it is drawn in (its map's front first),
+	// its parts in its map's own layout with their art in each, the size and seats of that layout, and the
+	// tilesets of the drawn facings in the battle
+	int _facing;
+	std::vector<int> _drawnFacings;
+	std::vector<FacingPart> _facingParts;
+	Position _baseSize;
+	std::vector<Position> _baseSeats;
+	std::vector<int> _extraSetIds;
 
 	/// Is the tileset one of the vehicle's?
-	bool isOwnSet(int setId) const { return setId >= _firstSetId && setId < _lastSetId; }
+	bool isOwnSet(int setId) const { return (setId >= _firstSetId && setId < _lastSetId) || std::find(_extraSetIds.begin(), _extraSetIds.end(), setId) != _extraSetIds.end(); }
 	/// Rebuilds the lookup of cells by offset, after the cells change.
 	void buildLookup();
 	/// Gets the index of the cell at a map position for the current vehicle position, -1 if none.
@@ -153,6 +173,12 @@ private:
 	void readUnder(SavedBattleGame *save);
 	/// Mirrors the vehicle's layout along its diagonal.
 	void mirrorLayout(std::vector<PartRef> &carried);
+	/// Finds the drawn facing that shows a facing, directly or mirrored.
+	int findArt(int facing, int &quarters, bool &mirrored) const;
+	/// Gets where a part of the vehicle's own layout goes in a facing.
+	void placePart(const FacingPart &part, int quarters, bool mirrored, Position &at, int &slot) const;
+	/// Turns a vehicle drawn in more facings, taking each facing's art.
+	MoveResult turnDrawn(SavedBattleGame *save, int facing, std::vector<BattleUnit*> &victims);
 	/// Does the vehicle's side know where a unit is?
 	bool knowsOf(const BattleUnit *unit) const;
 	/// Decides what a unit in the way does to the vehicle when it gets there.
@@ -261,6 +287,10 @@ public:
 	MoveResult turn(SavedBattleGame *save, int facing, std::vector<BattleUnit*> &victims);
 	/// Draws the vehicle's parts mirrored again after a battle is loaded.
 	void flipParts(SavedBattleGame *save) const;
+	/// Gives the vehicles of a map the maps they are drawn with in other facings.
+	static void loadFacingMaps(SavedBattleGame *save, Mod *mod, const RuleBattleVehicle &rule, const std::vector<BattleVehicle*> &vehicles, Position origin, Position mapSize);
+	/// Is the vehicle drawn in more facings than its map's?
+	bool hasDrawnFacings() const { return !_drawnFacings.empty(); }
 	/// Finds the steps that take the vehicle to a new place, following the ground.
 	bool findPath(SavedBattleGame *save, Position target, std::vector<Position> &path, std::string &error) const;
 	/// Finds every place the vehicle can drive to with some time units.

@@ -58,6 +58,18 @@ void RuleBattleVehicle::load(const YAML::YamlNodeReader &node)
 	node.tryRead("crushArmor", _crushArmor);
 	node.tryRead("front", _front);
 	node.tryRead("tuPerQuarterTurn", _tuPerQuarterTurn);
+	if (const auto &facingMaps = node["facingMaps"])
+	{
+		_facingMaps.clear();
+		for (const auto &facingMapReader : facingMaps.children())
+		{
+			FacingMap facingMap;
+			facingMapReader.tryRead("facing", facingMap.facing);
+			facingMapReader.tryRead("map", facingMap.map);
+			facingMapReader.tryRead("mapDataSets", facingMap.mapDataSets);
+			_facingMaps.push_back(facingMap);
+		}
+	}
 	node.tryRead("runOverDamage", _runOverDamage);
 	node.tryRead("runOverDamageType", _runOverDamageType);
 	node.tryRead("aiKeepDistance", _aiKeepDistance);
@@ -156,6 +168,12 @@ void RuleBattleVehicle::afterLoad(const Mod *mod, const std::string &type, RuleT
 	if (mod->checkForSoftError(_front != -1 && (_front < 0 || _front > 6 || _front % 2 != 0), type, "battleVehicle: front must be 0, 2, 4 or 6.", LOG_ERROR))
 	{
 		_front = -1;
+	}
+	for (const auto &facingMap : _facingMaps)
+	{
+		mod->checkForSoftError(_front == -1, type, "battleVehicle: facingMaps need front.", LOG_ERROR);
+		mod->checkForSoftError(facingMap.facing < 0 || facingMap.facing > 6 || facingMap.facing % 2 != 0 || facingMap.facing == _front, type, "battleVehicle: each of facingMaps needs a facing of 0, 2, 4 or 6, other than front.", LOG_ERROR);
+		mod->checkForSoftError(facingMap.map.empty() || facingMap.mapDataSets.empty(), type, "battleVehicle: each of facingMaps needs a map and its mapDataSets.", LOG_ERROR);
 	}
 	if (_tuPerQuarterTurn < 0)
 	{

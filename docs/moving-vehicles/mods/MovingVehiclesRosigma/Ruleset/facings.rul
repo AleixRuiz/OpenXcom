@@ -1,0 +1,17 @@
+# The showcase Chimera drawn in all four facings (M3, Phase 18). Its own map faces south, and east is
+# that map mirrored; these are the craft map turned to face north and west, drawn from behind. They were
+# drafted with an AI image tool from Rosigma's art and cut into tiles by the scripts in
+# docs/moving-vehicles/tools/art. The tilesets and maps they need (TERRAIN/MV_CHIMERA_N and MV_CHIMERA_W,
+# MAPS/CHIMERA_SMALL_NON_HYDRA_N and _W) are Rosigma's art and are not in the repository: without them
+# the Chimera turns by mirroring only, with an error in the log.
+# Mirror turning is the default; delete this file to go back to it.
+crafts:
+  - type: STR_CHIMERA
+    battleVehicle:
+      facingMaps:
+        - facing: 0
+          map: CHIMERA_SMALL_NON_HYDRA_N
+          mapDataSets: [BLANKS, MV_CHIMERA_N]
+        - facing: 6
+          map: CHIMERA_SMALL_NON_HYDRA_W
+          mapDataSets: [BLANKS, MV_CHIMERA_W]

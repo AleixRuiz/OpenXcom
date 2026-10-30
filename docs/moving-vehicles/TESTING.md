@@ -196,3 +196,17 @@ With the Rosigma Chimera craft (the convoy showcase works too):
 - [ ] The traitor convoy (facing east) still drives east and never turns: the AI doesn't turn yet.
 - [ ] Remove `front` from the Chimera in the demo mod: a right click in drive mode turns the driver, as before.
 - [ ] A battle save made before this phase opens.
+
+**Four facings** (Phase 18)
+
+With `facings.rul` and the showcase Chimera's tiles in the Rosigma demo mod, and the Chimera craft:
+
+- [ ] Right click north of a Chimera in drive mode: it turns half round, for 16 time units, and shows its back (open rear door, lowered ramp) and its right side.
+- [ ] Right click west of it: it faces west, showing its back and its left side. Right click east: it faces east (its south art mirrored). Right click south: back as it started.
+- [ ] In each facing, shots hit the hull where it is drawn, and soldiers walk in and out of the open rear door.
+- [ ] Soldiers, the roof turret and the hull gun on board stay on board and turn with it; the soldier on the seat still drives.
+- [ ] Lower the camera a level: the troop bay inside looks plausible in each facing (it keeps its old art).
+- [ ] Destroy a part of the hull, then turn: it is still gone.
+- [ ] Save in each facing and load: same facing, same look.
+- [ ] Without the tiles (rename `MV_CHIMERA_N.MCD`): the game starts, the log names the missing map, and the Chimera turns by mirroring.
+- [ ] The Steel Legion Chimera, the Baneblade and the traitor convoy still turn by mirroring only.

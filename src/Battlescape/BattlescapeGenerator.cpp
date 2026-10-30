@@ -3305,7 +3305,10 @@ void BattlescapeGenerator::generateMap(const std::vector<MapScript*> *script, co
 			if (ufoVehicleRule)
 			{
 				const Position origin(_ufoPos[i].x * 10, _ufoPos[i].y * 10, _ufoZ[i]);
-				for (auto* vehicle : ufoVehiclePlacement.finish(_save, *ufoVehicleRule, consolidatedUfoType, true, FACTION_HOSTILE, mapDataSetIDOffset, (int)_save->getMapDataSets()->size(), origin))
+				const std::vector<BattleVehicle*> ufoVehicles = ufoVehiclePlacement.finish(_save, *ufoVehicleRule, consolidatedUfoType, true, FACTION_HOSTILE, mapDataSetIDOffset, (int)_save->getMapDataSets()->size(), origin);
+				// the maps they are drawn with in other facings, if the mod draws them so
+				BattleVehicle::loadFacingMaps(_save, _game->getMod(), *ufoVehicleRule, ufoVehicles, origin, Position(ufoMaps[i]->getSizeX(), ufoMaps[i]->getSizeY(), ufoMaps[i]->getSizeZ()));
+				for (auto* vehicle : ufoVehicles)
 				{
 					_save->getVehicles()->push_back(vehicle);
 				}
@@ -3342,7 +3345,10 @@ void BattlescapeGenerator::generateMap(const std::vector<MapScript*> *script, co
 		if (vehicleRule)
 		{
 			const Position origin(_craftPos.x * 10, _craftPos.y * 10, _craftZ);
-			for (auto* vehicle : vehiclePlacement.finish(_save, *vehicleRule, _craftRules->getType(), false, FACTION_PLAYER, mapDataSetIDOffset + craftDataSetIDOffset, (int)_save->getMapDataSets()->size(), origin))
+			const std::vector<BattleVehicle*> vehicles = vehiclePlacement.finish(_save, *vehicleRule, _craftRules->getType(), false, FACTION_PLAYER, mapDataSetIDOffset + craftDataSetIDOffset, (int)_save->getMapDataSets()->size(), origin);
+			// the maps they are drawn with in other facings, if the mod draws them so
+			BattleVehicle::loadFacingMaps(_save, _game->getMod(), *vehicleRule, vehicles, origin, Position(craftMap->getSizeX(), craftMap->getSizeY(), craftMap->getSizeZ()));
+			for (auto* vehicle : vehicles)
 			{
 				_save->getVehicles()->push_back(vehicle);
 			}
