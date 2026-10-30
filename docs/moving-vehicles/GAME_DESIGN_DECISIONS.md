@@ -584,3 +584,11 @@ Decided · 2026-10-30 · M3, Phase 18 · the user's call
 - **No back:** a vehicle with neither north nor west art can't face away from the camera. Asked to, it lines up with that direction and drives in reverse.
 
 **Why.** Mirroring swaps the two faces seen from the same side, so it can stand in for a missing drawing on that side, but it can never show a back that was never drawn (GD-15). Taking every drawn map a mod has, and mirroring only to fill gaps, gives the best look the art allows. The usual craft, drawn facing the camera only, still turns between its two facings.
+
+**Settled when building it (2026-10-30).**
+
+- **Mirror turning is the default.** Drawn facings only apply to a vehicle whose rule sets `facingMaps`; everything else turns by mirroring as in Phase 16. Phase 18 is a separate path in the code and its own commit, so it can be dropped without touching mirror turning (the user's call: strong for the demo, maybe dropped later).
+- **Each facing map lists its own tilesets.** A map file stores each tile part in one byte, and the Chimera craft's own tilesets already use 220 of the 256 numbers, so a facing map can't share them. Each entry of `facingMaps` names its map and its `mapDataSets`; the engine loads those tilesets for the battle.
+- **A facing map is the whole craft or UFO map turned,** so a map with several vehicles (three Chimeras) needs one facing map, not one per vehicle.
+- **Destroyed parts stay destroyed:** a part gone in the facing a vehicle has when it turns is gone in every facing.
+- **The inside keeps its own art.** Parts a drawn facing doesn't show (the troop bay under the roof) reuse their sprites, turned where that is exact (floors turned half round) and mirrored otherwise.

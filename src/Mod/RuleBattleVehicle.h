@@ -40,6 +40,13 @@ public:
 	enum Split { SPLIT_CONNECTED, SPLIT_RECTS, SPLIT_WHOLE };
 	/// Who works the vehicle's mounted guns.
 	enum GunCrew { GUNS_NEED_DRIVER, GUNS_WORK_ALONE };
+	/// A map the vehicle is drawn with in another facing: the whole craft or UFO map turned that way, with its own tilesets.
+	struct FacingMap
+	{
+		int facing = -1;
+		std::string map;
+		std::vector<std::string> mapDataSets;
+	};
 private:
 	std::string _splitName, _gunCrewName, _aiExitName;
 	GunCrew _gunCrew;
@@ -49,6 +56,7 @@ private:
 	std::vector<std::string> _driverNames;
 	std::vector<const Armor*> _drivers;
 	std::vector<int> _driverRanks;
+	std::vector<FacingMap> _facingMaps;
 	int _tuPerTile, _timeUnits, _crushArmor, _front, _tuPerQuarterTurn;
 	int _runOverDamage, _runOverDamageType, _aiKeepDistance, _aiExit;
 	int _driverReactionsZeroPoint, _driverReactionsRange;
@@ -82,6 +90,8 @@ public:
 	int getTimeUnits() const { return _timeUnits; }
 	/// Gets the direction the front of the vehicle's map points to (0 north, 2 east, 4 south, 6 west), or -1 if the vehicle can't turn.
 	int getFront() const { return _front; }
+	/// Gets the maps the vehicle is drawn with in other facings.
+	const std::vector<FacingMap> &getFacingMaps() const { return _facingMaps; }
 	/// Gets the time unit cost to turn the vehicle by a quarter turn, paid by the vehicle and its driver.
 	int getTuPerQuarterTurn() const { return _tuPerQuarterTurn; }
 	/// Gets the strongest terrain armor the vehicle crushes when driving through.

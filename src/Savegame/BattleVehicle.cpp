@@ -31,6 +31,7 @@
 #include "Tile.h"
 #include "../Battlescape/Pathfinding.h"
 #include "../Battlescape/TileEngine.h"
+#include "../Engine/FileMap.h"
 #include "../Engine/Logger.h"
 #include "../Mod/Armor.h"
 #include "../Mod/MapDataSet.h"
@@ -55,6 +56,85 @@ const BattleVehicle::PartRef SCORCHED_EARTH = { 1, 0 };
 
 /// Ground height of a column with no ground within reach.
 const int NO_GROUND = INT_MIN;
+
+/**
+ * Turns a tile of a width x length area by quarter turns, north to east, then mirrors it along the
+ * diagonal if asked: how a vehicle's own layout becomes its layout in another facing.
+ * @param p Tile in the area.
+ * @param width Width of the area.
+ * @param length Length of the area.
+ * @param quarters Quarter turns.
+ * @param mirrored Mirror after turning?
+ * @return The tile in the turned area.
+ */
+Position turnTile(Position p, int width, int length, int quarters, bool mirrored)
+{
+	for (int i = 0; i < quarters; ++i)
+	{
+		p = Position(length - 1 - p.y, p.x, p.z);
+		std::swap(width, length);
+	}
+	return mirrored ? Position(p.y, p.x, p.z) : p;
+}
+
+/**
+ * Undoes turnTile: from a tile of the turned area back to the area as it was.
+ */
+Position unturnTile(Position p, int width, int length, int quarters, bool mirrored)
+{
+	if (quarters % 2)
+	{
+		std::swap(width, length);
+	}
+	if (mirrored)
+	{
+		p = Position(p.y, p.x, p.z);
+	}
+	return turnTile(p, width, length, (4 - quarters) % 4, false);
+}
+
+/**
+ * Turns a wall, a tile's west or north edge, like turnTile turns tiles. A wall turned onto a tile's
+ * far edge lands on the next tile's near edge.
+ * @param p Tile of the wall.
+ * @param slot O_WESTWALL or O_NORTHWALL.
+ * @param width Width of the area.
+ * @param length Length of the area.
+ * @param quarters Quarter turns.
+ * @param mirrored Mirror after turning?
+ * @param at Gets the tile the wall lands on.
+ * @param newSlot Gets which of its walls it is.
+ */
+void turnWall(Position p, int slot, int width, int length, int quarters, bool mirrored, Position &at, int &newSlot)
+{
+	// the wall as an edge between two tile corners
+	int ax = p.x, ay = p.y;
+	int bx = slot == O_WESTWALL ? p.x : p.x + 1, by = slot == O_WESTWALL ? p.y + 1 : p.y;
+	for (int i = 0; i < quarters; ++i)
+	{
+		const int oldAx = ax, oldBx = bx;
+		ax = length - ay;
+		ay = oldAx;
+		bx = length - by;
+		by = oldBx;
+		std::swap(width, length);
+	}
+	if (mirrored)
+	{
+		std::swap(ax, ay);
+		std::swap(bx, by);
+	}
+	if (ax == bx)
+	{
+		newSlot = O_WESTWALL;
+		at = Position(ax, std::min(ay, by), p.z);
+	}
+	else
+	{
+		newSlot = O_NORTHWALL;
+		at = Position(std::min(ax, bx), ay, p.z);
+	}
+}
 
 }
 
@@ -298,7 +378,7 @@ std::vector<BattleVehicle*> BattleVehicle::Placement::finish(SavedBattleGame *sa
 /**
  * Creates an empty vehicle, to be loaded from a save.
  */
-BattleVehicle::BattleVehicle() : _ufo(false), _faction(0), _timeUnits(0), _aiDecided(false), _tuCarry(0), _mirrored(false), _firstSetId(-1), _lastSetId(-1)
+BattleVehicle::BattleVehicle() : _ufo(false), _faction(0), _timeUnits(0), _aiDecided(false), _tuCarry(0), _mirrored(false), _firstSetId(-1), _lastSetId(-1), _facing(-1)
 {
 }
 
@@ -311,7 +391,7 @@ BattleVehicle::BattleVehicle() : _ufo(false), _faction(0), _timeUnits(0), _aiDec
  * @param lastSetId Index after the map's last tileset in the battle.
  */
 BattleVehicle::BattleVehicle(const std::string &type, bool ufo, int faction, int firstSetId, int lastSetId) :
-	_type(type), _ufo(ufo), _faction(faction), _timeUnits(0), _aiDecided(false), _tuCarry(0), _mirrored(false), _firstSetId(firstSetId), _lastSetId(lastSetId)
+	_type(type), _ufo(ufo), _faction(faction), _timeUnits(0), _aiDecided(false), _tuCarry(0), _mirrored(false), _firstSetId(firstSetId), _lastSetId(lastSetId), _facing(-1)
 {
 }
 
@@ -365,6 +445,37 @@ void BattleVehicle::load(const YAML::YamlNodeReader &reader, const Mod *mod)
 		_cells.push_back(cell);
 	}
 	buildLookup();
+
+	if (const auto &facings = reader["facings"])
+	{
+		facings.tryRead("facing", _facing);
+		facings.tryRead("drawn", _drawnFacings);
+		facings.tryRead("size", _baseSize);
+		facings.tryRead("sets", _extraSetIds);
+		std::vector<int> baseSeats;
+		facings.tryRead("seats", baseSeats);
+		_baseSeats.clear();
+		for (size_t i = 0; i + 3 <= baseSeats.size(); i += 3)
+		{
+			_baseSeats.push_back(Position(baseSeats[i], baseSeats[i + 1], baseSeats[i + 2]));
+		}
+		std::vector<int> parts;
+		facings.tryRead("parts", parts);
+		const size_t stride = 5 + 2 * _drawnFacings.size();
+		_facingParts.clear();
+		for (size_t i = 0; i + stride <= parts.size(); i += stride)
+		{
+			FacingPart part;
+			part.offset = Position(parts[i], parts[i + 1], parts[i + 2]);
+			part.slot = parts[i + 3];
+			part.lost = parts[i + 4] != 0;
+			for (size_t j = 0; j < _drawnFacings.size(); ++j)
+			{
+				part.art.push_back({ parts[i + 5 + j * 2], parts[i + 6 + j * 2] });
+			}
+			_facingParts.push_back(part);
+		}
+	}
 }
 
 /**
@@ -408,6 +519,32 @@ void BattleVehicle::save(YAML::YamlNodeWriter writer) const
 		}
 	}
 	writer.write("cells", data).setFlowStyle();
+
+	if (!_drawnFacings.empty())
+	{
+		auto facings = writer["facings"];
+		facings.setAsMap();
+		facings.write("facing", _facing);
+		facings.write("drawn", _drawnFacings).setFlowStyle();
+		facings.write("size", _baseSize);
+		facings.write("sets", _extraSetIds).setFlowStyle();
+		std::vector<int> baseSeats;
+		for (const auto &seat : _baseSeats)
+		{
+			baseSeats.insert(baseSeats.end(), { seat.x, seat.y, seat.z });
+		}
+		facings.write("seats", baseSeats).setFlowStyle();
+		std::vector<int> parts;
+		for (const auto &part : _facingParts)
+		{
+			parts.insert(parts.end(), { part.offset.x, part.offset.y, part.offset.z, part.slot, part.lost ? 1 : 0 });
+			for (const auto &ref : part.art)
+			{
+				parts.insert(parts.end(), { ref.id, ref.setId });
+			}
+		}
+		facings.write("parts", parts).setFlowStyle();
+	}
 }
 
 /**
@@ -1675,6 +1812,10 @@ int BattleVehicle::getFacing(const Mod *mod) const
 	{
 		return -1;
 	}
+	if (hasDrawnFacings())
+	{
+		return _facing;
+	}
 	return _mirrored ? mirrorDirection(rule->getFront()) : rule->getFront();
 }
 
@@ -1689,6 +1830,18 @@ int BattleVehicle::getFacing(const Mod *mod) const
 int BattleVehicle::getFacingToward(const Mod *mod, int direction) const
 {
 	const int facing = getFacing(mod);
+	if (facing != -1 && hasDrawnFacings())
+	{
+		// drawn in more facings: that way if it can face it, otherwise back first
+		int quarters;
+		bool mirrored;
+		if (findArt(direction, quarters, mirrored) != -1)
+		{
+			return direction;
+		}
+		const int back = (direction + 4) % 8;
+		return findArt(back, quarters, mirrored) != -1 ? back : facing;
+	}
 	if (facing == -1 || facing % 4 == direction % 4)
 	{
 		return facing;
@@ -1783,6 +1936,10 @@ void BattleVehicle::mirrorLayout(std::vector<PartRef> &carried)
 BattleVehicle::MoveResult BattleVehicle::turn(SavedBattleGame *save, int facing, std::vector<BattleUnit*> &victims)
 {
 	victims.clear();
+	if (hasDrawnFacings())
+	{
+		return turnDrawn(save, facing, victims);
+	}
 	const int current = getFacing(save->getMod());
 	if (_cells.empty() || current == -1)
 	{
@@ -1899,6 +2056,411 @@ BattleVehicle::MoveResult BattleVehicle::turn(SavedBattleGame *save, int facing,
 		save->getTileEngine()->applyGravity(save->getTile(tilePart.first->getPosition() + Position(0, 0, 1)));
 	}
 	return MOVE_OK;
+}
+
+/**
+ * Finds the drawn facing that shows a facing: the facing itself if it is drawn, otherwise its mirror
+ * partner (south for east, north for west), mirrored.
+ * @param facing The facing.
+ * @param quarters Gets the quarter turns from the vehicle's map to the drawn facing.
+ * @param mirrored Gets whether the drawn facing is mirrored.
+ * @return Index of the drawn facing (in FacingPart::art), or -1 if the vehicle can't show that facing.
+ */
+int BattleVehicle::findArt(int facing, int &quarters, bool &mirrored) const
+{
+	if (_drawnFacings.empty())
+	{
+		return -1;
+	}
+	for (int pass = 0; pass < 2; ++pass)
+	{
+		const int drawnFacing = pass == 0 ? facing : mirrorDirection(facing);
+		auto it = std::find(_drawnFacings.begin(), _drawnFacings.end(), drawnFacing);
+		if (it != _drawnFacings.end())
+		{
+			quarters = ((drawnFacing - _drawnFacings.front() + 8) % 8) / 2;
+			mirrored = pass == 1;
+			return (int)(it - _drawnFacings.begin());
+		}
+	}
+	return -1;
+}
+
+/**
+ * Gets where a part of the vehicle's own layout goes in a facing (see turnTile and turnWall).
+ * @param part The part.
+ * @param quarters Quarter turns from the vehicle's map.
+ * @param mirrored Mirrored after turning?
+ * @param at Gets its tile, relative to the vehicle's position.
+ * @param slot Gets its tile part.
+ */
+void BattleVehicle::placePart(const FacingPart &part, int quarters, bool mirrored, Position &at, int &slot) const
+{
+	if (part.slot == O_WESTWALL || part.slot == O_NORTHWALL)
+	{
+		turnWall(part.offset, part.slot, _baseSize.x, _baseSize.y, quarters, mirrored, at, slot);
+	}
+	else
+	{
+		at = turnTile(part.offset, _baseSize.x, _baseSize.y, quarters, mirrored);
+		slot = part.slot;
+	}
+}
+
+/**
+ * Turns a vehicle drawn in more facings round its middle, like turn() does for mirroring: its parts go
+ * where the new facing puts them, drawn as that facing shows them (see findArt), and everything on
+ * board goes to the matching tile and turns with it. Parts destroyed in any facing stay gone. A turn
+ * is a step: weak terrain in the way is crushed, and if anything blocks it nothing changes; units to
+ * run over are handed back without turning, for the caller to deal with first.
+ * @param save Battle save.
+ * @param facing The facing to turn to.
+ * @param victims Gets the units in the way to run over, with MOVE_RUN_OVER.
+ * @return MOVE_OK, MOVE_RUN_OVER, or what blocked the turn.
+ */
+BattleVehicle::MoveResult BattleVehicle::turnDrawn(SavedBattleGame *save, int facing, std::vector<BattleUnit*> &victims)
+{
+	int quarters, oldQuarters;
+	bool mirrored, oldMirrored;
+	const int art = findArt(facing, quarters, mirrored);
+	if (_cells.empty() || art < 0 || findArt(_facing, oldQuarters, oldMirrored) < 0)
+	{
+		return MOVE_BLOCKED_EDGE;
+	}
+	if (facing == _facing)
+	{
+		return MOVE_OK;
+	}
+
+	// a part destroyed in the facing the vehicle has now stays gone in the others
+	for (auto &part : _facingParts)
+	{
+		Position at;
+		int slot;
+		placePart(part, oldQuarters, oldMirrored, at, slot);
+		const Tile *tile = save->getTile(_pos + at);
+		if (!tile || !isOwnSet(getPart(tile, (TilePart)slot).setId))
+		{
+			part.lost = true;
+		}
+	}
+
+	// the layout's size in a facing, for turning round its middle
+	auto turnedSize = [&](int q, bool m)
+	{
+		return ((q % 2 == 1) != m) ? Position(_baseSize.y, _baseSize.x, 0) : Position(_baseSize.x, _baseSize.y, 0);
+	};
+	const Position oldPos = _pos;
+	const Position oldSize = turnedSize(oldQuarters, oldMirrored);
+	const Position middle = oldPos + Position((oldSize.x - 1) / 2, (oldSize.y - 1) / 2, 0);
+	const int buried = countBuried(save, oldPos);
+	const std::vector<BattleUnit*> passengers = getPassengers(save);
+
+	std::vector<BattleItem*> cargo;
+	for (const auto &cell : _cells)
+	{
+		const Position p = oldPos + cell.offset;
+		if (isOnBoard(save, p))
+		{
+			for (auto *item : *save->getTile(p)->getInventory())
+			{
+				cargo.push_back(item);
+			}
+		}
+	}
+
+	std::vector<PartRef> carried;
+	std::vector<char> discovered;
+	lift(save, carried, discovered);
+	const std::vector<Cell> oldCells = _cells;
+	const bool wasDiscovered = std::any_of(discovered.begin(), discovered.end(), [](char d) { return d != 0; });
+
+	// the new layout: every part where the facing puts it, drawn as that facing shows it
+	std::vector<Cell> cells;
+	std::vector<PartRef> parts;
+	for (const auto &part : _facingParts)
+	{
+		Position at;
+		int slot;
+		placePart(part, quarters, mirrored, at, slot);
+		size_t i = 0;
+		while (i < cells.size() && !(cells[i].offset == at))
+		{
+			++i;
+		}
+		if (i == cells.size())
+		{
+			Cell cell;
+			cell.offset = at;
+			// the vehicle takes the object slot of every tile it covers, as its map did
+			cell.owned = 1 << O_OBJECT;
+			cells.push_back(cell);
+			parts.resize(cells.size() * O_MAX);
+		}
+		cells[i].owned |= 1 << slot;
+		parts[i * O_MAX + slot] = part.lost ? PartRef() : part.art[art];
+	}
+	_cells = cells;
+	_mirrored = mirrored;
+	buildLookup();
+	readUnder(save);
+	std::vector<char> inside(_cells.size(), 0);
+	for (size_t i = 0; i < _cells.size(); ++i)
+	{
+		inside[i] = parts[i * O_MAX + O_FLOOR].id != -1;
+	}
+	const std::vector<char> seen(_cells.size(), wasDiscovered ? 1 : 0);
+
+	// round its middle, onto the ground there
+	const Position newSize = turnedSize(quarters, mirrored);
+	Position newPos = middle - Position((newSize.x - 1) / 2, (newSize.y - 1) / 2, 0);
+	newPos.z = oldPos.z;
+	MoveResult result = MOVE_BLOCKED_EDGE;
+	std::vector<std::pair<Tile*, TilePart> > toCrush;
+	if (newPos.x >= 0 && newPos.y >= 0 && newPos.x + _size.x <= save->getMapSizeX() && newPos.y + _size.y <= save->getMapSizeY())
+	{
+		newPos.z = findLevel(save, newPos.x, newPos.y, oldPos.z, buried);
+		result = newPos.z < 0 ? MOVE_TOO_STEEP : checkPlace(save, newPos, inside, passengers, getCrushArmor(save->getMod()), [&](const BattleUnit *unit) { return judgeUnit(save, unit); }, toCrush, victims);
+	}
+	if (result != MOVE_OK || !victims.empty())
+	{
+		_cells = oldCells;
+		_mirrored = oldMirrored;
+		buildLookup();
+		place(save, oldPos, carried, discovered);
+		return result != MOVE_OK ? result : MOVE_RUN_OVER;
+	}
+	for (const auto &tilePart : toCrush)
+	{
+		for (int i = 0; i < 8 && isSolid(tilePart.first->getMapData(tilePart.second)); ++i)
+		{
+			tilePart.first->destroy(tilePart.second, TILE);
+		}
+	}
+	place(save, newPos, parts, seen);
+	_facing = facing;
+	_seats.clear();
+	for (const auto &seat : _baseSeats)
+	{
+		_seats.push_back(turnTile(seat, _baseSize.x, _baseSize.y, quarters, mirrored));
+	}
+
+	// everything on board goes to the matching tile, back to the vehicle's own layout and out to the new facing
+	auto moveTile = [&](Position p)
+	{
+		const Position own = unturnTile(p - oldPos, _baseSize.x, _baseSize.y, oldQuarters, oldMirrored);
+		return newPos + turnTile(own, _baseSize.x, _baseSize.y, quarters, mirrored);
+	};
+	auto turnDirection = [&](int direction)
+	{
+		if (oldMirrored)
+		{
+			direction = mirrorDirection(direction);
+		}
+		direction = (direction + 2 * (quarters - oldQuarters) + 8) % 8;
+		return mirrored ? mirrorDirection(direction) : direction;
+	};
+	// free every old tile first, so passengers don't clear each other's new tiles
+	for (auto *unit : passengers)
+	{
+		unit->setTile(nullptr, save);
+	}
+	for (auto *unit : passengers)
+	{
+		// a big unit stands on the corner of its tiles nearest to the map's corner
+		const int size = unit->getArmor()->getSize();
+		Position p = moveTile(unit->getPosition());
+		for (int x = 0; x < size; ++x)
+		{
+			for (int y = 0; y < size; ++y)
+			{
+				const Position q = moveTile(unit->getPosition() + Position(x, y, 0));
+				p = Position(std::min(p.x, q.x), std::min(p.y, q.y), p.z);
+			}
+		}
+		unit->setTile(save->getTile(p), save);
+		unit->setPosition(p);
+		unit->setPosition(p); // it did not walk, so its last position is the new one too
+		unit->setDirection(turnDirection(unit->getDirection()));
+	}
+
+	const RuleInventory *ground = save->getMod()->getInventoryGround();
+	for (auto *item : cargo)
+	{
+		Tile *from = item->getTile();
+		const Position p = moveTile(from->getPosition());
+		from->removeItem(item);
+		save->getTile(p)->addItem(item, ground);
+		if (item->getUnit() && item->getUnit()->getPosition() == from->getPosition())
+		{
+			item->getUnit()->setPosition(p);
+		}
+	}
+
+	auto *nodes = save->getNodes();
+	for (int id : _nodeIds)
+	{
+		if (id >= 0 && (size_t)id < nodes->size())
+		{
+			Node *node = nodes->at(id);
+			node->setPosition(moveTile(node->getPosition()));
+		}
+	}
+
+	// what was left behind on the tiles the vehicle left falls, and so does anything on top of crushed terrain
+	for (const auto &cell : oldCells)
+	{
+		save->getTileEngine()->applyGravity(save->getTile(oldPos + cell.offset));
+	}
+	for (const auto &tilePart : toCrush)
+	{
+		save->getTileEngine()->applyGravity(save->getTile(tilePart.first->getPosition() + Position(0, 0, 1)));
+	}
+	return MOVE_OK;
+}
+
+/**
+ * Gives the vehicles a craft or UFO map makes the maps they are drawn with in other facings, if their
+ * rule has facingMaps. Each is the whole craft or UFO map turned to its facing, drawn with tilesets of
+ * its own, which are loaded for the battle. Each vehicle then remembers, for every part of its own
+ * layout, its part in each drawn facing. A facing whose map or tilesets are missing is left out, with
+ * an error in the log. Call right after the vehicles are made (see Placement::finish).
+ * @param save Battle save.
+ * @param mod The mod, to load the tilesets.
+ * @param rule The vehicles' rule.
+ * @param vehicles The vehicles the map made.
+ * @param origin Where the map's first tile was placed.
+ * @param mapSize Size of the map.
+ */
+void BattleVehicle::loadFacingMaps(SavedBattleGame *save, Mod *mod, const RuleBattleVehicle &rule, const std::vector<BattleVehicle*> &vehicles, Position origin, Position mapSize)
+{
+	if (rule.getFacingMaps().empty() || rule.getFront() == -1 || vehicles.empty())
+	{
+		return;
+	}
+	struct Drawn
+	{
+		int facing, quarters, sizeX, sizeY, sizeZ;
+		std::vector<PartRef> parts;
+	};
+	std::vector<Drawn> drawn;
+	std::vector<int> extraSetIds;
+	for (const auto &facingMap : rule.getFacingMaps())
+	{
+		const std::string filename = "MAPS/" + facingMap.map + ".MAP";
+		bool found = FileMap::fileExists(filename);
+		for (const auto &name : facingMap.mapDataSets)
+		{
+			found = found && FileMap::fileExists("TERRAIN/" + name + ".MCD");
+		}
+		if (!found || facingMap.facing < 0 || facingMap.facing > 6 || facingMap.facing % 2 != 0)
+		{
+			Log(LOG_ERROR) << "battleVehicle of " << vehicles.front()->_type << ": the map for facing " << facingMap.facing << " (" << filename << ") or one of its tilesets is missing; it doesn't show that facing.";
+			continue;
+		}
+		// its tilesets, loaded for the battle
+		std::vector<std::pair<int, size_t> > sets;
+		for (const auto &name : facingMap.mapDataSets)
+		{
+			MapDataSet *mds = mod->getMapDataSet(name);
+			mds->loadData(mod->getMCDPatch(name));
+			save->getMapDataSets()->push_back(mds);
+			sets.push_back(std::make_pair((int)save->getMapDataSets()->size() - 1, mds->getSize()));
+			extraSetIds.push_back(sets.back().first);
+		}
+		Drawn d;
+		d.facing = facingMap.facing;
+		d.quarters = ((facingMap.facing - rule.getFront() + 8) % 8) / 2;
+		auto file = FileMap::getIStream(filename);
+		unsigned char size[3];
+		file->read((char*)size, sizeof(size));
+		d.sizeY = size[0];
+		d.sizeX = size[1];
+		d.sizeZ = size[2];
+		if (d.sizeX != (d.quarters % 2 ? mapSize.y : mapSize.x) || d.sizeY != (d.quarters % 2 ? mapSize.x : mapSize.y))
+		{
+			Log(LOG_ERROR) << "battleVehicle of " << vehicles.front()->_type << ": " << filename << " is not its map turned to facing " << facingMap.facing << "; it doesn't show that facing.";
+			continue;
+		}
+		d.parts.assign((size_t)d.sizeX * d.sizeY * d.sizeZ * O_MAX, PartRef());
+		for (int z = d.sizeZ - 1; z >= 0; --z)
+		{
+			for (int y = 0; y < d.sizeY; ++y)
+			{
+				for (int x = 0; x < d.sizeX; ++x)
+				{
+					unsigned char value[O_MAX];
+					file->read((char*)value, sizeof(value));
+					for (int part = O_FLOOR; part < O_MAX; ++part)
+					{
+						int index = value[part];
+						for (size_t s = 0; s < sets.size() && index > 0; ++s)
+						{
+							if ((size_t)index < sets[s].second)
+							{
+								d.parts[(((size_t)z * d.sizeY + y) * d.sizeX + x) * O_MAX + part] = { index, sets[s].first };
+								break;
+							}
+							index -= (int)sets[s].second;
+						}
+					}
+				}
+			}
+		}
+		drawn.push_back(d);
+	}
+	if (drawn.empty())
+	{
+		return;
+	}
+
+	for (auto *vehicle : vehicles)
+	{
+		vehicle->_facing = rule.getFront();
+		vehicle->_drawnFacings = { rule.getFront() };
+		for (const auto &d : drawn)
+		{
+			vehicle->_drawnFacings.push_back(d.facing);
+		}
+		vehicle->_baseSize = vehicle->_size;
+		vehicle->_baseSeats = vehicle->_seats;
+		vehicle->_extraSetIds = extraSetIds;
+		vehicle->_facingParts.clear();
+		for (const auto &cell : vehicle->_cells)
+		{
+			const Tile *tile = save->getTile(vehicle->_pos + cell.offset);
+			for (int slot = O_FLOOR; slot < O_MAX && tile; ++slot)
+			{
+				const PartRef base = getPart(tile, (TilePart)slot);
+				if (!(cell.owned & (1 << slot)) || !vehicle->isOwnSet(base.setId))
+				{
+					continue;
+				}
+				FacingPart part;
+				part.offset = cell.offset;
+				part.slot = slot;
+				part.art.push_back(base);
+				// the part's place on its map, turned with the map
+				const Position onMap = vehicle->_pos + cell.offset - origin;
+				for (const auto &d : drawn)
+				{
+					Position at;
+					int atSlot = slot;
+					if (slot == O_WESTWALL || slot == O_NORTHWALL)
+					{
+						turnWall(onMap, slot, mapSize.x, mapSize.y, d.quarters, false, at, atSlot);
+					}
+					else
+					{
+						at = turnTile(onMap, mapSize.x, mapSize.y, d.quarters, false);
+					}
+					const bool onDrawnMap = at.x >= 0 && at.y >= 0 && at.z >= 0 && at.x < d.sizeX && at.y < d.sizeY && at.z < d.sizeZ;
+					part.art.push_back(onDrawnMap ? d.parts[(((size_t)at.z * d.sizeY + at.y) * d.sizeX + at.x) * O_MAX + atSlot] : PartRef());
+				}
+				vehicle->_facingParts.push_back(part);
+			}
+		}
+	}
 }
 
 /**

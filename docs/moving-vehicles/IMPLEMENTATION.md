@@ -384,7 +384,7 @@ Decided in [GD-28](GAME_DESIGN_DECISIONS.md#gd-28--a-vehicles-guns-need-its-driv
 | --- | --- | --- | --- |
 | 16. Mirror turning | `front`, `tuPerQuarterTurn`; mirrored tile parts (sprite, hit shape, wall slot); the turn step; right click in drive mode | The Chimera turns between south and east | `033d9599f` |
 | 17. Turning on the way | Settles [GD-31](GAME_DESIGN_DECISIONS.md#gd-31--drives-turn-the-vehicle-toward-where-it-goes); drives and AI drivers turn first, the preview shows it | The Chimera faces where it drives | |
-| 18. Per-facing maps | `facingMaps`; the art scripts; the showcase Chimera's north and west maps | The Chimera turns all the way round | |
+| 18. Per-facing maps | `facingMaps`; the art scripts; the showcase Chimera's north and west maps | The Chimera turns all the way round | this phase's commit |
 
 ## Phase 16: Mirror turning
 
@@ -412,3 +412,31 @@ Decided in [GD-30](GAME_DESIGN_DECISIONS.md#gd-30--turning-is-a-step-and-mirrori
 - [ ] The in-game checks under "Mirror turning" in [TESTING.md](TESTING.md).
 
 **Commit:** `Moving vehicles: vehicles turn by mirroring their map` (`033d9599f`)
+
+## Phase 18: Per-facing maps
+
+Decided in [GD-32](GAME_DESIGN_DECISIONS.md#gd-32--up-to-four-drawn-facings-mirroring-fills-the-gaps). Optional and droppable: only vehicles with `facingMaps` take this path, mirror turning (Phase 16) is untouched, and the phase is one commit to revert. Built before Phase 17.
+
+**Approach**
+
+- `RuleBattleVehicle` reads `facingMaps`: for each, a `facing`, a `map` and its `mapDataSets`.
+- `BattleVehicle::loadFacingMaps`, called by the battle generator right after a craft's or UFO's vehicles are made:
+    - loads each facing map's tilesets into the battle and reads the map, the whole craft map turned;
+    - gives each vehicle a list of its parts in its own layout (`FacingPart`), each with its part in every drawn facing.
+- `BattleVehicle::turnDrawn` turns such a vehicle:
+    - `findArt` picks the drawn facing that shows the new one, mirrored for a partner;
+    - every part goes where the facing puts it (`placePart`: quarter turns, then the mirror; walls turned onto a far edge move to the next tile), with that facing's art;
+    - units, items, seats and route nodes go to the matching tile, back to the own layout and out to the new one, and turn with it;
+    - a part destroyed in any facing stays gone.
+- `turn`, `getFacing` and `getFacingToward` hand vehicles with drawn facings to the new path; toward a facing it can show, the vehicle turns that way, even half round.
+- Saves keep the drawn facings in a `facings` block of the vehicle; the facing tilesets are in the battle's tileset list like any other.
+- Art: the scripts in [tools/art](tools/art/README.md) render references and templates, ask Nano Banana Pro for the views, and cut them into tiles. Demo mod: `facings.rul` gives the Chimera its north and west maps; the tiles themselves stay in the local mod.
+
+**Checks**
+
+- [ ] Builds with no new warnings.
+- [ ] Builds on Linux, macOS and 32-bit Windows on GitHub.
+- [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
+- [ ] The in-game checks under "Four facings" in [TESTING.md](TESTING.md).
+
+**Commit:** `Moving vehicles: vehicles drawn in more facings turn all the way round`

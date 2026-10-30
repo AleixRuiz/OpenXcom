@@ -211,6 +211,7 @@ Keys M3 adds, as each phase is built. All are optional, and leaving them out kee
 | --- | --- | --- | --- |
 | `front` | 0, 2, 4 or 6 | none | The direction the front of the vehicle's map points to (0 north, 2 east, 4 south, 6 west). A vehicle with `front` can turn. It turns between the two facings its art shows (south and east, or north and west) by mirroring its map; turned toward a facing its art can't show, it lines up with it back first. |
 | `tuPerQuarterTurn` | integer | 2 × `tuPerTile` | Time units per quarter turn, paid by both the vehicle and its driver, made cheaper or dearer by the driver's skill as steps are. |
+| `facingMaps` | list of `facing`, `map`, `mapDataSets` | none | Maps the vehicle is drawn with in other facings: each is the whole craft or UFO map turned to `facing` (0, 2, 4 or 6, not `front`), with the tilesets it uses. The vehicle shows each facing that is drawn, mirrors a drawn one for its partner (east from south, west from north), and with no art for its back drives back first. Needs `front`. A map or tileset that is missing is left out, with an error in the log. |
 
 In drive mode, a right click turns the vehicle toward the clicked tile. A turn needs room for the turned vehicle, and crushes and runs over like a step.
 
@@ -277,13 +278,15 @@ A vehicle can only face the directions its art shows, so turning comes in two le
 
 **Level 1: mirroring (no new art).** Mirroring a map along its diagonal turns a south-facing vehicle into an east-facing one, exactly, for any vehicle that is the same on both sides. The engine draws its parts flipped left to right, transposes their hit shapes, and keeps destroyed or opened parts in the swapped wall slot. The prototype proved this on the Chimera, Baneblade and Valkyrie. Without more art, a vehicle driving away from the camera drives in reverse.
 
-**Level 2: per-facing maps (new art).** A mod can give the map drawn facing north; west then comes free by mirroring it:
+**Level 2: per-facing maps (new art).** A mod can give the map drawn facing north; west then comes free by mirroring it, or can be drawn too:
 
 ```yaml
     battleVehicle:
       front: 4
       facingMaps:
-        0: CHIMERA_NORTH   # same layout turned 180 degrees, drawn from behind
+        - facing: 0                           # drawn from behind
+          map: CHIMERA_SMALL_NON_HYDRA_N      # the whole craft map turned 180 degrees
+          mapDataSets: [BLANKS, MV_CHIMERA_N] # its own tilesets
 ```
 
 The north map must keep the same layout turned 180 degrees, so units, items and damage carry over tile by tile. Turning 180 degrees moves walls to the neighbouring tile, so the engine keeps the layout as loaded and computes each facing from it, instead of the prototype's fixed tile list.
