@@ -472,6 +472,6 @@ Decided in [GD-31](GAME_DESIGN_DECISIONS.md#gd-31--drives-turn-the-vehicle-towar
 - [x] Builds with no new warnings.
 - [ ] Builds on Linux, macOS and 32-bit Windows on GitHub.
 - [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
-- [ ] The in-game checks under "Driving along the axis" in [TESTING.md](TESTING.md).
+- [x] The in-game checks under "Driving along the axis" in [TESTING.md](TESTING.md), played 2026-10-31 with the fixes for turrets on the first turn, upper floors and the hull gun.
 
 **Commit:** `Moving vehicles: vehicles that can turn drive along their axis`
