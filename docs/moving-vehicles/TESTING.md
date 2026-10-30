@@ -94,70 +94,87 @@ The M2 checks use the same demo mods, updated with each phase.
 
 **Running over** (Phase 8)
 
-- [ ] Click so the vehicle ends on an enemy you can see: the route goes there, and the enemy takes the hit when the vehicle reaches it. A weak enemy goes down and the vehicle drives on over the body.
-- [ ] A strong enemy that survives stops the vehicle: "The vehicle rammed a unit!", the step's time units are spent, and the vehicle stays where it was.
-- [ ] A kill by running over counts for the driver: it shows in the soldier's diary after the mission.
-- [ ] Click past an enemy standing in the way (not under the place clicked): the route goes around it, or "No route for the vehicle!".
-- [ ] Your own soldiers always block: "A unit is in the way!".
-- [ ] A civilian is only run over when you click so the vehicle ends on them; the civilian loss counts.
-- [ ] An enemy nobody could see is run over (or rams the vehicle) when the vehicle reaches it.
-- [ ] A vehicle without `runOverDamage` (remove it from the demo mod) is blocked by every unit, as before.
+- [x] Click so the vehicle ends on an enemy you can see: the route goes there, and the enemy takes the hit when the vehicle reaches it. A weak enemy goes down and the vehicle drives on over the body.
+- [x] A strong enemy that survives stops the vehicle: "The vehicle rammed a unit!", the step's time units are spent, and the vehicle stays where it was.
+- [x] A kill by running over counts for the driver: it shows in the soldier's diary after the mission.
+- [x] Click past an enemy standing in the way (not under the place clicked): the route goes around it, or "No route for the vehicle!".
+- [x] Your own soldiers always block: "A unit is in the way!".
+- [x] A civilian is only run over when you click so the vehicle ends on them; the civilian loss counts.
+- [x] An enemy nobody could see is run over (or rams the vehicle) when the vehicle reaches it.
+- [x] A vehicle without `runOverDamage` (remove it from the demo mod) is blocked by every unit, as before.
 
 **Reaction fire** (Phase 9)
 
-- [ ] Drive past an enemy with a soldier standing on the roof: the enemy may fire at the soldier, and a shot stops the drive.
-- [ ] The same drive with everyone inside a closed vehicle (Chimera hatches shut): no reaction fire, the hull hides them.
-- [ ] The Chimera's turrets draw reaction fire like the roof crew.
-- [ ] A drive that draws no fire goes on to its end as before.
+- [x] Drive past an enemy with a soldier standing on the roof: the enemy may fire at the soldier, and a shot stops the drive.
+- [x] The same drive with everyone inside a closed vehicle (Chimera hatches shut): no reaction fire, the hull hides them.
+- [ ] The Chimera's turrets draw reaction fire like the roof crew. (2026-10-30: not seen in play. They are checked like the roof crew, but riders spend no time units, so enemies rarely win the initiative against them; see the note of that date in [NOTES.md](NOTES.md).)
+- [x] A drive that draws no fire goes on to its end as before.
 
 **Enemy vehicles** (Phase 10)
 
 Fight the traitor convoy: **New Battle**, the last mission in the list, "Moving vehicles: convoy showcase", with the Chimera as your craft.
 
-- [ ] The battle opens; the save file's `vehicles:` list has three entries with `ufo: STR_TRAITOR_CHIMERA` and `faction: 1`, next to the player's own vehicles with `craft:`.
-- [ ] The traitor Chimeras don't move yet (no AI drivers until Phase 11), and nothing else about the battle changes.
-- [ ] Shooting a traitor Chimera damages its hull as before; the turrets fight as before.
-- [ ] Your soldiers can't drive an enemy vehicle: no Drive button on its tiles.
-- [ ] Save and load: the enemy vehicles are still there.
+- [x] The battle opens; the save file's `vehicles:` list has three entries with `ufo: STR_TRAITOR_CHIMERA` and `faction: 1`, next to the player's own vehicles with `craft:`.
+- [x] Nothing else about the battle changes. (This line first said the Chimeras don't move yet; since Phase 11 they drive.)
+- [x] Shooting a traitor Chimera damages its hull as before; the turrets fight as before.
+- [x] Your soldiers can't drive an enemy vehicle while its side holds it: no Drive button on its seat with traitors still inside. (Since Phase 15 they can once they capture it; see "Gun crews and hijacking".)
+- [x] Save and load: the enemy vehicles are still there.
 
 **AI drivers** (Phase 11)
 
 Same traitor convoy battle.
 
-- [ ] While the traitors don't know where your squad is, their Chimeras stay parked.
-- [ ] Once a traitor has spotted your squad, on the aliens' turn a traitor Chimera drives toward it and stops about 6 tiles away, then its turret and crew fire if they can.
-- [ ] A traitor Chimera whose turret or crew already sees a target doesn't move; they fire.
-- [ ] The camera follows a traitor Chimera while you can see anyone on board (its turret, say), and the map shows it moving.
-- [ ] An enemy Chimera driving past your soldiers draws their reaction fire on whoever shows: its turret, roof crew.
-- [ ] Your soldiers standing in its way are run over or ram it; its own infantry never are.
-- [ ] Each traitor Chimera drives at most once per aliens' turn, and no further than its time units allow.
-- [ ] The third Chimera (no turret) drives too, with its own driver (from Phase 14).
+- [x] While the traitors don't know where your squad is, their Chimeras stay parked.
+- [x] Once a traitor has spotted your squad, on the aliens' turn a traitor Chimera drives toward it and stops about 6 tiles away, then its turret and crew fire if they can.
+- [x] A traitor Chimera whose turret or crew already sees a target doesn't move; they fire.
+- [x] The camera follows a traitor Chimera while you can see anyone on board (its turret, say), and the map shows it moving.
+- [ ] An enemy Chimera driving past your soldiers draws their reaction fire on whoever shows: its turret, roof crew. (2026-10-30: not sure in play; the same question as the turrets under "Reaction fire".)
+- [x] Your soldiers standing in its way are run over or ram it; its own infantry never are.
+- [x] Each traitor Chimera drives at most once per aliens' turn, and no further than its time units allow.
+- [x] The third Chimera (no turret) drives too, with its own driver (from Phase 14).
 
 **Driver skill** (Phase 13)
 
-- [ ] Put a soldier with high reactions (75 or more) on the seat and preview a long drive: the time units left go down more slowly than with a soldier near 55, and the vehicle gets further in a turn.
-- [ ] A soldier with low reactions (35 or less) gets less far.
-- [ ] On a craft that takes pilots, a soldier who isn't one of its pilots drives as a 55-reactions soldier would, whatever their reactions.
-- [ ] Save in the middle of a turn and load: the time units left and the next steps' costs are the same.
-- [ ] The traitor Chimeras (driven by traitors, who aren't soldiers) go exactly as far as before.
+- [x] Put a soldier with high reactions (75 or more) on the seat and preview a long drive: the time units left go down more slowly than with a soldier near 55, and the vehicle gets further in a turn.
+- [x] A soldier with low reactions (35 or less) gets less far.
+- [x] On a craft that takes pilots, a soldier who isn't one of its pilots drives as a 55-reactions soldier would, whatever their reactions.
+- [x] Save in the middle of a turn and load: the time units left and the next steps' costs are the same.
+- [x] The traitor Chimeras (driven by traitors, who aren't soldiers) go exactly as far as before.
 
 **Enemy drivers** (Phase 14)
 
-- [ ] At battle start, each traitor Chimera has a traitor on its driver seat, inside at the front of its troop bay: in a save, a traitor stands on each of `[5, 8, 0]`, `[17, 7, 0]` and `[9, 2, 0]` of the convoy map.
-- [ ] No leader or commander is put on a seat.
-- [ ] The battle has as many traitors as before: none are added.
-- [ ] The traitor on a seat never walks off it; it shoots from there when it can.
-- [ ] Kill or stun a driver (break in, or a grenade through a hatch): that Chimera stops driving for the rest of the battle.
-- [ ] A battle save made before this phase opens; nobody is moved in it.
+- [x] At battle start, each traitor Chimera has a traitor on its driver seat, inside at the front of its troop bay: in a save, a traitor stands on each of `[5, 8, 0]`, `[17, 7, 0]` and `[9, 2, 0]` of the convoy map.
+- [x] No leader or commander is put on a seat.
+- [x] The battle has as many traitors as before: none are added.
+- [x] The traitor on a seat never walks off it; it shoots from there when it can.
+- [x] Kill or stun a driver (break in, or a grenade through a hatch): that Chimera stops driving for the rest of the battle.
+- [x] A battle save made before this phase opens; nobody is moved in it.
 
 **Gun crews and hijacking** (Phase 15)
 
 In the convoy showcase:
 
-- [ ] Kill or stun a traitor Chimera's driver: its turret stops firing at once, and doesn't fire or react in the aliens' next turns.
+- [x] Kill or stun a traitor Chimera's driver: its turret stops firing at once, and doesn't fire or react in the aliens' next turns.
 - [ ] Your own Chimera: with nobody on its driver seat when your turn starts, its turrets have no time units; put a soldier on the seat and they work again from the next turn.
-- [ ] Step a soldier onto the seat of a traitor Chimera with infantry still inside: nothing changes.
-- [ ] Clear the traitors inside (kill or stun them), then step onto the seat: "Vehicle captured! Ready next turn.". The Chimera and its turret are yours, with no time units until your next turn. The traitors may shoot at the turret now: it's yours.
-- [ ] On your next turn, and the turn after, the turret is still yours: select it and fire it, and drive the Chimera with the soldier on the seat. (Reopened 2026-10-30: the turret went back to the traitors.)
-- [ ] Save and load after a capture: the Chimera and its turret are still yours.
-- [ ] Set `gunCrew: none` on the traitor convoy in the demo mod: its turrets keep firing after the driver dies.
+- [x] Step a soldier onto the seat of a traitor Chimera with infantry still inside: nothing changes.
+- [x] Clear the traitors inside (kill or stun them), then step onto the seat: "Vehicle captured! Ready next turn.". The Chimera and its turret are yours, with no time units until your next turn. The traitors may shoot at the turret now: it's yours.
+- [x] On your next turn, and the turn after, the turret is still yours: select it and fire it. (Reopened 2026-10-30, when the turret went back to the traitors; played again after the fix the same day.)
+- [x] On your next turn, drive the captured Chimera with the soldier on the seat.
+- [x] Save and load after a capture: the Chimera and its turret are still yours.
+- [x] Set `gunCrew: none` on the traitor convoy in the demo mod: its turrets keep firing after the driver dies.
+
+**Convoy** (Phase 12)
+
+In the convoy showcase (New Battle, last mission, with the Chimera craft):
+
+- [ ] The map is farmland. The traitor convoy starts at the west edge, on the middle rows, facing east, with most of its traitors inside and a few on foot; your Chimeras land north of it, in the middle.
+- [ ] On the aliens' first turn, before they know where you are, the convoy already drives east, the lead Chimera first. None of them stops to fight, and their turrets still shoot at what they see.
+- [ ] Each Chimera goes about 5 to 7 tiles a turn, around barns and through fences and crops.
+- [ ] Park one of your Chimeras across its way: the convoy goes around it, or stops as close as it can get.
+- [ ] A soldier on foot in its way is run over, or rams it to a stop if they survive.
+- [ ] Kill or stun a convoy Chimera's driver: that Chimera stops for good, and the others drive on.
+- [ ] Capture a convoy Chimera and drive it to the east edge: it stays.
+- [ ] Let a convoy Chimera reach the east edge: "An enemy vehicle escaped!", and it disappears with the traitors inside and its turret; the ground under it comes back. A soldier of yours on its roof stays behind, on the ground.
+- [ ] When every traitor has escaped or is down, the battle ends as usual. The debriefing counts no kill or capture for those who escaped, and nothing they carried.
+- [ ] Save after an escape and load: the escaped Chimera stays gone.
+- [ ] A battle save made before this phase opens.

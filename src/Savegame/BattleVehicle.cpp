@@ -1337,6 +1337,130 @@ std::vector<std::pair<BattleVehicle*, int> > BattleVehicle::updateCrews(SavedBat
 }
 
 /**
+ * Gets how many tiles the vehicle would be from a map edge, standing at a position: 0 when it
+ * touches the edge.
+ * @param save Battle save.
+ * @param pos Vehicle position.
+ * @param edge The edge, as a direction (0 north, 2 east, 4 south, 6 west).
+ * @return The distance in tiles.
+ */
+int BattleVehicle::getEdgeDistance(SavedBattleGame *save, Position pos, int edge) const
+{
+	int distance = INT_MAX;
+	for (const auto &column : _columns)
+	{
+		const int x = pos.x + column.x, y = pos.y + column.y;
+		switch (edge)
+		{
+		case 0: distance = std::min(distance, y); break;
+		case 2: distance = std::min(distance, save->getMapSizeX() - 1 - x); break;
+		case 4: distance = std::min(distance, save->getMapSizeY() - 1 - y); break;
+		default: distance = std::min(distance, x); break;
+		}
+	}
+	return distance;
+}
+
+/**
+ * Takes the vehicle off the battle through the map edge, as a convoy escapes. The units of its
+ * side on board, mounted guns and stunned ones included, and the items on board leave with it:
+ * they go into the time out of units left behind between the stages of a mission, so they count
+ * as neither killed nor captured, and the items are lost. Anyone else on board, and their bodies,
+ * stay on the ground where they were. The terrain under the vehicle comes back. The caller then
+ * deletes the vehicle.
+ * @param save Battle save.
+ */
+void BattleVehicle::leaveBattle(SavedBattleGame *save)
+{
+	std::vector<BattleUnit*> leaving;
+	for (auto *unit : getPassengers(save))
+	{
+		if (unit->getFaction() == _faction)
+		{
+			leaving.push_back(unit);
+		}
+	}
+	std::vector<BattleItem*> cargo;
+	for (const auto &cell : _cells)
+	{
+		const Position p = _pos + cell.offset;
+		if (!isOnBoard(save, p))
+		{
+			continue;
+		}
+		for (auto *item : *save->getTile(p)->getInventory())
+		{
+			BattleUnit *body = item->getUnit();
+			if (body && body->getFaction() != _faction)
+			{
+				continue;
+			}
+			cargo.push_back(item);
+			if (body && body->getStatus() == STATUS_UNCONSCIOUS)
+			{
+				leaving.push_back(body);
+			}
+		}
+	}
+	for (auto *item : cargo)
+	{
+		save->removeItem(item);
+	}
+	for (auto *unit : leaving)
+	{
+		unit->setTile(nullptr, save);
+		unit->setPosition(TileEngine::invalid, false);
+		unit->setFire(0);
+		unit->goToTimeOut();
+	}
+
+	std::vector<PartRef> carried;
+	std::vector<char> discovered;
+	lift(save, carried, discovered);
+	// whoever stays behind on the roof comes down
+	for (const auto &cell : _cells)
+	{
+		save->getTileEngine()->applyGravity(save->getTile(_pos + cell.offset));
+	}
+}
+
+/**
+ * Takes the convoy vehicles of a side that stand at the map edge they drive for off the battle,
+ * as long as someone on board can still drive them (see leaveBattle). Only the AI sides' vehicles
+ * leave: a convoy vehicle the player captured stays.
+ * @param save Battle save.
+ * @param faction The side whose vehicles may leave.
+ * @return How many vehicles left.
+ */
+int BattleVehicle::escapeAtExits(SavedBattleGame *save, int faction)
+{
+	int escaped = 0;
+	if (faction == FACTION_PLAYER)
+	{
+		return escaped;
+	}
+	auto *vehicles = save->getVehicles();
+	for (auto i = vehicles->begin(); i != vehicles->end();)
+	{
+		BattleVehicle *vehicle = *i;
+		const RuleBattleVehicle *rule = vehicle->getRule(save->getMod());
+		if (vehicle->_faction == faction && rule && rule->getAIExit() != -1
+			&& vehicle->getEdgeDistance(save, vehicle->_pos, rule->getAIExit()) == 0 && vehicle->hasDriver(save))
+		{
+			vehicle->leaveBattle(save);
+			delete vehicle;
+			i = vehicles->erase(i);
+			++escaped;
+		}
+		else
+		{
+			++i;
+		}
+	}
+	return escaped;
+}
+
+/**
  * Gets the time unit cost of a step, paid by the vehicle and its driver; a diagonal step and
  * climbing a level each cost half as much again.
  * @param mod The mod.

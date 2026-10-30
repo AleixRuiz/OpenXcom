@@ -129,7 +129,8 @@ ufos:
   - type: STR_TRAITOR_CHIMERA
     battleVehicle:
       split: connected
-      drivers: [STR_TRAITOR_CHIMERA_TURRET_ARMOR]   # the turret drives; it is listed because it can't walk
+      driverSeats: [[5, 8, 0], [17, 7, 0], [9, 2, 0]]   # a traitor inside drives each Chimera
+      aiExit: east            # a convoy: drives off the east edge of the map
       tuPerTile: 4
       front: 2
 ```
@@ -181,6 +182,7 @@ Keys M2 adds, as each phase is built. All are optional, and leaving them out kee
 | `runOverDamage` | integer | 0 | Damage dealt to an enemy or civilian the vehicle is driven onto, once per unit, credited to the driver. If a unit survives, the vehicle has rammed it and stops. 0 means units block the vehicle. The player's route only runs over the units under the place clicked. |
 | `runOverDamageType` | damage type number | 7 (melee) | Damage type of `runOverDamage`, as for items (`damageType`). |
 | `aiKeepDistance` | integer | 6 | Tiles an AI driver keeps between the vehicle's middle and the nearest enemy it knows of, when it advances. |
+| `aiExit` | `north`, `east`, `south` or `west` | none | Makes a vehicle of an AI side a convoy: on every turn of its side it drives for that edge of the map, whatever its crew sees, its lead vehicle first. When it touches the edge it leaves the battle with its side's units and the items on board, which count as neither killed nor captured. A vehicle the player captured never leaves. |
 | `driverRanks` | list of alien ranks | none | For enemy vehicles: the ranks (as in `alienDeployments`, 4 is the navigator) put on a driver seat first when the battle starts. Without them, any deployed unit allowed by `drivers` but a commander or leader takes the seat. Needs `driverSeats`. |
 | `gunCrew` | `driver` or `none` | `driver` | Who works the vehicle's mounted guns: with `driver` they only act and react while someone on board can drive it; with `none` they work by themselves. A later `gunners` value will give each gun its own seat. |
 | `driverReactionsZeroPoint` | integer | the mod's `pilotReactionsZeroPoint` (55) | Reactions of a soldier who drives with no skill bonus. |
@@ -294,6 +296,7 @@ The hull is terrain and the crew are units, so most combat rules already apply; 
 | Floor destroyed under a unit on board | The unit falls, as on any broken floor. |
 | Driver killed or stunned | The drive stops; another crew member can take the seat. With `gunCrew: driver` (the default) the vehicle's mounted guns fall silent until someone takes the wheel and a new turn starts ([GD-28](GAME_DESIGN_DECISIONS.md#gd-28--a-vehicles-guns-need-its-driver-unless-the-vehicle-says-otherwise)). |
 | Crew down, seat taken by the other side | The vehicle and its mounted guns change sides, with no time units until their new side's turn ([GD-29](GAME_DESIGN_DECISIONS.md#gd-29--hijacking-take-the-seat-once-the-crew-is-down)). |
+| Convoy vehicle reaches its edge | It leaves the battle with its side's units, turrets and stunned crew included, and the items on board; they count as neither killed nor captured. Anyone else on board stays behind, on the ground ([GD-25](GAME_DESIGN_DECISIONS.md#gd-25--convoys-drive-for-the-map-edge)). |
 | Vehicle disabled | No eligible driver means no movement. Follow-up: `criticalParts`, tile parts whose destruction disables the vehicle (an engine block). |
 
 There is no separate vehicle health: a vehicle is exactly as broken as its tiles. A wreck graphic when it is disabled is left to follow-ups.
@@ -308,8 +311,10 @@ AI drivers follow the player's rules: a crew member on a seat drives, pays time 
 
 1. **Hold** when a unit on board already has a target: the crew fights, the vehicle stays.
 2. **Advance** to `aiKeepDistance` tiles from the nearest known enemy, preferring places that crush little.
-3. **Park** when no enemy is known: the vehicle stays where it is. A convoy instead drives for the map edge (M2, Phase 12).
+3. **Park** when no enemy is known: the vehicle stays where it is.
 4. **Retreat** when its hull is badly damaged (follow-up, needs `criticalParts`).
+
+A **convoy** (a vehicle with `aiExit`) does none of these. On every turn it drives for its edge of the map as far as it can, its guns firing on the move, its lead vehicle first, and when it gets there it leaves the battle with its side's units and everything on board.
 
 How each of these is decided is in [GD-24](GAME_DESIGN_DECISIONS.md#gd-24--ai-drivers-hold-advance-or-stay-parked) and, for convoys, [GD-25](GAME_DESIGN_DECISIONS.md#gd-25--convoys-drive-for-the-map-edge).
 

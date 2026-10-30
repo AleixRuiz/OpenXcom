@@ -2,7 +2,7 @@
 
 Last updated 2026-10-29 · Aleix Ruiz Sorribes
 
-The [MVP](MVP.md) (Phases 1 to 7) and [M2](M2.md) (Phases 8 to 13) are built in phases on the `moving-vehicles` branch. Each phase builds cleanly and lands as its own commit (pushed to the fork), so the history reads as a series of reviewable steps that can be rolled back one by one. Findings and ideas met on the way go to [NOTES.md](NOTES.md); the in-game checks are collected in [TESTING.md](TESTING.md).
+The [MVP](MVP.md) (Phases 1 to 7) and [M2](M2.md) (Phases 8 to 15) are built in phases on the `moving-vehicles` branch. Each phase builds cleanly and lands as its own commit (pushed to the fork), so the history reads as a series of reviewable steps that can be rolled back one by one. Findings and ideas met on the way go to [NOTES.md](NOTES.md); the in-game checks are collected in [TESTING.md](TESTING.md).
 
 All seven phases are written, built and committed, and the test plan was played on 2026-10-29; the two problems it found are fixed (see Phase 7), and the reopened lines are to play again. Phase 6 was added after the first five, when testing showed that swapping drivers let a vehicle drive without limit, and Phase 7 when we looked at hilly maps, where a vehicle staying on its level drove into hills.
 
@@ -188,7 +188,7 @@ Decided in [GD-18](GAME_DESIGN_DECISIONS.md#gd-18--ground-vehicles-rest-on-the-h
 | 9. Reaction fire | Reaction checks for every unit on board after each step | Crew showing on a driving vehicle draw fire | `8264a1c8b` |
 | 10. Enemy vehicles | `battleVehicle` under `ufos`, alien-side vehicles, `ufo:` in saves | The traitor convoy's Chimeras are vehicles (not driven yet) | `a7d9f8c3d` |
 | 11. AI drivers | Hold, advance or park, once per turn per vehicle | The traitor Chimeras close in on the squad | `13ee31083` |
-| 12. Convoy | Settles [GD-25](GAME_DESIGN_DECISIONS.md#gd-25--convoys-drive-for-the-map-edge); `aiExit` and escaping at the map edge | The convoy tries to drive off the map | built last, after 14 |
+| 12. Convoy | Settles [GD-25](GAME_DESIGN_DECISIONS.md#gd-25--convoys-drive-for-the-map-edge); `aiExit` and escaping at the map edge | The convoy tries to drive off the map | this phase's commit |
 | 13. Driver skill | Layers 1 and 2 of [GD-17](GAME_DESIGN_DECISIONS.md#gd-17--skilled-and-dedicated-drivers-make-a-vehicle-go-further) | A good driver gets further | `0b374aca1` |
 | 14. Enemy drivers | One of the deployed enemies put on each enemy vehicle's seat; `driverRanks`; AI drivers keep their seat | The traitor Chimeras are driven by traitors inside | `da4cbb1eb` |
 | 15. Gun crews and hijacking | `gunCrew`; silent guns without a driver; capturing a vehicle and its guns | Killing a driver silences its turrets; taking its seat takes the vehicle | `ae3466baf` |
@@ -210,7 +210,7 @@ Decided in [GD-21](GAME_DESIGN_DECISIONS.md#gd-21--running-over-is-the-players-c
 
 - [x] Builds with no new warnings.
 - [ ] Both demo mods load with no messages, and a battle save made before this phase loads (to run when the screen is free).
-- [ ] The in-game checks under "Running over" in [TESTING.md](TESTING.md).
+- [x] The in-game checks under "Running over" in [TESTING.md](TESTING.md). Played 2026-10-30.
 
 **Commit:** `Moving vehicles: vehicles run over units`
 
@@ -226,7 +226,7 @@ Decided in [GD-22](GAME_DESIGN_DECISIONS.md#gd-22--reaction-fire-against-everyon
 **Checks**
 
 - [x] Builds with no new warnings.
-- [ ] The in-game checks under "Reaction fire" in [TESTING.md](TESTING.md).
+- [ ] The in-game checks under "Reaction fire" in [TESTING.md](TESTING.md). Played 2026-10-30: roof crew and the closed hull as planned; the turrets were not seen drawing fire (open).
 
 **Commit:** `Moving vehicles: reaction fire against driving vehicles`
 
@@ -245,7 +245,7 @@ Decided in [GD-23](GAME_DESIGN_DECISIONS.md#gd-23--enemy-vehicles-come-from-ufo-
 
 - [x] Builds with no new warnings.
 - [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
-- [ ] The in-game checks under "Enemy vehicles" in [TESTING.md](TESTING.md).
+- [x] The in-game checks under "Enemy vehicles" in [TESTING.md](TESTING.md). Played 2026-10-30; two lines that later phases changed were rewritten.
 
 **Commit:** `Moving vehicles: UFO maps can be enemy vehicles`
 
@@ -266,13 +266,40 @@ Decided in [GD-24](GAME_DESIGN_DECISIONS.md#gd-24--ai-drivers-hold-advance-or-st
 
 - [x] Builds with no new warnings.
 - [ ] Both demo mods load with no messages.
-- [ ] The in-game checks under "AI drivers" in [TESTING.md](TESTING.md).
+- [ ] The in-game checks under "AI drivers" in [TESTING.md](TESTING.md). Played 2026-10-30: all but reaction fire against the enemy Chimera's crew (open, as under "Reaction fire").
 
 **Commit:** `Moving vehicles: AI units drive vehicles`
 
 ## Phase 12: Convoy
 
-Settles [GD-25](GAME_DESIGN_DECISIONS.md#gd-25--convoys-drive-for-the-map-edge) first, after the AI drivers of Phase 11 have been played; the approach is written then.
+Decided in [GD-25](GAME_DESIGN_DECISIONS.md#gd-25--convoys-drive-for-the-map-edge), settled once the AI drivers of Phase 11 had been played (2026-10-30). Built last, after Phase 15, whose hijacking it needs.
+
+**Approach**
+
+- `RuleBattleVehicle` reads `aiExit` (north, east, south or west), kept as a direction.
+- `BattleVehicle::getEdgeDistance` tells how far the vehicle is from an edge.
+- `BattleVehicle::leaveBattle` takes the vehicle off the map:
+    - its side's units on board and its stunned crew go into OXCE's time out (`BattleUnit::goToTimeOut`, as for units left behind between mission stages);
+    - the items on board are removed (`SavedBattleGame::removeItem`);
+    - the terrain under it comes back (`lift`), and whoever stays falls to the ground.
+- `BattleVehicle::escapeAtExits` does that for every convoy vehicle of a side that touches its edge and has a driver.
+- `VehicleAI::think` sends convoys to `thinkConvoy`: of every place the vehicle can reach (`findReachable` with no limit), the nearest to its edge, then the cheapest, then the one crushing least. The route there is cut to this turn's budget, half the driver's time units. `VehicleAI::getLead` picks the convoy vehicle nearest its edge that hasn't driven yet.
+- `BattlescapeGame::handleAI`:
+    - drives a convoy's lead vehicle first, with that vehicle's driver, then the unit's own; the unit's first action starts again after each;
+    - before each AI action, lets the convoy vehicles at their edge leave, with `STR_VEHICLE_ESCAPED`;
+    - skips a unit that left, as it skips one that is out.
+- Rosigma demo:
+    - `aiExit: east` on the traitor convoy;
+    - the showcase gets its own map script on the farm terrain (convoy at the west edge, craft north of its way);
+    - its traitors ride inside, with a small escort on foot.
+- No save changes: an escaped vehicle is gone from the `vehicles` list, and units save their time out.
+
+**Checks**
+
+- [x] Builds with no new warnings.
+- [ ] Builds on Linux, macOS and 32-bit Windows on GitHub.
+- [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
+- [ ] The in-game checks under "Convoy" in [TESTING.md](TESTING.md).
 
 **Commit:** `Moving vehicles: convoys drive for the map edge`
 
@@ -291,7 +318,7 @@ Layers 1 and 2 of [GD-17](GAME_DESIGN_DECISIONS.md#gd-17--skilled-and-dedicated-
 
 - [x] Builds with no new warnings.
 - [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
-- [ ] The in-game checks under "Driver skill" in [TESTING.md](TESTING.md).
+- [x] The in-game checks under "Driver skill" in [TESTING.md](TESTING.md). Played 2026-10-30.
 
 **Commit:** `Moving vehicles: skilled drivers get further`
 
@@ -312,7 +339,7 @@ Decided in [GD-27](GAME_DESIGN_DECISIONS.md#gd-27--enemy-vehicles-get-their-driv
 
 - [x] Builds with no new warnings.
 - [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
-- [ ] The in-game checks under "Enemy drivers" in [TESTING.md](TESTING.md).
+- [x] The in-game checks under "Enemy drivers" in [TESTING.md](TESTING.md). Played 2026-10-30.
 
 **Commit:** `Moving vehicles: enemy vehicles get a driver from their crew`
 
@@ -332,7 +359,7 @@ Decided in [GD-28](GAME_DESIGN_DECISIONS.md#gd-28--a-vehicles-guns-need-its-driv
 
 - [x] Builds with no new warnings.
 - [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
-- [ ] The in-game checks under "Gun crews and hijacking" in [TESTING.md](TESTING.md). First play on 2026-10-30: the capture works, but the turret went back to the traitors when the player's next turn started; fixed below.
+- [ ] The in-game checks under "Gun crews and hijacking" in [TESTING.md](TESTING.md). Played 2026-10-30: the turret went back to the traitors the turn after a capture, fixed below; everything else passed but "your own Chimera without a driver", not played yet.
 
 **Commit:** `Moving vehicles: guns need a driver, and vehicles can be hijacked` (`ae3466baf`)
 
@@ -344,7 +371,7 @@ Decided in [GD-28](GAME_DESIGN_DECISIONS.md#gd-28--a-vehicles-guns-need-its-driv
 **Checks**
 
 - [x] Builds with no new warnings.
-- [ ] Builds on Linux, macOS and 32-bit Windows on GitHub.
-- [ ] The reopened lines under "Gun crews and hijacking" in [TESTING.md](TESTING.md).
+- [x] Builds on Linux (GCC), macOS (Clang) and 32-bit Windows on GitHub, with no warnings in our code (2026-10-30).
+- [x] The captured turret stays yours and fires on the turns after the capture (played 2026-10-30).
 
-**Commit:** `Moving vehicles: a captured vehicle keeps its guns`
+**Commit:** `Moving vehicles: a captured vehicle keeps its guns` (`ec84ebb27`)

@@ -25,6 +25,9 @@ From the [OpenXcom coding style](https://www.ufopaedia.org/index.php/Coding_Styl
 
 | Date | Finding | What it changes |
 | --- | --- | --- |
+| 2026-10-30 | Units left behind between the stages of a mission go into a time out (`BattleUnit::goToTimeOut`, status `STATUS_IGNORE_ME`): they count as out when the battle checks for its end, and the debriefing counts a hostile one in time out as neither killed nor captured, unless its body lies on the map. | Escaping convoys reuse it, with no new mission rules (GD-25). |
+| 2026-10-30 | A deployment's `script` replaces its terrain's map script. Rosigma's terrains use long scripts (craft groups, vertical levels); the vanilla farm (`CULTA`) uses a short one. | The convoy showcase has its own map script, on the farm terrain only. |
+| 2026-10-30 | An enemy can only react to a unit whose reaction score (reactions x time units left / maximum time units) is no higher than its own (`TileEngine::getSpottingUnits` and `getReactor`). A walker's score drops with every step it pays for; units riding a vehicle pay nothing, so they keep their full score for the whole drive. | Turrets and other riders draw reaction fire far less often than walkers do; in play the Chimera turrets were not seen drawing any. A question for GD-22. |
 | 2026-10-30 | `BattleUnit::convertToFaction` is mind control: when the controlling side's turn starts, `BattleUnit::prepareNewTurn` puts the unit back on its original side, with no time units. The original side is what the debriefing counts by (an original player unit without a soldier is taken for a tank and recovered as an item). | Captured guns keep their original side and are converted back at each turn start of their vehicle's side (`BattleVehicle::keepGuns`). |
 | 2026-10-29 | An `alienDeployments` entry without `width` and `length` gets a map of size 0 (`AlienDeployment::getDimensions` copies them as they are), unless its map script resizes the map. Nothing fits on it, and the game stops with "Craft ... could not be placed on the map". Rosigma's convoy deployment sets only `height` because the 40k master already sets 50 x 50. | A new demo deployment always sets its own size. |
 | 2026-10-29 | OXCE's build workflow is stored as `.github/workflows/nightly.test`, a name GitHub never runs. A copy named `nightly.yml` on a `test` branch of the fork builds on Windows (MSVC, 32-bit), Linux (GCC with `-Wall -Wextra -Wshadow -Wsuggest-override`, set in `src/CMakeLists.txt`) and macOS (Clang); macOS runners are sometimes not available. | Before each pitch-ready milestone, push `moving-vehicles` onto `test` and check the Linux log for warnings in our files. |
@@ -61,6 +64,7 @@ From the [OpenXcom coding style](https://www.ufopaedia.org/index.php/Coding_Styl
 
 | Idea | Why it could help | When |
 | --- | --- | --- |
+| Extra loot for each convoy vehicle the player stops (driver down, captured, or still on the map at the end) | Rewards stopping the convoy beyond what its crew carries (the user's idea) | After M2 ([GD-25](GAME_DESIGN_DECISIONS.md#gd-25--convoys-drive-for-the-map-edge)) |
 | A ruleset key for the Drive button's picture (a `SPICONS.DAT` frame), like special weapons have | Mods can give the button art that fits them | After the MVP |
 | Show the drive hotkey in the Drive button's tooltip | Players learn the hotkey without opening the options | After the MVP |
 | Mounted guns (units that can't walk) never drive unless `drivers` names their armor | Avoids a turret on a seat taking the wheel by accident | Done in Phase 1 (`RuleBattleVehicle::canDrive`) |

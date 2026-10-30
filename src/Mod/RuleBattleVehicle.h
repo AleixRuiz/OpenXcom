@@ -41,7 +41,7 @@ public:
 	/// Who works the vehicle's mounted guns.
 	enum GunCrew { GUNS_NEED_DRIVER, GUNS_WORK_ALONE };
 private:
-	std::string _splitName, _gunCrewName;
+	std::string _splitName, _gunCrewName, _aiExitName;
 	GunCrew _gunCrew;
 	Split _split;
 	std::vector<std::vector<int> > _pieces;
@@ -50,7 +50,7 @@ private:
 	std::vector<const Armor*> _drivers;
 	std::vector<int> _driverRanks;
 	int _tuPerTile, _timeUnits, _crushArmor;
-	int _runOverDamage, _runOverDamageType, _aiKeepDistance;
+	int _runOverDamage, _runOverDamageType, _aiKeepDistance, _aiExit;
 	int _driverReactionsZeroPoint, _driverReactionsRange;
 	const RuleDamageType *_runOverDamageRule;
 public:
@@ -88,6 +88,8 @@ public:
 	const RuleDamageType *getRunOverDamageType() const { return _runOverDamageRule; }
 	/// Gets the distance in tiles an AI driver keeps from the nearest enemy.
 	int getAIKeepDistance() const { return _aiKeepDistance; }
+	/// Gets the map edge an AI convoy drives for, as a direction (0 north, 2 east, 4 south, 6 west), or -1 if it isn't a convoy.
+	int getAIExit() const { return _aiExit; }
 	/// Gets the driver reactions that drive the vehicle with no skill bonus.
 	int getDriverReactionsZeroPoint() const { return _driverReactionsZeroPoint; }
 	/// Gets the skill range: a driver changes the step cost by (reactions - zero point) * range / 100 percent.

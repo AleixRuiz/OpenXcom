@@ -308,11 +308,19 @@ void BattlescapeGame::handleAI(BattleUnit *unit)
 {
 	std::ostringstream ss;
 
+	// a convoy vehicle that drove to its exit leaves the battle, with its side's units on board
+	if (BattleVehicle::escapeAtExits(_save, _save->getSide()) > 0)
+	{
+		_parentState->warning("STR_VEHICLE_ESCAPED");
+		_save->getTileEngine()->calculateLighting(LL_AMBIENT, TileEngine::invalid, 0, true);
+		_save->getTileEngine()->recalculateFOV();
+	}
+
 	if (unit->getTimeUnits() <= 5)
 	{
 		unit->dontReselect();
 	}
-	if (_AIActionCounter >= 2 || !unit->reselectAllowed() || unit->getTurnsSinceStunned() == 0) //stun check for restoring OXC behavior that AI does not attack after waking up even having full TU
+	if (_AIActionCounter >= 2 || !unit->reselectAllowed() || unit->getTurnsSinceStunned() == 0 || unit->isOut()) //stun check for restoring OXC behavior that AI does not attack after waking up even having full TU
 	{
 		if (_save->selectNextPlayerUnit(true, _AISecondMove) == 0)
 		{
@@ -361,19 +369,31 @@ void BattlescapeGame::handleAI(BattleUnit *unit)
 		unit->setHiding(false);
 		if (Options::traceAI) { Log(LOG_INFO) << "#" << unit->getId() << "--" << unit->getType(); }
 
-		// a unit that can drive decides for its vehicle first, once a turn, then acts as usual
+		// a unit that can drive decides for its vehicle first, once a turn, then acts as usual;
+		// a convoy drives its lead vehicle first, with that vehicle's driver, then this one
 		BattleVehicle *vehicle = BattleVehicle::getDrivenBy(_save, unit);
-		if (vehicle && !vehicle->isAIDecided())
+		while (vehicle && !vehicle->isAIDecided())
 		{
-			vehicle->setAIDecided();
+			BattleUnit *driver = unit;
+			BattleVehicle *next = VehicleAI::getLead(_save, vehicle, driver);
+			next->setAIDecided();
+			if (!driver->getAIModule())
+			{
+				driver->setAIModule(new AIModule(_save, driver, 0));
+			}
 			std::vector<Position> path;
-			if (VehicleAI::think(_save, unit, vehicle, path))
+			if (VehicleAI::think(_save, driver, next, path))
 			{
 				_parentState->debug("Driving");
 				BattleAction drive;
-				drive.actor = unit;
+				drive.actor = driver;
 				drive.number = _AIActionCounter;
-				statePushBack(new VehicleDriveBState(this, drive, vehicle, path));
+				statePushBack(new VehicleDriveBState(this, drive, next, path));
+				if (next != vehicle)
+				{
+					// this unit's own vehicle comes next, still before the unit acts
+					_AIActionCounter = 0;
+				}
 				return;
 			}
 		}
