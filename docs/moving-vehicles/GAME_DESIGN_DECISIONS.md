@@ -42,7 +42,7 @@ Why moving vehicles plays the way it does. Each entry records a game design choi
 | [GD-22](#gd-22--reaction-fire-against-everyone-on-board-who-shows) | Reaction fire against everyone on board who shows | Decided | M2, Phase 9 |
 | [GD-23](#gd-23--enemy-vehicles-come-from-ufo-maps) | Enemy vehicles come from UFO maps | Decided | M2, Phase 10 |
 | [GD-24](#gd-24--ai-drivers-hold-advance-or-stay-parked) | AI drivers hold, advance or stay parked | Decided | M2, Phase 11 |
-| [GD-25](#gd-25--convoys-drive-for-the-map-edge) | Convoys drive for the map edge | Proposed | M2, Phase 12 |
+| [GD-25](#gd-25--convoys-drive-for-the-map-edge) | Convoys drive for the map edge | Decided | M2, Phase 12 |
 | [GD-26](#gd-26--how-driving-skill-counts) | How driving skill counts | Decided | M2, Phase 13 |
 | [GD-27](#gd-27--enemy-vehicles-get-their-driver-from-the-deployed-crew) | Enemy vehicles get their driver from the deployed crew | Decided | M2, Phase 14 |
 | [GD-28](#gd-28--a-vehicles-guns-need-its-driver-unless-the-vehicle-says-otherwise) | A vehicle's guns need its driver, unless the vehicle says otherwise | Decided | M2, Phase 15 |
@@ -405,11 +405,38 @@ Decided · 2026-10-29 · M2, Phase 11 · follows [GD-14](#gd-14--ai-drivers-foll
 
 ### GD-25 · Convoys drive for the map edge
 
-Proposed · 2026-10-29 · M2, Phase 12 · settled after the AI drivers of Phase 11 have been played
+Decided · 2026-10-30 · M2, Phase 12 · proposed 2026-10-29, settled once the AI drivers had been played
 
-**Proposal.** A vehicle marked as a convoy (`aiExit`, a map direction) drives toward that edge of the map whenever its crew has nothing to hold for, following [GD-24](#gd-24--ai-drivers-hold-advance-or-stay-parked) otherwise. When its footprint reaches the edge, it leaves the battle with everyone and everything on board: aliens on board escape (removed, not killed) and items on board are lost. The player stops it by blocking the road with a vehicle, ramming it, killing or stunning whoever can drive it, or taking its seat. The Rosigma traitor convoy is set up this way in the demo mod.
+**Decision.**
 
-**Why proposed, not decided.** Whether the convoy should stop to fight, how an escape counts for the mission, and how far it may drive in a turn are best judged once AI driving has been seen in play.
+- **`aiExit`** (north, east, south or west) makes a vehicle of an AI side a convoy, driving for that edge of the map.
+- **It never stops to fight.** On every turn of its side it drives toward its edge as far as its time units go, whatever its crew sees and whether it knows of an enemy or not. Its turrets and crew keep shooting from on board. Like any AI driver it takes at most half its driver's time units ([GD-24](#gd-24--ai-drivers-hold-advance-or-stay-parked)), so it goes about half as far per turn as a player's vehicle and can be caught.
+- **Its way:** the cheapest way to the nearest place at its edge, preferring ways that crush less. It runs over infantry in the way ([GD-21](#gd-21--running-over-is-the-players-choice-ai-drivers-dont-hesitate)), goes around buildings and vehicles, and gets as close as it can when boxed in. A convoy drives its lead vehicle, the one nearest its edge, first, so the others don't run into it.
+- **Escaping:** a convoy vehicle that touches its edge, with someone on board able to drive it, leaves the battle as soon as its side acts next.
+    - The units of its side on board, turrets and stunned crew included, and the items on board leave with it. They count as neither killed nor captured, and the items are lost.
+    - Anyone else on board stays where they were and comes down to the ground.
+    - The player sees "An enemy vehicle escaped!".
+- **For the mission, nothing more (option A).** The battle goes on; if no enemies are left on the map it ends as usual, and the player scores only what was killed, stunned or captured.
+- A convoy vehicle the player has captured never escapes, wherever it is driven.
+- **How the player stops it:**
+    - Park a vehicle in its way: vehicles block vehicles.
+    - Kill or stun its driver ([GD-27](#gd-27--enemy-vehicles-get-their-driver-from-the-deployed-crew), [GD-28](#gd-28--a-vehicles-guns-need-its-driver-unless-the-vehicle-says-otherwise)).
+    - Board it and take its seat ([GD-29](#gd-29--hijacking-take-the-seat-once-the-crew-is-down)).
+    - Soldiers on foot don't block it: they are run over, unless they survive and ram it to a stop.
+
+**Why.** "Stop them before they get away" is a goal players read at once, and it needs no new mission rules in OXCE. An escape reuses the time out of units left behind between mission stages, which the debriefing already counts as neither killed nor captured. A convoy that stopped to fight could be held forever by a soldier standing in view. Half speed keeps it catchable: a player's Chimera goes about twice as far in a turn, and its passengers ride without spending time units.
+
+**Turned down.**
+
+- A penalty in the debriefing for each enemy that escaped (B), or a mission lost when a convoy vehicle escapes (C): stronger stakes, but new mission rules to ask OXCE for. Revisit if escapes feel free in play.
+- Holding to fight like other AI vehicles: see above.
+- Taking the player's soldiers on board away with it, missing in action: losing soldiers to a map edge without a fight would feel unfair.
+- An exit set by the mission (`alienDeployments`) rather than the vehicle: the art fixes which way a vehicle faces, and vehicles can't turn before M3. Revisit with turning.
+
+**Later.**
+
+- Extra loot for each convoy vehicle the player stops, beyond what its crew carries (the user's idea, 2026-10-30).
+- Damage when vehicles collide, and a command vehicle as the mission's objective.
 
 ### GD-26 · How driving skill counts
 

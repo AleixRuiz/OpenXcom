@@ -1,12 +1,13 @@
-# The convoy showcase: a New Battle mission, last in the list, against the traitor convoy
-# (the STR_TRAITOR_CHIMERA UFO: three Chimeras, each an enemy vehicle with a traitor at the
-# wheel). Pick the Chimera craft, so both sides drive. Same crew as Rosigma's own convoy battle.
-# It grows into the convoy interception showcase once convoys drive for the map edge (M2 Phase 12).
+# The convoy interception showcase: a New Battle mission, last in the list, against the traitor
+# convoy (the STR_TRAITOR_CHIMERA UFO: three Chimeras, each an enemy vehicle with a traitor at the
+# wheel, driving for the east edge). Pick the Chimera craft, so both sides drive. Same crew as
+# Rosigma's own convoy battle, but riding inside the Chimeras, with a small escort on foot.
 alienDeployments:
   - type: STR_MV_CONVOY_SHOWCASE
     customUfo: STR_TRAITOR_CHIMERA
     race: STR_SNAKEMAN  # the traitor guard
-    terrains: [CULTA, PLAINSGRASS]
+    terrains: [CULTA]  # vanilla farms: fences and crops to crush, barns to drive around
+    script: MV_CONVOY_SHOWCASE
     width: 50  # a deployment without a size gets an empty map; Rosigma's convoy battle is 50 x 50
     length: 50
     height: 9
@@ -14,23 +15,23 @@ alienDeployments:
       title: STR_MV_CONVOY_SHOWCASE
       desc: STR_MV_CONVOY_SHOWCASE_BRIEFING
     data:
-      - alienRank: 5
+      - alienRank: 5  # they ride inside where the convoy map has room (9 places), the rest next to it
         lowQty: 9
         highQty: 9
         dQty: 4
-        percentageOutsideUfo: 90
+        percentageOutsideUfo: 0
         itemSets: [[], [], []]
-      - alienRank: 5  # guardsmen with alternate weapons
+      - alienRank: 5  # guardsmen with alternate weapons: the escort on foot
         lowQty: 3
         highQty: 3
         dQty: 0
-        percentageOutsideUfo: 65
+        percentageOutsideUfo: 100
         itemSets: [[], [], []]
       - alienRank: 3
         lowQty: 1
         highQty: 1
         dQty: 2
-        percentageOutsideUfo: 60
+        percentageOutsideUfo: 0
         itemSets: [[], [], []]
       - alienRank: 1
         lowQty: 0
@@ -45,12 +46,27 @@ alienDeployments:
         percentageOutsideUfo: 100
         itemSets: [[], [], []]
 
+# The convoy starts at the west edge, on the middle row of blocks, and drives east; your craft
+# lands north of its way, in the middle, so you have a few turns to cut it off.
+mapScripts:
+  - type: MV_CONVOY_SHOWCASE
+    commands:
+    - type: addUFO
+      rects:
+        - [0, 2, 2, 1]
+    - type: addCraft
+      rects:
+        - [2, 0, 2, 2]
+    - type: fillArea
+      blocks: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+      maxUses: [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
+
 extraStrings:
   - type: en-US
     strings:
       STR_MV_CONVOY_SHOWCASE: "Moving vehicles: convoy showcase"
-      STR_MV_CONVOY_SHOWCASE_BRIEFING: "A traitor convoy of three Chimeras is crossing the area. Each is driven by a traitor inside, and two carry a manned turret. Take your own Chimeras, cut the convoy off and destroy it: run its infantry over, ram it, or break in and kill its drivers."
+      STR_MV_CONVOY_SHOWCASE_BRIEFING: "A traitor convoy of three Chimeras is crossing the farms, heading east. Each is driven by a traitor inside, and two carry a manned turret; a few guardsmen escort it on foot. Stop it before it drives off the east edge of the map, or whoever is on board gets away: park your Chimeras in its way, kill its drivers, or board the Chimeras and take them. Soldiers standing in its way get run over."
   - type: en-GB
     strings:
       STR_MV_CONVOY_SHOWCASE: "Moving vehicles: convoy showcase"
-      STR_MV_CONVOY_SHOWCASE_BRIEFING: "A traitor convoy of three Chimeras is crossing the area. Each is driven by a traitor inside, and two carry a manned turret. Take your own Chimeras, cut the convoy off and destroy it: run its infantry over, ram it, or break in and kill its drivers."
+      STR_MV_CONVOY_SHOWCASE_BRIEFING: "A traitor convoy of three Chimeras is crossing the farms, heading east. Each is driven by a traitor inside, and two carry a manned turret; a few guardsmen escort it on foot. Stop it before it drives off the east edge of the map, or whoever is on board gets away: park your Chimeras in its way, kill its drivers, or board the Chimeras and take them. Soldiers standing in its way get run over."

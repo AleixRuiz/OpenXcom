@@ -35,7 +35,7 @@ namespace OpenXcom
  * units are set from its cost per tile once the rule is loaded.
  */
 RuleBattleVehicle::RuleBattleVehicle() : _gunCrew(GUNS_NEED_DRIVER), _split(SPLIT_CONNECTED), _tuPerTile(4), _timeUnits(-1), _crushArmor(0),
-	_runOverDamage(0), _runOverDamageType(DT_MELEE), _aiKeepDistance(6), _driverReactionsZeroPoint(-1), _driverReactionsRange(-1),
+	_runOverDamage(0), _runOverDamageType(DT_MELEE), _aiKeepDistance(6), _aiExit(-1), _driverReactionsZeroPoint(-1), _driverReactionsRange(-1),
 	_runOverDamageRule(nullptr)
 {
 }
@@ -59,6 +59,7 @@ void RuleBattleVehicle::load(const YAML::YamlNodeReader &node)
 	node.tryRead("runOverDamage", _runOverDamage);
 	node.tryRead("runOverDamageType", _runOverDamageType);
 	node.tryRead("aiKeepDistance", _aiKeepDistance);
+	node.tryRead("aiExit", _aiExitName);
 	node.tryRead("driverReactionsZeroPoint", _driverReactionsZeroPoint);
 	node.tryRead("driverReactionsRange", _driverReactionsRange);
 }
@@ -103,6 +104,17 @@ void RuleBattleVehicle::afterLoad(const Mod *mod, const std::string &type, RuleT
 	{
 		_gunCrew = GUNS_NEED_DRIVER;
 	}
+
+	static const char *const edges[] = { "north", "east", "south", "west" };
+	_aiExit = -1;
+	for (int i = 0; i < 4; ++i)
+	{
+		if (_aiExitName == edges[i])
+		{
+			_aiExit = i * 2;
+		}
+	}
+	mod->checkForSoftError(_aiExit == -1 && !_aiExitName.empty(), type, "battleVehicle: unknown aiExit '" + _aiExitName + "', expected north, east, south or west.", LOG_ERROR);
 
 	if (mod->checkForSoftError(_tuPerTile < 0, type, "battleVehicle: tuPerTile cannot be negative.", LOG_ERROR))
 	{

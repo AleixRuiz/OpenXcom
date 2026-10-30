@@ -224,6 +224,12 @@ public:
 	void keepGuns(SavedBattleGame *save) const;
 	/// Hands over the vehicles taken this way and silences the guns without a driver.
 	static std::vector<std::pair<BattleVehicle*, int> > updateCrews(SavedBattleGame *save);
+	/// Gets how many tiles the vehicle would be from a map edge at a position.
+	int getEdgeDistance(SavedBattleGame *save, Position pos, int edge) const;
+	/// Takes the vehicle off the battle through the map edge, with its side's units and the items on board.
+	void leaveBattle(SavedBattleGame *save);
+	/// Takes the convoy vehicles of a side that reached their exit off the battle.
+	static int escapeAtExits(SavedBattleGame *save, int faction);
 	/// Gets the time unit cost of a step, paid by the vehicle and its driver.
 	int getStepCost(const Mod *mod, Position delta) const;
 	/// Gets the time unit cost of a step for a driver with a skill bonus, carrying fractions over between steps.

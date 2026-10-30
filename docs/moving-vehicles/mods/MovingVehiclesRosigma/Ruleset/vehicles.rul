@@ -44,3 +44,4 @@ ufos:
       timeUnits: 48
       crushArmor: 100
       runOverDamage: 150
+      aiExit: east  # a convoy: the Chimeras face east and drive off the east edge of the map
