@@ -39,9 +39,11 @@ namespace OpenXcom
  * @param vehicle The vehicle to drive.
  * @param path Vehicle positions after each step.
  * @param turnTo Facing to turn the vehicle to before the first step, or -1 not to turn.
+ * @param facings The vehicle's facing after each step, for a vehicle that drives along its axis: where
+ * it changes, that step is a turn.
  */
-VehicleDriveBState::VehicleDriveBState(BattlescapeGame *parent, BattleAction action, BattleVehicle *vehicle, const std::vector<Position> &path, int turnTo) :
-	BattleState(parent, action), _vehicle(vehicle), _path(path), _step(0), _spotted(0), _cancelled(false), _turnTo(turnTo)
+VehicleDriveBState::VehicleDriveBState(BattlescapeGame *parent, BattleAction action, BattleVehicle *vehicle, const std::vector<Position> &path, int turnTo, const std::vector<int> &facings) :
+	BattleState(parent, action), _vehicle(vehicle), _path(path), _step(0), _spotted(0), _cancelled(false), _turnTo(turnTo), _facings(facings)
 {
 }
 
@@ -122,7 +124,8 @@ void VehicleDriveBState::runOver(const std::vector<BattleUnit*> &victims, Positi
 		_parent->popState();
 		return;
 	}
-	_parent->statePushBack(new VehicleDriveBState(_parent, _action, _vehicle, std::vector<Position>(_path.begin() + _step, _path.end()), _turnTo));
+	const std::vector<int> facings(_facings.begin() + std::min(_step, _facings.size()), _facings.end());
+	_parent->statePushBack(new VehicleDriveBState(_parent, _action, _vehicle, std::vector<Position>(_path.begin() + _step, _path.end()), _turnTo, facings));
 	_parent->popState();
 }
 
@@ -174,12 +177,20 @@ void VehicleDriveBState::think()
 		return;
 	}
 
-	const bool turning = _turnTo != -1;
+	// a drive may start with a turn, and a vehicle that drives along its axis turns on the way where its
+	// facing changes: a turn goes like a step
+	const int facing = _vehicle->getFacing(save->getMod());
+	int turnTo = _turnTo;
+	if (turnTo == -1 && _step < _facings.size() && _facings[_step] != facing)
+	{
+		turnTo = _facings[_step];
+	}
+	const bool turning = turnTo != -1;
 	const Position delta = turning ? Position(0, 0, 0) : _path[_step] - _vehicle->getPosition();
 	// the driver's skill makes the step cheaper or dearer, fractions carrying over to the next step
 	int carry = _vehicle->getTuCarry();
 	const int bonus = _vehicle->getDriverBonus(save, driver);
-	const int cost = turning ? _vehicle->getTurnCost(save->getMod(), _turnTo, bonus, carry) : _vehicle->getStepCost(save->getMod(), delta, bonus, carry);
+	const int cost = turning ? _vehicle->getTurnCost(save->getMod(), turnTo, bonus, carry) : _vehicle->getDriveCost(save->getMod(), delta, facing, bonus, carry);
 	if (_vehicle->getTimeUnits() < cost)
 	{
 		// another driver wouldn't help either
@@ -196,7 +207,7 @@ void VehicleDriveBState::think()
 
 	const int level = _vehicle->getPosition().z;
 	std::vector<BattleUnit*> victims;
-	const BattleVehicle::MoveResult result = turning ? _vehicle->turn(save, _turnTo, victims) : _vehicle->move(save, delta, victims);
+	const BattleVehicle::MoveResult result = turning ? _vehicle->turn(save, turnTo, victims) : _vehicle->move(save, delta, victims);
 	if (result == BattleVehicle::MOVE_RUN_OVER)
 	{
 		runOver(victims, delta, cost, carry);
@@ -212,7 +223,7 @@ void VehicleDriveBState::think()
 	driver->spendTimeUnits(cost);
 	_vehicle->spendTimeUnits(cost);
 	_vehicle->setTuCarry(carry);
-	if (turning)
+	if (_turnTo != -1)
 	{
 		_turnTo = -1;
 	}

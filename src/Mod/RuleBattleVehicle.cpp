@@ -34,7 +34,7 @@ namespace OpenXcom
  * anyone on board can drive, nothing is crushed, units block it, and the vehicle's time
  * units are set from its cost per tile once the rule is loaded.
  */
-RuleBattleVehicle::RuleBattleVehicle() : _gunCrew(GUNS_NEED_DRIVER), _split(SPLIT_CONNECTED), _tuPerTile(4), _timeUnits(-1), _crushArmor(0), _front(-1), _tuPerQuarterTurn(-1),
+RuleBattleVehicle::RuleBattleVehicle() : _gunCrew(GUNS_NEED_DRIVER), _split(SPLIT_CONNECTED), _axisLocked(true), _tuPerTile(4), _timeUnits(-1), _crushArmor(0), _front(-1), _tuPerQuarterTurn(-1), _reverseCost(150),
 	_runOverDamage(0), _runOverDamageType(DT_MELEE), _aiKeepDistance(6), _aiExit(-1), _driverReactionsZeroPoint(-1), _driverReactionsRange(-1),
 	_runOverDamageRule(nullptr)
 {
@@ -58,6 +58,8 @@ void RuleBattleVehicle::load(const YAML::YamlNodeReader &node)
 	node.tryRead("crushArmor", _crushArmor);
 	node.tryRead("front", _front);
 	node.tryRead("tuPerQuarterTurn", _tuPerQuarterTurn);
+	node.tryRead("axisLocked", _axisLocked);
+	node.tryRead("reverseCost", _reverseCost);
 	if (const auto &facingMaps = node["facingMaps"])
 	{
 		_facingMaps.clear();
@@ -174,6 +176,10 @@ void RuleBattleVehicle::afterLoad(const Mod *mod, const std::string &type, RuleT
 		mod->checkForSoftError(_front == -1, type, "battleVehicle: facingMaps need front.", LOG_ERROR);
 		mod->checkForSoftError(facingMap.facing < 0 || facingMap.facing > 6 || facingMap.facing % 2 != 0 || facingMap.facing == _front, type, "battleVehicle: each of facingMaps needs a facing of 0, 2, 4 or 6, other than front.", LOG_ERROR);
 		mod->checkForSoftError(facingMap.map.empty() || facingMap.mapDataSets.empty(), type, "battleVehicle: each of facingMaps needs a map and its mapDataSets.", LOG_ERROR);
+	}
+	if (mod->checkForSoftError(_reverseCost < 0, type, "battleVehicle: reverseCost cannot be negative.", LOG_ERROR))
+	{
+		_reverseCost = 150;
 	}
 	if (_tuPerQuarterTurn < 0)
 	{

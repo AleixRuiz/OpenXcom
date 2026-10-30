@@ -213,3 +213,17 @@ With `facings.rul` and the showcase Chimera's tiles in the Rosigma demo mod, and
 - [ ] Save in each facing and load: same facing, same look.
 - [ ] Without the tiles (rename `MV_CHIMERA_N.MCD`): the game starts, the log names the missing map, and the Chimera turns by mirroring.
 - [ ] The Steel Legion Chimera, the Baneblade and the traitor convoy still turn by mirroring only.
+
+**Driving along the axis** (Phase 17)
+
+With the Chimera craft (with or without `facings.rul`):
+
+- [ ] Preview a drive sideways from a Chimera (east of a south-facing one): the route turns first, the preview counts the turn's 8 time units, and the see-through vehicle stands in its final facing.
+- [ ] Drive a few tiles straight back: it backs up, each step costing half as much again; drive far behind it with drawn facings on: it turns round instead.
+- [ ] Without `facings.rul`, drive north from a south-facing Chimera: it backs up at the normal cost (it can't face north).
+- [ ] Diagonal steps within 45 degrees of its axis are allowed; it never slides sideways.
+- [ ] Where there is no room to turn, the route goes another way, or says there is none.
+- [ ] The driver's seat ends on the clicked tile, whatever facing the drive ends in.
+- [ ] The traitor convoy still drives east, and turns where it must to get round things.
+- [ ] Set `axisLocked: false` on the Chimera in the demo mod: it slides sideways again, as before.
+- [ ] A battle save made before this phase opens.

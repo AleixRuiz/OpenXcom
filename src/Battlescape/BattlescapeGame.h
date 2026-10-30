@@ -22,6 +22,7 @@
 #include "../Engine/HelperMeta.h"
 #include <string>
 #include <list>
+#include <memory>
 #include <vector>
 
 namespace OpenXcom
@@ -154,6 +155,10 @@ private:
 	BattleVehicle *_driveVehicle;
 	Position _driveTarget;
 	std::vector<Position> _drivePath;
+	// the vehicle's facing after each step of the previewed drive, and the vehicle laid out in its last
+	// one when it differs, for the see-through preview
+	std::vector<int> _driveFacings;
+	std::shared_ptr<BattleVehicle> _driveGhost;
 
 	/// Ends the turn.
 	void endTurn();

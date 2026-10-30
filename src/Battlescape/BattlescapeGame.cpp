@@ -383,13 +383,14 @@ void BattlescapeGame::handleAI(BattleUnit *unit)
 				driver->setAIModule(new AIModule(_save, driver, 0));
 			}
 			std::vector<Position> path;
-			if (VehicleAI::think(_save, driver, next, path))
+			std::vector<int> facings;
+			if (VehicleAI::think(_save, driver, next, path, facings))
 			{
 				_parentState->debug("Driving");
 				BattleAction drive;
 				drive.actor = driver;
 				drive.number = _AIActionCounter;
-				statePushBack(new VehicleDriveBState(this, drive, next, path));
+				statePushBack(new VehicleDriveBState(this, drive, next, path, -1, facings));
 				if (next != vehicle)
 				{
 					// this unit's own vehicle comes next, still before the unit acts
@@ -2119,6 +2120,8 @@ void BattlescapeGame::setDriveMode(bool driveMode)
 	_driveUnit = _driveMode ? unit : nullptr;
 	_driveVehicle = nullptr;
 	_drivePath.clear();
+	_driveFacings.clear();
+	_driveGhost.reset();
 	_save->getPathfinding()->removePreview();
 }
 
@@ -2134,6 +2137,8 @@ void BattlescapeGame::checkDriveMode()
 		_driveUnit = nullptr;
 		_driveVehicle = nullptr;
 		_drivePath.clear();
+		_driveFacings.clear();
+		_driveGhost.reset();
 	}
 }
 
@@ -2149,7 +2154,7 @@ const BattleVehicle *BattlescapeGame::getDrivePreview(Position &stop) const
 		return nullptr;
 	}
 	stop = _drivePath.back();
-	return _driveVehicle;
+	return _driveGhost ? _driveGhost.get() : _driveVehicle;
 }
 
 /**
@@ -2171,14 +2176,33 @@ void BattlescapeGame::driveVehicle(Position pos, bool previewed)
 	{
 		_driveTarget = pos;
 		_driveVehicle = vehicle;
-		const Position target = vehicle->getPosition() + Position(pos.x - driver->getPosition().x, pos.y - driver->getPosition().y, 0);
+		_driveFacings.clear();
+		_driveGhost.reset();
 		std::string error;
-		if (!vehicle->findPath(_save, target, _drivePath, error))
+		bool found;
+		if (vehicle->drivesAlongAxis(_save->getMod()))
+		{
+			// along its axis, turning on the way: the seat ends on the clicked tile, in whichever facing the way ends
+			found = vehicle->findPathForSeat(_save, driver->getPosition() - vehicle->getPosition(), pos, _drivePath, _driveFacings, error);
+		}
+		else
+		{
+			const Position target = vehicle->getPosition() + Position(pos.x - driver->getPosition().x, pos.y - driver->getPosition().y, 0);
+			found = vehicle->findPath(_save, target, _drivePath, error);
+		}
+		if (!found)
 		{
 			_driveVehicle = nullptr;
 			_drivePath.clear();
+			_driveFacings.clear();
 			_parentState->warning(error);
 			return;
+		}
+		if (!_driveFacings.empty() && _driveFacings.back() != vehicle->getFacing(_save->getMod()))
+		{
+			// the see-through vehicle stands in the facing the drive ends in
+			std::vector<char> inside;
+			_driveGhost = std::make_shared<BattleVehicle>(vehicle->layoutFor(_save, _driveFacings.back(), inside));
 		}
 	}
 
@@ -2186,16 +2210,27 @@ void BattlescapeGame::driveVehicle(Position pos, bool previewed)
 	{
 		std::vector<Position> tiles;
 		std::vector<int> directions, tuLeft;
-		const Position center = vehicle->getCenter() - vehicle->getPosition();
+		const Mod *mod = _save->getMod();
 		Position previous = vehicle->getPosition();
 		// the drive stops when either the driver or the vehicle runs out
 		int tu = std::min(driver->getTimeUnits(), vehicle->getTimeUnits());
 		const int bonus = vehicle->getDriverBonus(_save, driver);
 		int carry = vehicle->getTuCarry();
+		int facing = vehicle->getFacing(mod);
 		for (size_t i = 0; i < _drivePath.size(); ++i)
 		{
-			tu -= vehicle->getStepCost(_save->getMod(), _drivePath[i] - previous, bonus, carry);
-			tiles.push_back(_drivePath[i] + center);
+			if (i < _driveFacings.size() && _driveFacings[i] != facing)
+			{
+				tu -= vehicle->getTurnCost(mod, facing, _driveFacings[i], bonus, carry);
+				facing = _driveFacings[i];
+			}
+			else
+			{
+				tu -= vehicle->getDriveCost(mod, _drivePath[i] - previous, facing, bonus, carry);
+			}
+			// the middle of the vehicle, in the facing it has there
+			const Position size = vehicle->facingSize(mod, facing);
+			tiles.push_back(_drivePath[i] + Position((size.x - 1) / 2, (size.y - 1) / 2, 0));
 			directions.push_back(i + 1 < _drivePath.size() ? Pathfinding::vectorToDirection(_drivePath[i + 1] - _drivePath[i]) : 10);
 			tuLeft.push_back(tu);
 			previous = _drivePath[i];
@@ -2210,9 +2245,11 @@ void BattlescapeGame::driveVehicle(Position pos, bool previewed)
 	drive.ignoreSpottedEnemies = _save->isShiftPressed(true);
 	getMap()->setCursorType(CT_NONE);
 	_parentState->getGame()->getCursor()->setVisible(false);
-	statePushBack(new VehicleDriveBState(this, drive, vehicle, _drivePath));
+	statePushBack(new VehicleDriveBState(this, drive, vehicle, _drivePath, -1, _driveFacings));
 	_driveVehicle = nullptr;
 	_drivePath.clear();
+	_driveFacings.clear();
+	_driveGhost.reset();
 }
 
 /**
@@ -2246,6 +2283,8 @@ bool BattlescapeGame::turnVehicle(Position pos)
 	}
 	_driveVehicle = nullptr;
 	_drivePath.clear();
+	_driveFacings.clear();
+	_driveGhost.reset();
 	BattleAction turn;
 	turn.actor = driver;
 	turn.type = BA_NONE;

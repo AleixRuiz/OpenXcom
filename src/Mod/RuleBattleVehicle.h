@@ -51,13 +51,14 @@ private:
 	std::string _splitName, _gunCrewName, _aiExitName;
 	GunCrew _gunCrew;
 	Split _split;
+	bool _axisLocked;
 	std::vector<std::vector<int> > _pieces;
 	std::vector<std::vector<int> > _driverSeats;
 	std::vector<std::string> _driverNames;
 	std::vector<const Armor*> _drivers;
 	std::vector<int> _driverRanks;
 	std::vector<FacingMap> _facingMaps;
-	int _tuPerTile, _timeUnits, _crushArmor, _front, _tuPerQuarterTurn;
+	int _tuPerTile, _timeUnits, _crushArmor, _front, _tuPerQuarterTurn, _reverseCost;
 	int _runOverDamage, _runOverDamageType, _aiKeepDistance, _aiExit;
 	int _driverReactionsZeroPoint, _driverReactionsRange;
 	const RuleDamageType *_runOverDamageRule;
@@ -94,6 +95,10 @@ public:
 	const std::vector<FacingMap> &getFacingMaps() const { return _facingMaps; }
 	/// Gets the time unit cost to turn the vehicle by a quarter turn, paid by the vehicle and its driver.
 	int getTuPerQuarterTurn() const { return _tuPerQuarterTurn; }
+	/// Does a vehicle that can turn drive only along its axis, turning to change it?
+	bool isAxisLocked() const { return _axisLocked; }
+	/// Gets the cost of a step backing up, in percent of a step forward.
+	int getReverseCost() const { return _reverseCost; }
 	/// Gets the strongest terrain armor the vehicle crushes when driving through.
 	int getCrushArmor() const { return _crushArmor; }
 	/// Gets the damage dealt to a unit the vehicle is driven onto; 0 means units block it.
