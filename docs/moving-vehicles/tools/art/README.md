@@ -11,6 +11,7 @@ Python scripts (standard library only) that drew the showcase Chimera's north an
 | `draft.py` | Asks Nano Banana Pro for a facing: a south template with its finished art as the example, then the template to paint. Counts images against a limit. |
 | `evaluate.py` | Shrinks a draft to game scale in the vehicle's own colours and measures how well it fits the template. |
 | `cutter.py` | Cuts a painted facing into tile parts: turns the layout and hit shapes, finds which part is in front at each pixel, and writes MCD, PCK/TAB and MAP files. |
-| `make_facings.py` | Runs the cutter for the Chimera craft's north and west maps and previews them. |
+| `retry_ground.py` | Asks for the roofless views (the ground level with its roof taken off), retrying while the model is overloaded and falling back to Nano Banana 2. |
+| `make_facings.py` | Runs the cutter for the Chimera craft's north and west maps and previews them, roof on and roof off. The roof comes from the full painting, the ground level (hull sides and the inside) from the roofless one, and the floor inside keeps its own art turned round. |
 
 Drafts come back as JPEG; the author converted them to PNG with Windows' `System.Drawing` before `evaluate.py`.
