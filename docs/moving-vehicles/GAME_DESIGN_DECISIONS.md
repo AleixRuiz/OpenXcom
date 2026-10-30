@@ -48,8 +48,9 @@ Why moving vehicles plays the way it does. Each entry records a game design choi
 | [GD-28](#gd-28--a-vehicles-guns-need-its-driver-unless-the-vehicle-says-otherwise) | A vehicle's guns need its driver, unless the vehicle says otherwise | Decided | M2, Phase 15 |
 | [GD-29](#gd-29--hijacking-take-the-seat-once-the-crew-is-down) | Hijacking: take the seat once the crew is down | Decided | M2, Phase 15 |
 | [GD-30](#gd-30--turning-is-a-step-and-mirroring-is-free-art) | Turning is a step, and mirroring is free art | Decided | M3, Phase 16 |
-| [GD-31](#gd-31--drives-turn-the-vehicle-toward-where-it-goes) | Drives turn the vehicle toward where it goes | Proposed | M3, Phase 17 |
+| [GD-31](#gd-31--drives-turn-the-vehicle-toward-where-it-goes) | Drives turn the vehicle toward where it goes | Decided | M3, Phase 17 |
 | [GD-32](#gd-32--up-to-four-drawn-facings-mirroring-fills-the-gaps) | Up to four drawn facings, mirroring fills the gaps | Decided | M3, Phase 18 |
+| [GD-33](#gd-33--upper-floors-in-a-vehicles-way-are-crushed-or-block-it) | Upper floors in a vehicle's way are crushed or block it | Decided | M3, fix after play |
 
 ## Decisions
 
@@ -511,6 +512,8 @@ Decided · 2026-10-30 · M2, Phase 15
 
 **Settled with it.** Silencing works through time units, so a mod's own scripts that hand turrets time units can override it.
 
+**Settled after play (2026-10-30).** At first the guns went silent whenever a vehicle had nobody at the wheel, checked after every step: on the first turn only the Chimera whose seat a soldier happened to start on had a working turret, and moving the driver to another seat silenced the turret. Now a gun goes silent at once only when its driver goes down (killed or stunned), and otherwise at the start of a turn with nobody at the wheel. A battle that starts without a driver, or a driver changing places, costs the guns nothing until then.
+
 ### GD-29 · Hijacking: take the seat once the crew is down
 
 Decided · 2026-10-30 · M2, Phase 15
@@ -566,11 +569,17 @@ Decided · 2026-10-30 · M3, Phase 16 · details [GD-15](#gd-15--turning-only-to
 
 ### GD-31 · Drives turn the vehicle toward where it goes
 
-Proposed · 2026-10-30 · M3, Phase 17 · settled after mirror turning (Phase 16) has been played
+Decided · 2026-10-30 · M3, Phase 17 · the user's call, after playing mirror turning and drawn facings
 
-**Proposal.** A drive first turns the vehicle to face its main direction of travel, when it can face that way and has room, then drives as now. A vehicle that can't face that way (no art for its back) lines up with it and drives in reverse. The route preview shows the turn and its cost, and AI drivers turn the same way. Turning by hand (right click) stays, for parking a vehicle the way the player wants.
+**Decision.**
 
-**Why proposed, not decided.** Whether turning on its own feels right, and whether it should be skipped when it costs more than it's worth, is best judged once turning has been played.
+- **Vehicles that can turn drive along their axis** (`axisLocked`, on by default for a vehicle with `front`): forward or back, also diagonally within 45 degrees, never sideways. A vehicle without `front` slides as before, having no other way to get anywhere.
+- **The route plans the turns:** each costs `tuPerQuarterTurn` and needs room for the turned vehicle, like a turn by hand. The preview shows them, and the see-through vehicle stands in its final facing. Turning by hand (right click) stays, for parking.
+- **Backing up costs more,** `reverseCost` percent of a step (150 by default), so a long drive turns round and a short one backs up. A vehicle backing toward a facing its art can't show (no back drawn) pays the normal cost.
+- **AI drivers use the same routes.**
+- **Reversible:** a separate path in the code, its own commits, and `axisLocked: false` per vehicle.
+
+**Why.** With drawn facings, sliding sideways looks wrong, and turning becomes part of driving, with its cost and the room it needs. Long vehicles get less nimble in tight places, which makes positioning matter; play will tell if it feels clunky.
 
 ### GD-32 · Up to four drawn facings, mirroring fills the gaps
 
@@ -592,3 +601,13 @@ Decided · 2026-10-30 · M3, Phase 18 · the user's call
 - **A facing map is the whole craft or UFO map turned,** so a map with several vehicles (three Chimeras) needs one facing map, not one per vehicle.
 - **Destroyed parts stay destroyed:** a part gone in the facing a vehicle has when it turns is gone in every facing.
 - **The inside is painted too.** With a unit inside, the camera shows the vehicle's level without its roof. The first try reused the old sprites of the parts the painting didn't show, mirrored: in play the walls faced the wrong way, were missing or showed over the hull. Now each drawn facing has two paintings: the full view for the roof, and the view with the roof taken off for the ground level (hull sides and the inside). Parts neither painting shows stay empty, except the floor inside, which keeps its own art turned round (exact for a half turn).
+
+### GD-33 · Upper floors in a vehicle's way are crushed or block it
+
+Decided · 2026-10-30 · found in play: a Chimera driven into a barn
+
+**Problem.** A vehicle taller than one level (the Chimera's roof is on the level above its troop bay) drove into a building with an upper storey, and the storey's floor didn't break: the vehicle took the floor's place and gave it back when it left, so its roof looked melted into the floor.
+
+**Decision.** A floor on one of the vehicle's upper levels is in its way like a wall: crushed if its armor is up to `crushArmor` (all of it, leaving a hole when the vehicle leaves), otherwise it blocks the vehicle. The floor the vehicle stands on, and a floor over hill ground (the hill's own top, GD-18), are left alone.
+
+**Why.** The vehicle physically passes through that floor; a wooden barn floor gives way, a concrete one stops it, as walls do.

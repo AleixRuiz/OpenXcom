@@ -35,10 +35,10 @@ class SavedBattleGame;
 class VehicleAI
 {
 	/// Decides how far a convoy vehicle drives for its exit this turn.
-	static bool thinkConvoy(SavedBattleGame *save, BattleUnit *driver, const BattleVehicle *vehicle, int exit, std::vector<Position> &path);
+	static bool thinkConvoy(SavedBattleGame *save, BattleUnit *driver, const BattleVehicle *vehicle, int exit, std::vector<Position> &path, std::vector<int> &facings);
 public:
 	/// Decides where an AI driver takes its vehicle this turn.
-	static bool think(SavedBattleGame *save, BattleUnit *driver, const BattleVehicle *vehicle, std::vector<Position> &path);
+	static bool think(SavedBattleGame *save, BattleUnit *driver, const BattleVehicle *vehicle, std::vector<Position> &path, std::vector<int> &facings);
 	/// Gets the vehicle to drive first: a convoy's lead vehicle, or the vehicle itself.
 	static BattleVehicle *getLead(SavedBattleGame *save, BattleVehicle *vehicle, BattleUnit *&driver);
 };

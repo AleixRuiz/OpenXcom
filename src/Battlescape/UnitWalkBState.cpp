@@ -513,7 +513,7 @@ void UnitWalkBState::postPathProcedures()
 	_terrain->calculateFOV(_unit);
 
 	// taking a vehicle's seat may take the vehicle
-	for (const auto &captured : BattleVehicle::updateCrews(_parent->getSave()))
+	for (const auto &captured : BattleVehicle::updateCrews(_parent->getSave(), false))
 	{
 		if (captured.first->getFaction() == FACTION_PLAYER)
 		{

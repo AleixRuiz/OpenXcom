@@ -211,6 +211,8 @@ Keys M3 adds, as each phase is built. All are optional, and leaving them out kee
 | --- | --- | --- | --- |
 | `front` | 0, 2, 4 or 6 | none | The direction the front of the vehicle's map points to (0 north, 2 east, 4 south, 6 west). A vehicle with `front` can turn. It turns between the two facings its art shows (south and east, or north and west) by mirroring its map; turned toward a facing its art can't show, it lines up with it back first. |
 | `tuPerQuarterTurn` | integer | 2 × `tuPerTile` | Time units per quarter turn, paid by both the vehicle and its driver, made cheaper or dearer by the driver's skill as steps are. |
+| `axisLocked` | boolean | `true` | A vehicle with `front` drives only along its axis: forward or back, also diagonally within 45 degrees, never sideways. Its routes turn on the way, each turn needing room and costing `tuPerQuarterTurn`. `false` lets it slide sideways, as a vehicle without `front` does. |
+| `reverseCost` | percent | 150 | Cost of a step backing up, in percent of a step forward, for a vehicle that drives along its axis. A vehicle backing toward a facing its art can't show pays a normal step. |
 | `facingMaps` | list of `facing`, `map`, `mapDataSets` | none | Maps the vehicle is drawn with in other facings: each is the whole craft or UFO map turned to `facing` (0, 2, 4 or 6, not `front`), with the tilesets it uses. The vehicle shows each facing that is drawn, mirrors a drawn one for its partner (east from south, west from north), and with no art for its back drives back first. Needs `front`. A map or tileset that is missing is left out, with an error in the log. |
 
 In drive mode, a right click turns the vehicle toward the clicked tile. A turn needs room for the turned vehicle, and crushes and runs over like a step.
@@ -251,6 +253,7 @@ A step is allowed only when every tile of the vehicle's new footprint is free, c
 | A unit of the driver's side | Blocked |
 | An enemy or civilian unit | Run over if `runOverDamage` > 0, else blocked; a survivor stops the vehicle ("rammed"). The player's route only runs over units under the place clicked ([GD-21](GAME_DESIGN_DECISIONS.md#gd-21--running-over-is-the-players-choice-ai-drivers-dont-hesitate)) |
 | Solid terrain with armor up to `crushArmor` | Crushed, along with whatever it turns into when destroyed |
+| A floor on one of the vehicle's upper levels (a building's upper storey) | Crushed like a wall if its armor is up to `crushArmor`, leaving a hole; otherwise blocked ([GD-33](GAME_DESIGN_DECISIONS.md#gd-33--upper-floors-in-a-vehicles-way-are-crushed-or-block-it)) |
 | Solid terrain that is indestructible (armor 255), explosive, a lift, an exit, a start tile or a mission objective | Blocked |
 | Raised ground on the vehicle's level (slopes, bumps) | Hidden under the vehicle while it stands there |
 | Ground of the level above (a hilltop, or ground filling the tile) | The vehicle climbs onto it if its middle stays over ground; otherwise blocked. Never crushed |

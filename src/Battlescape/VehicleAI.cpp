@@ -41,9 +41,10 @@ namespace OpenXcom
  * @param vehicle The vehicle.
  * @param exit The edge it drives for, as a direction.
  * @param path Gets the steps to drive.
+ * @param facings Gets the vehicle's facing after each step, if it drives along its axis.
  * @return True if the vehicle should drive.
  */
-bool VehicleAI::thinkConvoy(SavedBattleGame *save, BattleUnit *driver, const BattleVehicle *vehicle, int exit, std::vector<Position> &path)
+bool VehicleAI::thinkConvoy(SavedBattleGame *save, BattleUnit *driver, const BattleVehicle *vehicle, int exit, std::vector<Position> &path, std::vector<int> &facings)
 {
 	const int budget = std::min(vehicle->getTimeUnits(), driver->getTimeUnits() / 2);
 	if (budget <= 0)
@@ -69,44 +70,58 @@ bool VehicleAI::thinkConvoy(SavedBattleGame *save, BattleUnit *driver, const Bat
 		return false;
 	}
 	std::string error;
-	if (!vehicle->findPath(save, best->pos, path, error))
+	if (!vehicle->findPath(save, best->pos, path, error, &facings, best->facing))
 	{
 		return false;
 	}
 	// as far as this turn's time units go
+	const Mod *mod = save->getMod();
 	Position at = vehicle->getPosition();
+	int facing = vehicle->getFacing(mod);
 	int spent = 0;
 	size_t steps = 0;
 	for (; steps < path.size(); ++steps)
 	{
-		const int cost = vehicle->getStepCost(save->getMod(), path[steps] - at);
+		int carry = 0;
+		const bool turn = steps < facings.size() && facings[steps] != facing;
+		const int cost = turn ? vehicle->getTurnCost(mod, facing, facings[steps], 0, carry) : vehicle->getDriveCost(mod, path[steps] - at, facing, 0, carry);
 		if (spent + cost > budget)
 		{
 			break;
 		}
 		spent += cost;
 		at = path[steps];
+		if (turn)
+		{
+			facing = facings[steps];
+		}
 	}
 	path.resize(steps);
+	if (facings.size() > steps)
+	{
+		facings.resize(steps);
+	}
 	return !path.empty();
 }
 
 /**
  * Decides where an AI driver takes its vehicle this turn. A convoy (a vehicle with an exit)
  * always drives for its exit, whatever its crew sees (see thinkConvoy). Any other vehicle holds
- * if anyone on board sees a target the AI would attack. Otherwise it advances toward the nearest enemy its side knows of,
- * to the place it can reach whose middle is closest to the vehicle's keep distance from that
+ * if anyone on board sees a target the AI would attack. Otherwise it advances toward the nearest
+ * enemy its side knows of, to the place it can reach whose middle is closest to the vehicle's keep distance from that
  * enemy, preferring places that crush less, then that cost less. With no known enemy it stays
  * parked. Driving takes at most half the driver's time units, so the driver can still fight.
  * @param save Battle save.
  * @param driver The AI unit that can drive the vehicle.
  * @param vehicle The vehicle.
  * @param path Gets the steps to drive.
+ * @param facings Gets the vehicle's facing after each step, if it drives along its axis.
  * @return True if the vehicle should drive.
  */
-bool VehicleAI::think(SavedBattleGame *save, BattleUnit *driver, const BattleVehicle *vehicle, std::vector<Position> &path)
+bool VehicleAI::think(SavedBattleGame *save, BattleUnit *driver, const BattleVehicle *vehicle, std::vector<Position> &path, std::vector<int> &facings)
 {
 	path.clear();
+	facings.clear();
 	const RuleBattleVehicle *rule = vehicle->getRule(save->getMod());
 	AIModule *ai = driver->getAIModule();
 	if (!rule || !ai)
@@ -115,7 +130,7 @@ bool VehicleAI::think(SavedBattleGame *save, BattleUnit *driver, const BattleVeh
 	}
 	if (rule->getAIExit() != -1)
 	{
-		return thinkConvoy(save, driver, vehicle, rule->getAIExit(), path);
+		return thinkConvoy(save, driver, vehicle, rule->getAIExit(), path, facings);
 	}
 
 	// hold: the crew has something to fight
@@ -180,7 +195,7 @@ bool VehicleAI::think(SavedBattleGame *save, BattleUnit *driver, const BattleVeh
 		return false;
 	}
 	std::string error;
-	return vehicle->findPath(save, best->pos, path, error);
+	return vehicle->findPath(save, best->pos, path, error, &facings, best->facing);
 }
 
 /**

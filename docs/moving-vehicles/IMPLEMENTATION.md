@@ -383,7 +383,7 @@ Decided in [GD-28](GAME_DESIGN_DECISIONS.md#gd-28--a-vehicles-guns-need-its-driv
 | Phase | Delivers | Playable result | Commit |
 | --- | --- | --- | --- |
 | 16. Mirror turning | `front`, `tuPerQuarterTurn`; mirrored tile parts (sprite, hit shape, wall slot); the turn step; right click in drive mode | The Chimera turns between south and east | `033d9599f` |
-| 17. Turning on the way | Settles [GD-31](GAME_DESIGN_DECISIONS.md#gd-31--drives-turn-the-vehicle-toward-where-it-goes); drives and AI drivers turn first, the preview shows it | The Chimera faces where it drives | |
+| 17. Driving along the axis | [GD-31](GAME_DESIGN_DECISIONS.md#gd-31--drives-turn-the-vehicle-toward-where-it-goes): `axisLocked`, `reverseCost`; routes over positions and facings; turns on the way; preview in the final facing; AI drivers too | The Chimera drives the way it faces | this phase's commit |
 | 18. Per-facing maps | `facingMaps`; the art scripts; the showcase Chimera's north and west maps | The Chimera turns all the way round | `2ab7dc969` |
 
 ## Phase 16: Mirror turning
@@ -449,3 +449,29 @@ Played on 2026-10-30: the Chimera turns all the way round, but it looked rough, 
 - **Hull gun left behind.** The new layout was built from the vehicle's parts only. The hull gun's tile holds just a wall, which a half turn moves to the next tile, so the gun's tile was no longer covered and the gun stopped being mounted ([GD-19](GAME_DESIGN_DECISIONS.md#gd-19--mounted-guns-are-held-by-their-vehicle)). `turnDrawn` now keeps every tile of the vehicle's own layout covered, turned with it.
 
 **Commit:** `Moving vehicles: drawn facings keep every tile the vehicle covers`
+
+## Phase 17: Driving along the axis
+
+Decided in [GD-31](GAME_DESIGN_DECISIONS.md#gd-31--drives-turn-the-vehicle-toward-where-it-goes). Built after Phase 18 (drawn facings), which it works with. Reversible: only vehicles that can turn and have `axisLocked` (the default) take the new route search, and `axisLocked: false` gives a vehicle the old one back.
+
+**Approach**
+
+- `RuleBattleVehicle` reads `axisLocked` (default `true`) and `reverseCost` (default 150).
+- **Layout copies.** `BattleVehicle::layoutFor` makes a copy of the vehicle laid out in another facing, without touching the map (mirrored, or from its drawn facings), with the parts each tile would show. A copy judges terrain by the vehicle it stands for, and doesn't count it as a vehicle in its way (`self()` in `getTerrain` and `checkPlace`).
+- **Route search.** `searchAlongAxis` plans over positions and facings:
+    - steps go forward or back along the facing, also diagonally within 45 degrees, never sideways;
+    - backing up costs `reverseCost` percent (`getDriveCost`), except toward a facing the vehicle can't show;
+    - turns go round the middle (`turnedPosition`, as `turn` does) where the turned layout fits, and cost `tuPerQuarterTurn` per quarter turn;
+    - the estimate counts steps to where the vehicle would stand to turn onto each goal.
+- `findPathForSeat` puts the driver's seat on the clicked tile in whichever facing the way ends (`mapOffset`). `findPath` and `findReachable` take and give facings for AI drivers.
+- `VehicleDriveBState` takes the facing after each step and turns where it changes. The route preview counts the turns and backing up, and shows the see-through vehicle in its final facing (a layout copy).
+- AI drivers (`VehicleAI`, convoys included) plan and drive the same way.
+
+**Checks**
+
+- [x] Builds with no new warnings.
+- [ ] Builds on Linux, macOS and 32-bit Windows on GitHub.
+- [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
+- [ ] The in-game checks under "Driving along the axis" in [TESTING.md](TESTING.md).
+
+**Commit:** `Moving vehicles: vehicles that can turn drive along their axis`

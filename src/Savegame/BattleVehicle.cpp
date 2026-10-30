@@ -378,7 +378,7 @@ std::vector<BattleVehicle*> BattleVehicle::Placement::finish(SavedBattleGame *sa
 /**
  * Creates an empty vehicle, to be loaded from a save.
  */
-BattleVehicle::BattleVehicle() : _ufo(false), _faction(0), _timeUnits(0), _aiDecided(false), _tuCarry(0), _mirrored(false), _firstSetId(-1), _lastSetId(-1), _facing(-1)
+BattleVehicle::BattleVehicle() : _ufo(false), _faction(0), _timeUnits(0), _aiDecided(false), _tuCarry(0), _mirrored(false), _driven(false), _firstSetId(-1), _lastSetId(-1), _facing(-1)
 {
 }
 
@@ -391,7 +391,7 @@ BattleVehicle::BattleVehicle() : _ufo(false), _faction(0), _timeUnits(0), _aiDec
  * @param lastSetId Index after the map's last tileset in the battle.
  */
 BattleVehicle::BattleVehicle(const std::string &type, bool ufo, int faction, int firstSetId, int lastSetId) :
-	_type(type), _ufo(ufo), _faction(faction), _timeUnits(0), _aiDecided(false), _tuCarry(0), _mirrored(false), _firstSetId(firstSetId), _lastSetId(lastSetId), _facing(-1)
+	_type(type), _ufo(ufo), _faction(faction), _timeUnits(0), _aiDecided(false), _tuCarry(0), _mirrored(false), _driven(false), _firstSetId(firstSetId), _lastSetId(lastSetId), _facing(-1)
 {
 }
 
@@ -416,6 +416,7 @@ void BattleVehicle::load(const YAML::YamlNodeReader &reader, const Mod *mod)
 	reader.tryRead("timeUnits", _timeUnits);
 	reader.tryRead("tuCarry", _tuCarry);
 	reader.tryRead("mirrored", _mirrored);
+	reader.tryRead("driven", _driven);
 	reader.tryRead("position", _pos);
 	reader.tryRead("firstSetId", _firstSetId);
 	reader.tryRead("lastSetId", _lastSetId);
@@ -495,6 +496,10 @@ void BattleVehicle::save(YAML::YamlNodeWriter writer) const
 	if (_mirrored)
 	{
 		writer.write("mirrored", _mirrored);
+	}
+	if (_driven)
+	{
+		writer.write("driven", _driven);
 	}
 	writer.write("position", _pos);
 	writer.write("firstSetId", _firstSetId);
@@ -714,10 +719,12 @@ const MapData *BattleVehicle::getTerrain(SavedBattleGame *save, Position pos, Ti
 	{
 		return nullptr;
 	}
-	const int i = getCellIndex(pos);
-	if (i != -1 && (_cells[i].owned & (1 << part)))
+	// a layout copy judges the terrain by the vehicle it stands for
+	const BattleVehicle *vehicle = self();
+	const int i = vehicle->getCellIndex(pos);
+	if (i != -1 && (vehicle->_cells[i].owned & (1 << part)))
 	{
-		return getMapData(save, _cells[i].under[part]);
+		return getMapData(save, vehicle->_cells[i].under[part]);
 	}
 	return tile->getMapData(part);
 }
@@ -1064,7 +1071,7 @@ BattleVehicle::MoveResult BattleVehicle::checkPlace(SavedBattleGame *save, Posit
 		}
 		for (const auto *other : *save->getVehicles())
 		{
-			if (other != this && other->covers(p))
+			if (other != self() && other->covers(p))
 			{
 				return MOVE_BLOCKED_VEHICLE;
 			}
@@ -1080,6 +1087,22 @@ BattleVehicle::MoveResult BattleVehicle::checkPlace(SavedBattleGame *save, Posit
 			if (inWay == UNIT_RUN_OVER && std::find(victims.begin(), victims.end(), unit) == victims.end())
 			{
 				victims.push_back(unit);
+			}
+		}
+		// a floor on one of the vehicle's upper levels (a building's upper storey) is in its way like a wall;
+		// one over hill ground is the hill's own top, left alone
+		if ((cell.owned & (1 << O_FLOOR)) && !isLowest(cell))
+		{
+			const MapData *floor = getTerrain(save, p, O_FLOOR);
+			const MapData *below = getTerrain(save, p - Position(0, 0, 1), O_OBJECT);
+			const bool hillTop = below && (isSolid(below) || below->getTerrainLevel() <= -Position::TileZ);
+			if (floor && !hillTop)
+			{
+				if (!canCrush(floor, save, crushArmor))
+				{
+					return MOVE_BLOCKED_TERRAIN;
+				}
+				toCrush.push_back(std::make_pair(tile, O_FLOOR));
 			}
 		}
 		for (int part = O_WESTWALL; part < O_MAX; ++part)
@@ -1459,13 +1482,16 @@ void BattleVehicle::keepGuns(SavedBattleGame *save) const
 }
 
 /**
- * Hands over every vehicle whose seat was taken by another side (see checkCapture), then takes
- * the time units of mounted guns left without a driver (see silenceGuns). Called after units
- * move or go down.
+ * Hands over every vehicle whose seat was taken by another side (see checkCapture). After units go
+ * down, also takes the time units of the mounted guns of every vehicle whose driver went down (see
+ * silenceGuns). A vehicle that starts the battle without a driver, or whose driver leaves the seat,
+ * keeps its guns working until a turn starts with nobody at the wheel (see SavedBattleGame::endTurn),
+ * so the crew can change places. Called after units move or go down.
  * @param save Battle save.
+ * @param casualties Did units go down?
  * @return The vehicles that changed hands, each with the side it belonged to.
  */
-std::vector<std::pair<BattleVehicle*, int> > BattleVehicle::updateCrews(SavedBattleGame *save)
+std::vector<std::pair<BattleVehicle*, int> > BattleVehicle::updateCrews(SavedBattleGame *save, bool casualties)
 {
 	std::vector<std::pair<BattleVehicle*, int> > captured;
 	for (auto *vehicle : *save->getVehicles())
@@ -1475,7 +1501,12 @@ std::vector<std::pair<BattleVehicle*, int> > BattleVehicle::updateCrews(SavedBat
 		{
 			captured.push_back(std::make_pair(vehicle, from));
 		}
-		vehicle->silenceGuns(save);
+		const bool driven = vehicle->hasDriver(save);
+		if (casualties && vehicle->_driven && !driven)
+		{
+			vehicle->silenceGuns(save);
+		}
+		vehicle->_driven = driven;
 	}
 	return captured;
 }
@@ -1734,8 +1765,14 @@ BattleVehicle::MoveResult BattleVehicle::move(SavedBattleGame *save, Position de
 	}
 	for (const auto &tilePart : toCrush)
 	{
-		for (int i = 0; i < 8 && isSolid(tilePart.first->getMapData(tilePart.second)); ++i)
+		// walls and objects are crushed until they no longer block, floors until nothing is left of them
+		for (int i = 0; i < 8; ++i)
 		{
+			const MapData *md = tilePart.first->getMapData(tilePart.second);
+			if (!md || (tilePart.second != O_FLOOR && !isSolid(md)))
+			{
+				break;
+			}
 			tilePart.first->destroy(tilePart.second, TILE);
 		}
 	}
@@ -1860,8 +1897,23 @@ int BattleVehicle::getFacingToward(const Mod *mod, int direction) const
  */
 int BattleVehicle::getTurnCost(const Mod *mod, int facing, int bonus, int &carry) const
 {
+	return getTurnCost(mod, getFacing(mod), facing, bonus, carry);
+}
+
+/**
+ * Gets the time unit cost of turning the vehicle between two facings, as getTurnCost above.
+ * @param mod The mod.
+ * @param fromFacing The facing it turns from.
+ * @param toFacing The facing it turns to.
+ * @param bonus The driver's bonus, in percent (see getDriverBonus).
+ * @param carry Hundredths of a time unit carried over from the last step; gets what carries over to the next.
+ * @return Time units.
+ */
+int BattleVehicle::getTurnCost(const Mod *mod, int fromFacing, int toFacing, int bonus, int &carry) const
+{
 	const RuleBattleVehicle *rule = getRule(mod);
-	const int current = getFacing(mod);
+	const int current = fromFacing;
+	const int facing = toFacing;
 	if (!rule || current == -1)
 	{
 		return 0;
@@ -1996,8 +2048,14 @@ BattleVehicle::MoveResult BattleVehicle::turn(SavedBattleGame *save, int facing,
 	}
 	for (const auto &tilePart : toCrush)
 	{
-		for (int i = 0; i < 8 && isSolid(tilePart.first->getMapData(tilePart.second)); ++i)
+		// walls and objects are crushed until they no longer block, floors until nothing is left of them
+		for (int i = 0; i < 8; ++i)
 		{
+			const MapData *md = tilePart.first->getMapData(tilePart.second);
+			if (!md || (tilePart.second != O_FLOOR && !isSolid(md)))
+			{
+				break;
+			}
 			tilePart.first->destroy(tilePart.second, TILE);
 		}
 	}
@@ -2252,8 +2310,14 @@ BattleVehicle::MoveResult BattleVehicle::turnDrawn(SavedBattleGame *save, int fa
 	}
 	for (const auto &tilePart : toCrush)
 	{
-		for (int i = 0; i < 8 && isSolid(tilePart.first->getMapData(tilePart.second)); ++i)
+		// walls and objects are crushed until they no longer block, floors until nothing is left of them
+		for (int i = 0; i < 8; ++i)
 		{
+			const MapData *md = tilePart.first->getMapData(tilePart.second);
+			if (!md || (tilePart.second != O_FLOOR && !isSolid(md)))
+			{
+				break;
+			}
 			tilePart.first->destroy(tilePart.second, TILE);
 		}
 	}
@@ -2730,16 +2794,615 @@ bool BattleVehicle::search(SavedBattleGame *save, const Position *target, int bu
 }
 
 /**
- * Finds the steps that take the vehicle to a new place (see search).
+ * Checks whether the vehicle drives along its axis: it can turn, and its rule doesn't let it slide
+ * (axisLocked). It then steps forward or back along its facing, never sideways, and turns on the way.
+ * @param mod The mod.
+ * @return True if it drives along its axis.
+ */
+bool BattleVehicle::drivesAlongAxis(const Mod *mod) const
+{
+	const RuleBattleVehicle *rule = getRule(mod);
+	return rule && rule->getFront() != -1 && rule->isAxisLocked();
+}
+
+/**
+ * Checks whether the vehicle can face a direction: a drawn facing or its mirror partner, or for a
+ * vehicle without drawn facings, its map's front or that mirrored.
+ * @param mod The mod.
+ * @param facing The facing (0 north, 2 east, 4 south, 6 west).
+ * @return True if it can face that way.
+ */
+bool BattleVehicle::canFace(const Mod *mod, int facing) const
+{
+	const RuleBattleVehicle *rule = getRule(mod);
+	if (!rule || rule->getFront() == -1)
+	{
+		return false;
+	}
+	if (hasDrawnFacings())
+	{
+		int quarters;
+		bool mirrored;
+		return findArt(facing, quarters, mirrored) != -1;
+	}
+	return facing == rule->getFront() || facing == mirrorDirection(rule->getFront());
+}
+
+/**
+ * Gets the facings the vehicle can take.
+ * @param mod The mod.
+ * @return The facings, the one it has now first; empty if it can't turn.
+ */
+std::vector<int> BattleVehicle::getFacings(const Mod *mod) const
+{
+	std::vector<int> facings;
+	const int current = getFacing(mod);
+	if (current == -1)
+	{
+		return facings;
+	}
+	facings.push_back(current);
+	for (int facing = 0; facing < 8; facing += 2)
+	{
+		if (facing != current && canFace(mod, facing))
+		{
+			facings.push_back(facing);
+		}
+	}
+	return facings;
+}
+
+/**
+ * Gets the size of the vehicle's layout in a facing: its sides swap when its axis does.
+ * @param mod The mod.
+ * @param facing The facing.
+ * @return The size (x and y).
+ */
+Position BattleVehicle::facingSize(const Mod *mod, int facing) const
+{
+	if (hasDrawnFacings())
+	{
+		int quarters = 0;
+		bool mirrored = false;
+		findArt(facing, quarters, mirrored);
+		return ((quarters % 2 == 1) != mirrored) ? Position(_baseSize.y, _baseSize.x, 0) : Position(_baseSize.x, _baseSize.y, 0);
+	}
+	const int current = getFacing(mod);
+	return (current == -1 || current % 4 == facing % 4) ? Position(_size.x, _size.y, 0) : Position(_size.y, _size.x, 0);
+}
+
+/**
+ * Gets where the vehicle stands after turning round its middle from one facing to another, as
+ * turn() puts it.
+ * @param mod The mod.
+ * @param pos Its position before the turn.
+ * @param fromFacing Its facing before the turn.
+ * @param toFacing Its facing after the turn.
+ * @return Its position after the turn (level unchanged; the ground decides it).
+ */
+Position BattleVehicle::turnedPosition(const Mod *mod, Position pos, int fromFacing, int toFacing) const
+{
+	const Position from = facingSize(mod, fromFacing), to = facingSize(mod, toFacing);
+	return pos + Position((from.x - 1) / 2 - (to.x - 1) / 2, (from.y - 1) / 2 - (to.y - 1) / 2, 0);
+}
+
+/**
+ * Gets where a tile of the vehicle's layout in one facing goes in another, as turning moves what is
+ * on board.
+ * @param mod The mod.
+ * @param offset The tile, relative to the vehicle's position.
+ * @param fromFacing The facing it is in.
+ * @param toFacing The facing to put it in.
+ * @return The tile relative to the vehicle's position in the other facing.
+ */
+Position BattleVehicle::mapOffset(const Mod *mod, Position offset, int fromFacing, int toFacing) const
+{
+	if (fromFacing == toFacing)
+	{
+		return offset;
+	}
+	if (hasDrawnFacings())
+	{
+		int fromQuarters = 0, toQuarters = 0;
+		bool fromMirrored = false, toMirrored = false;
+		findArt(fromFacing, fromQuarters, fromMirrored);
+		findArt(toFacing, toQuarters, toMirrored);
+		return turnTile(unturnTile(offset, _baseSize.x, _baseSize.y, fromQuarters, fromMirrored), _baseSize.x, _baseSize.y, toQuarters, toMirrored);
+	}
+	return fromFacing % 4 == toFacing % 4 ? offset : Position(offset.y, offset.x, offset.z);
+}
+
+/**
+ * Gets a copy of the vehicle laid out in another facing, as a turn would lay it out, without
+ * touching the map: for planning routes that turn, and for showing where a drive ends. The copy
+ * judges terrain by this vehicle, and shows the parts it would have.
+ * @param save Battle save.
+ * @param facing The facing.
+ * @param inside Gets, for each of the copy's tiles, whether it has its floor there.
+ * @return The copy.
+ */
+BattleVehicle BattleVehicle::layoutFor(SavedBattleGame *save, int facing, std::vector<char> &inside) const
+{
+	BattleVehicle copy = *this;
+	copy._original = self();
+	inside.assign(_cells.size(), 0);
+	copy._ghostArt.assign(_cells.size() * O_MAX, PartRef());
+	for (size_t i = 0; i < _cells.size(); ++i)
+	{
+		const Position p = _pos + _cells[i].offset;
+		inside[i] = isOnBoard(save, p);
+		const Tile *tile = save->getTile(p);
+		for (int part = O_FLOOR; part < O_MAX && tile; ++part)
+		{
+			const PartRef ref = getPart(tile, (TilePart)part);
+			if ((_cells[i].owned & (1 << part)) && isOwnSet(ref.setId))
+			{
+				copy._ghostArt[i * O_MAX + part] = ref;
+			}
+		}
+	}
+	const int current = getFacing(save->getMod());
+	if (current == -1 || facing == current)
+	{
+		return copy;
+	}
+	if (!hasDrawnFacings())
+	{
+		// mirrored: every tile goes to its transposed place, walls swapping sides
+		copy.mirrorLayout(copy._ghostArt);
+		return copy;
+	}
+
+	int quarters = 0, oldQuarters = 0;
+	bool mirrored = false, oldMirrored = false;
+	const int art = findArt(facing, quarters, mirrored);
+	findArt(current, oldQuarters, oldMirrored);
+	if (art < 0)
+	{
+		return copy;
+	}
+	copy._cells.clear();
+	copy._ghostArt.clear();
+	auto cellAt = [&](Position at)
+	{
+		for (size_t i = 0; i < copy._cells.size(); ++i)
+		{
+			if (copy._cells[i].offset == at)
+			{
+				return i;
+			}
+		}
+		Cell cell;
+		cell.offset = at;
+		cell.owned = 1 << O_OBJECT;
+		copy._cells.push_back(cell);
+		copy._ghostArt.resize(copy._cells.size() * O_MAX);
+		return copy._cells.size() - 1;
+	};
+	for (const auto &part : _facingParts)
+	{
+		Position at;
+		int slot;
+		placePart(part, quarters, mirrored, at, slot);
+		const size_t i = cellAt(at);
+		copy._cells[i].owned |= 1 << slot;
+		copy._ghostArt[i * O_MAX + slot] = part.lost ? PartRef() : part.art[art];
+	}
+	// every tile of its own layout stays covered (see turnDrawn)
+	for (const auto &cell : _cells)
+	{
+		const Position own = unturnTile(cell.offset, _baseSize.x, _baseSize.y, oldQuarters, oldMirrored);
+		if (own.x >= 0 && own.y >= 0 && own.x < _baseSize.x && own.y < _baseSize.y)
+		{
+			cellAt(turnTile(own, _baseSize.x, _baseSize.y, quarters, mirrored));
+		}
+	}
+	inside.assign(copy._cells.size(), 0);
+	for (size_t i = 0; i < copy._cells.size(); ++i)
+	{
+		inside[i] = copy._ghostArt[i * O_MAX + O_FLOOR].id != -1;
+	}
+	copy._facing = facing;
+	copy._mirrored = mirrored;
+	copy._seats.clear();
+	for (const auto &seat : _baseSeats)
+	{
+		copy._seats.push_back(turnTile(seat, _baseSize.x, _baseSize.y, quarters, mirrored));
+	}
+	copy.buildLookup();
+	return copy;
+}
+
+/**
+ * Gets the time unit cost of a step of a vehicle in a facing: as getStepCost, and for a vehicle that
+ * drives along its axis, reverseCost percent of that when it backs up, unless it can't face the way
+ * it backs toward (no art for its back), so backing up is its only way there.
+ * @param mod The mod.
+ * @param delta The step.
+ * @param facing The vehicle's facing during the step.
+ * @param bonus The driver's bonus, in percent (see getDriverBonus).
+ * @param carry Hundredths of a time unit carried over from the last step; gets what carries over to the next.
+ * @return Time units.
+ */
+int BattleVehicle::getDriveCost(const Mod *mod, Position delta, int facing, int bonus, int &carry) const
+{
+	const RuleBattleVehicle *rule = getRule(mod);
+	int percent = 100;
+	if (rule && facing != -1 && (delta.x != 0 || delta.y != 0) && drivesAlongAxis(mod))
+	{
+		const int back = (facing + 4) % 8;
+		const int off = (Pathfinding::vectorToDirection(Position(delta.x, delta.y, 0)) - back + 8) % 8;
+		if (std::min(off, 8 - off) <= 1 && canFace(mod, back))
+		{
+			percent = rule->getReverseCost();
+		}
+	}
+	const int hundredths = getStepCost(mod, delta) * (100 - bonus) * percent / 100 + carry;
+	carry = hundredths % 100;
+	return hundredths / 100;
+}
+
+/**
+ * Searches the routes of a vehicle that drives along its axis. A place is a position and a facing.
+ * The vehicle steps forward or back along its facing, also diagonally within 45 degrees of it, but
+ * never sideways; backing up costs more (see getDriveCost). It turns where the turned vehicle fits,
+ * round its middle, for tuPerQuarterTurn per quarter turn. Otherwise as search(): the same terrain,
+ * units, crushing and running over, judged in each facing by a copy of the vehicle laid out in it.
+ * @param save Battle save.
+ * @param goals For each facing the vehicle can take (see getFacings), the position the drive may end
+ * at in that facing (x -1 for none), or null to find every place within the budget.
+ * @param budget Time units the vehicle may spend, without goals.
+ * @param path Gets the vehicle positions after each step and turn.
+ * @param facings Gets the vehicle's facing after each step and turn.
+ * @param reach Gets the places within the budget, without goals.
+ * @param error Gets a string ID telling why there is no way.
+ * @return True if a way to a goal was found.
+ */
+bool BattleVehicle::searchAlongAxis(SavedBattleGame *save, const std::vector<Position> *goals, int budget, std::vector<Position> &path, std::vector<int> &facings, std::vector<Reach> *reach, std::string &error) const
+{
+	path.clear();
+	facings.clear();
+	const Mod *mod = save->getMod();
+	const RuleBattleVehicle *rule = getRule(mod);
+	const std::vector<int> options = getFacings(mod);
+	const int count = (int)options.size();
+	if (_cells.empty() || !rule || count == 0 || (goals && goals->size() != options.size()))
+	{
+		error = "STR_VEHICLE_NO_ROUTE";
+		return false;
+	}
+	if (goals && (*goals)[0].x == _pos.x && (*goals)[0].y == _pos.y)
+	{
+		error = "STR_VEHICLE_ALREADY_THERE";
+		return false;
+	}
+	const int crushArmor = getCrushArmor(mod);
+	const int tuPerTile = std::max(1, rule->getTuPerTile());
+	const std::vector<BattleUnit*> passengers = getPassengers(save);
+	const int width = save->getMapSizeX(), length = save->getMapSizeY(), height = save->getMapSizeZ();
+
+	// the vehicle laid out in each facing it can take, the one it has first
+	std::vector<BattleVehicle> layouts;
+	std::vector<std::vector<char> > insides(count);
+	for (int f = 0; f < count; ++f)
+	{
+		layouts.push_back(layoutFor(save, options[f], insides[f]));
+	}
+
+	// running over is the player's choice: only the units under the place clicked, in any facing ending there
+	std::vector<const BattleUnit*> targetUnits;
+	for (int f = 0; f < count && goals; ++f)
+	{
+		const Position &goal = (*goals)[f];
+		if (goal.x < 0)
+		{
+			continue;
+		}
+		for (const auto &column : layouts[f]._columns)
+		{
+			for (int z = 0; z < height; ++z)
+			{
+				const Tile *tile = save->getTile(Position(goal.x + column.x, goal.y + column.y, z));
+				if (tile && tile->getUnit())
+				{
+					targetUnits.push_back(tile->getUnit());
+				}
+			}
+		}
+	}
+	auto judge = [&](const BattleUnit *unit)
+	{
+		if (!knowsOf(unit))
+		{
+			return UNIT_IGNORED;
+		}
+		const UnitInWay inWay = judgeUnit(save, unit);
+		if (inWay == UNIT_RUN_OVER && _faction == FACTION_PLAYER && std::find(targetUnits.begin(), targetUnits.end(), unit) == targetUnits.end())
+		{
+			return UNIT_BLOCKS;
+		}
+		return inWay;
+	};
+
+	// where the vehicle stands, in a facing, with its corner at (x, y), coming from a level with some columns
+	// in the ground above it: its level (-1 if it doesn't fit there), what it crushes and runs over, what blocks it
+	struct Fit
+	{
+		int z, crushed, victims;
+		MoveResult blocked;
+	};
+	std::unordered_map<long long, Fit> fits;
+	auto fitsAt = [&](int f, int x, int y, int fromZ, int fromBuried)
+	{
+		Fit fit = { -1, 0, 0, MOVE_BLOCKED_EDGE };
+		if (x < 0 || y < 0 || x >= width || y >= length)
+		{
+			return fit;
+		}
+		const BattleVehicle &layout = layouts[f];
+		const long long key = (((((long long)f * 4096 + fromBuried) * height + fromZ) * length + y) * width) + x;
+		auto known = fits.find(key);
+		if (known != fits.end())
+		{
+			return known->second;
+		}
+		const bool onMap = std::all_of(layout._columns.begin(), layout._columns.end(), [&](Position column) { return x + column.x < width && y + column.y < length; });
+		if (onMap)
+		{
+			fit.z = layout.findLevel(save, x, y, fromZ, fromBuried);
+			fit.blocked = MOVE_TOO_STEEP;
+		}
+		if (fit.z >= 0)
+		{
+			std::vector<std::pair<Tile*, TilePart> > toCrush;
+			std::vector<BattleUnit*> victims;
+			fit.blocked = layout.checkPlace(save, Position(x, y, fit.z), insides[f], passengers, crushArmor, judge, toCrush, victims);
+			if (fit.blocked == MOVE_OK)
+			{
+				fit.crushed = (int)toCrush.size();
+				fit.victims = (int)victims.size();
+			}
+			else
+			{
+				fit.z = -1;
+			}
+		}
+		fits[key] = fit;
+		return fit;
+	};
+
+	// the goals, from any level; when none fits, what stands in the way says more than the ground
+	if (goals)
+	{
+		MoveResult atGoal = MOVE_TOO_STEEP;
+		for (int f = 0; f < count && atGoal != MOVE_OK; ++f)
+		{
+			const Position &goal = (*goals)[f];
+			for (int z = 0; z < height && goal.x >= 0 && atGoal != MOVE_OK; ++z)
+			{
+				const MoveResult result = fitsAt(f, goal.x, goal.y, z, (int)layouts[f]._columns.size()).blocked;
+				if (result == MOVE_OK || atGoal == MOVE_TOO_STEEP)
+				{
+					atGoal = result;
+				}
+			}
+		}
+		if (atGoal != MOVE_OK)
+		{
+			error = getMoveResultString(atGoal);
+			return false;
+		}
+	}
+
+	// the estimate counts straight and diagonal steps to where the vehicle would have to stand, in the
+	// facing it has, to turn onto a goal; costs are in half time units
+	std::vector<Position> half;
+	for (int f = 0; f < count; ++f)
+	{
+		const Position size = facingSize(mod, options[f]);
+		half.push_back(Position((size.x - 1) / 2, (size.y - 1) / 2, 0));
+	}
+	auto estimate = [&](int f, int x, int y)
+	{
+		if (!goals)
+		{
+			return 0;
+		}
+		int best = INT_MAX;
+		for (int g = 0; g < count; ++g)
+		{
+			const Position &goal = (*goals)[g];
+			if (goal.x < 0)
+			{
+				continue;
+			}
+			const int dx = std::abs(x - (goal.x - half[f].x + half[g].x)), dy = std::abs(y - (goal.y - half[f].y + half[g].y));
+			best = std::min(best, tuPerTile * (2 * std::max(dx, dy) + std::min(dx, dy)));
+		}
+		return best == INT_MAX ? 0 : best;
+	};
+	auto nodeAt = [&](int f, int x, int y, int z)
+	{
+		return ((f * height + z) * length + y) * width + x;
+	};
+	const int start = nodeAt(0, _pos.x, _pos.y, _pos.z);
+	int goal = -1;
+	std::unordered_map<int, int> cost, from, buried, tuSpent, crushing;
+	using Entry = std::pair<int, int>;
+	std::priority_queue<Entry, std::vector<Entry>, std::greater<Entry> > open;
+	cost[start] = 0;
+	buried[start] = countBuried(save, _pos);
+	tuSpent[start] = 0;
+	crushing[start] = 0;
+	open.push(std::make_pair(estimate(0, _pos.x, _pos.y), start));
+	auto relax = [&](int current, int f, Position at, int newCost, int tu, bool crushes)
+	{
+		const int next = nodeAt(f, at.x, at.y, at.z);
+		auto known = cost.find(next);
+		if (known == cost.end() || newCost < known->second)
+		{
+			if (known == cost.end())
+			{
+				buried[next] = layouts[f].countBuried(save, at);
+			}
+			cost[next] = newCost;
+			from[next] = current;
+			tuSpent[next] = tu;
+			crushing[next] = crushing[current] + (crushes ? 1 : 0);
+			open.push(std::make_pair(newCost + estimate(f, at.x, at.y), next));
+		}
+	};
+	int expanded = 0;
+	while (!open.empty() && expanded < 80000)
+	{
+		const Entry top = open.top();
+		open.pop();
+		const int current = top.second;
+		const int cx = current % width, cy = current / width % length, cz = current / (width * length) % height, cf = current / (width * length * height);
+		if (goals && (*goals)[cf].x == cx && (*goals)[cf].y == cy)
+		{
+			goal = current;
+			break;
+		}
+		if (top.first - estimate(cf, cx, cy) > cost[current])
+		{
+			continue; // a better way to this place was found after this entry
+		}
+		++expanded;
+		const int facing = options[cf];
+		const int back = (facing + 4) % 8;
+		const int reversePercent = canFace(mod, back) ? rule->getReverseCost() : 100;
+		const int currentBuried = buried[current];
+		// steps forward or back, also diagonally within 45 degrees of the axis
+		for (int dir = 0; dir < 8; ++dir)
+		{
+			const int ahead = (dir - facing + 8) % 8, behind = (dir - back + 8) % 8;
+			const bool backward = std::min(behind, 8 - behind) <= 1;
+			if (std::min(ahead, 8 - ahead) > 1 && !backward)
+			{
+				continue;
+			}
+			Position v;
+			Pathfinding::directionToVector(dir, &v);
+			const Fit fit = fitsAt(cf, cx + v.x, cy + v.y, cz, currentBuried);
+			const bool diagonal = v.x != 0 && v.y != 0;
+			if (fit.z < 0 || (diagonal && (fitsAt(cf, cx + v.x, cy, cz, currentBuried).z < 0 || fitsAt(cf, cx, cy + v.y, cz, currentBuried).z < 0)))
+			{
+				continue;
+			}
+			const int step = getStepCost(mod, Position(v.x, v.y, fit.z - cz)) * (backward ? reversePercent : 100) / 100;
+			const int tu = tuSpent[current] + step;
+			if (!goals && tu > budget)
+			{
+				continue;
+			}
+			const int newCost = cost[current] + 2 * step + (fit.crushed > 0 ? 2 * tuPerTile : 0) + (fit.victims > 0 ? 6 * tuPerTile : 0);
+			relax(current, cf, Position(cx + v.x, cy + v.y, fit.z), newCost, tu, fit.crushed > 0 || fit.victims > 0);
+		}
+		// turns round the middle, where the turned vehicle fits
+		for (int g = 0; g < count; ++g)
+		{
+			if (g == cf)
+			{
+				continue;
+			}
+			const Position p = turnedPosition(mod, Position(cx, cy, cz), facing, options[g]);
+			const Fit fit = fitsAt(g, p.x, p.y, cz, currentBuried);
+			if (fit.z < 0)
+			{
+				continue;
+			}
+			int carry = 0;
+			const int turn = getTurnCost(mod, facing, options[g], 0, carry);
+			const int tu = tuSpent[current] + turn;
+			if (!goals && tu > budget)
+			{
+				continue;
+			}
+			const int newCost = cost[current] + 2 * turn + (fit.crushed > 0 ? 2 * tuPerTile : 0) + (fit.victims > 0 ? 6 * tuPerTile : 0);
+			relax(current, g, Position(p.x, p.y, fit.z), newCost, tu, fit.crushed > 0 || fit.victims > 0);
+		}
+	}
+	if (!goals)
+	{
+		for (const auto &place : cost)
+		{
+			const int at = place.first;
+			reach->push_back({ Position(at % width, at / width % length, at / (width * length) % height), tuSpent[at], crushing[at], options[at / (width * length * height)] });
+		}
+		return false;
+	}
+	if (goal == -1)
+	{
+		error = "STR_VEHICLE_NO_ROUTE";
+		return false;
+	}
+	for (int at = goal; at != start; at = from[at])
+	{
+		path.push_back(Position(at % width, at / width % length, at / (width * length) % height));
+		facings.push_back(options[at / (width * length * height)]);
+	}
+	std::reverse(path.begin(), path.end());
+	std::reverse(facings.begin(), facings.end());
+	return true;
+}
+
+/**
+ * Finds the steps that take the vehicle to a new place (see search). A vehicle that drives along
+ * its axis, asked for its facings, gets the way along its axis (see searchAlongAxis), ending in the
+ * given facing or any.
  * @param save Battle save.
  * @param target New vehicle position (its level is ignored).
  * @param path Gets the vehicle positions after each step, the last one being the target.
  * @param error Gets a string ID telling why there is no way.
+ * @param facings Gets the vehicle's facing after each step, for a vehicle that drives along its axis (empty otherwise).
+ * @param facing The facing the way should end in, or -1 for any.
  * @return True if a way was found.
  */
-bool BattleVehicle::findPath(SavedBattleGame *save, Position target, std::vector<Position> &path, std::string &error) const
+bool BattleVehicle::findPath(SavedBattleGame *save, Position target, std::vector<Position> &path, std::string &error, std::vector<int> *facings, int facing) const
 {
+	if (facings)
+	{
+		facings->clear();
+		if (drivesAlongAxis(save->getMod()))
+		{
+			const std::vector<int> options = getFacings(save->getMod());
+			std::vector<Position> goals(options.size(), Position(-1, -1, 0));
+			for (size_t f = 0; f < options.size(); ++f)
+			{
+				if (facing == -1 || options[f] == facing)
+				{
+					goals[f] = target;
+				}
+			}
+			return searchAlongAxis(save, &goals, 0, path, *facings, nullptr, error);
+		}
+	}
 	return search(save, &target, 0, path, nullptr, error);
+}
+
+/**
+ * Finds the steps and turns of a vehicle that drives along its axis so that a tile of it, a
+ * driver's seat, ends on a target tile, in whichever facing the way there ends (see searchAlongAxis).
+ * @param save Battle save.
+ * @param seat The tile, relative to the vehicle's position now.
+ * @param target The tile it should end on (its level is ignored).
+ * @param path Gets the vehicle positions after each step.
+ * @param facings Gets the vehicle's facing after each step.
+ * @param error Gets a string ID telling why there is no way.
+ * @return True if a way was found.
+ */
+bool BattleVehicle::findPathForSeat(SavedBattleGame *save, Position seat, Position target, std::vector<Position> &path, std::vector<int> &facings, std::string &error) const
+{
+	const Mod *mod = save->getMod();
+	const int current = getFacing(mod);
+	std::vector<Position> goals;
+	for (int facing : getFacings(mod))
+	{
+		const Position at = mapOffset(mod, seat, current, facing);
+		goals.push_back(Position(target.x - at.x, target.y - at.y, 0));
+	}
+	return searchAlongAxis(save, &goals, 0, path, facings, nullptr, error);
 }
 
 /**
@@ -2754,6 +3417,12 @@ std::vector<BattleVehicle::Reach> BattleVehicle::findReachable(SavedBattleGame *
 	std::vector<Reach> reach;
 	std::vector<Position> path;
 	std::string error;
+	if (drivesAlongAxis(save->getMod()))
+	{
+		std::vector<int> facings;
+		searchAlongAxis(save, nullptr, tu, path, facings, &reach, error);
+		return reach;
+	}
 	search(save, nullptr, tu, path, &reach, error);
 	return reach;
 }
@@ -2794,8 +3463,18 @@ const char *BattleVehicle::getMoveResultString(MoveResult result)
 bool BattleVehicle::getGhostParts(SavedBattleGame *save, Position ghostPos, Position tilePos, const MapData *parts[O_MAX]) const
 {
 	const int i = getCellIndex(tilePos - ghostPos + _pos);
-	const Tile *current = i != -1 ? save->getTile(_pos + _cells[i].offset) : nullptr;
 	bool any = false;
+	if (!_ghostArt.empty())
+	{
+		// a layout copy shows the parts it was given
+		for (int part = O_FLOOR; part < O_MAX; ++part)
+		{
+			parts[part] = (i != -1 && (_cells[i].owned & (1 << part))) ? getMapData(save, _ghostArt[i * O_MAX + part]) : nullptr;
+			any = any || parts[part] != nullptr;
+		}
+		return any;
+	}
+	const Tile *current = i != -1 ? save->getTile(_pos + _cells[i].offset) : nullptr;
 	for (int part = O_FLOOR; part < O_MAX; ++part)
 	{
 		parts[part] = nullptr;

@@ -75,6 +75,8 @@ public:
 		int tu;
 		/// Steps on the way that crush terrain or run over units.
 		int crushing;
+		/// Facing there, for a vehicle that drives along its axis (-1 otherwise).
+		int facing = -1;
 	};
 
 	/// A part of a vehicle drawn in more facings: where it is in its map's own layout, and its part in each drawn facing.
@@ -111,6 +113,8 @@ private:
 	bool _aiDecided;
 	int _tuCarry;
 	bool _mirrored;
+	// did someone on board drive it when its crew was last checked?
+	bool _driven;
 	Position _pos;
 	int _firstSetId, _lastSetId;
 	std::vector<Cell> _cells;
@@ -130,6 +134,10 @@ private:
 	Position _baseSize;
 	std::vector<Position> _baseSeats;
 	std::vector<int> _extraSetIds;
+	// a copy of the vehicle laid out in another facing, for planning routes and previews: the vehicle it
+	// stands for, and the part each of its tiles shows
+	const BattleVehicle *_original = nullptr;
+	std::vector<PartRef> _ghostArt;
 
 	/// Is the tileset one of the vehicle's?
 	bool isOwnSet(int setId) const { return (setId >= _firstSetId && setId < _lastSetId) || std::find(_extraSetIds.begin(), _extraSetIds.end(), setId) != _extraSetIds.end(); }
@@ -187,6 +195,10 @@ private:
 	MoveResult checkPlace(SavedBattleGame *save, Position pos, const std::vector<char> &inside, const std::vector<BattleUnit*> &passengers, int crushArmor, const UnitJudge &judge, std::vector<std::pair<Tile*, TilePart> > &toCrush, std::vector<BattleUnit*> &victims) const;
 	/// Searches the vehicle's routes, to a target or to every place within some time units.
 	bool search(SavedBattleGame *save, const Position *target, int budget, std::vector<Position> &path, std::vector<Reach> *reach, std::string &error) const;
+	/// Gets the vehicle a layout copy stands for, or this one.
+	const BattleVehicle *self() const { return _original ? _original : this; }
+	/// Searches the routes of a vehicle that drives along its axis: places are positions and facings.
+	bool searchAlongAxis(SavedBattleGame *save, const std::vector<Position> *goals, int budget, std::vector<Position> &path, std::vector<int> &facings, std::vector<Reach> *reach, std::string &error) const;
 
 public:
 	/// Creates an empty vehicle, to be loaded from a save.
@@ -253,8 +265,8 @@ public:
 	int checkCapture(SavedBattleGame *save);
 	/// Brings back the mounted guns that went back to their own side when the vehicle's side's turn started.
 	void keepGuns(SavedBattleGame *save) const;
-	/// Hands over the vehicles taken this way and silences the guns without a driver.
-	static std::vector<std::pair<BattleVehicle*, int> > updateCrews(SavedBattleGame *save);
+	/// Hands over the vehicles taken this way, and silences the guns of those whose driver went down.
+	static std::vector<std::pair<BattleVehicle*, int> > updateCrews(SavedBattleGame *save, bool casualties);
 	/// Gets how many tiles the vehicle would be from a map edge at a position.
 	int getEdgeDistance(SavedBattleGame *save, Position pos, int edge) const;
 	/// Takes the vehicle off the battle through the map edge, with its side's units and the items on board.
@@ -292,7 +304,27 @@ public:
 	/// Is the vehicle drawn in more facings than its map's?
 	bool hasDrawnFacings() const { return !_drawnFacings.empty(); }
 	/// Finds the steps that take the vehicle to a new place, following the ground.
-	bool findPath(SavedBattleGame *save, Position target, std::vector<Position> &path, std::string &error) const;
+	bool findPath(SavedBattleGame *save, Position target, std::vector<Position> &path, std::string &error, std::vector<int> *facings = nullptr, int facing = -1) const;
+	/// Finds the steps and turns that put a tile of the vehicle (a driver's seat) on a target tile.
+	bool findPathForSeat(SavedBattleGame *save, Position seat, Position target, std::vector<Position> &path, std::vector<int> &facings, std::string &error) const;
+	/// Does the vehicle drive along its axis, turning to change it?
+	bool drivesAlongAxis(const Mod *mod) const;
+	/// Can the vehicle face a direction, drawn or mirrored from a drawn one?
+	bool canFace(const Mod *mod, int facing) const;
+	/// Gets the facings the vehicle can take, the one it has first.
+	std::vector<int> getFacings(const Mod *mod) const;
+	/// Gets the size of the vehicle's layout in a facing.
+	Position facingSize(const Mod *mod, int facing) const;
+	/// Gets where the vehicle stands after turning round its middle.
+	Position turnedPosition(const Mod *mod, Position pos, int fromFacing, int toFacing) const;
+	/// Gets where a tile of the vehicle's layout goes in another facing.
+	Position mapOffset(const Mod *mod, Position offset, int fromFacing, int toFacing) const;
+	/// Gets a copy of the vehicle laid out in another facing, for planning and previews.
+	BattleVehicle layoutFor(SavedBattleGame *save, int facing, std::vector<char> &inside) const;
+	/// Gets the time unit cost of a step in a facing, backing up included, for a driver with a skill bonus.
+	int getDriveCost(const Mod *mod, Position delta, int facing, int bonus, int &carry) const;
+	/// Gets the time unit cost of turning between two facings, for a driver with a skill bonus.
+	int getTurnCost(const Mod *mod, int fromFacing, int toFacing, int bonus, int &carry) const;
 	/// Finds every place the vehicle can drive to with some time units.
 	std::vector<Reach> findReachable(SavedBattleGame *save, int tu) const;
 	/// Gets the message (a string ID) telling why a step failed.
