@@ -1031,7 +1031,7 @@ void BattlescapeGame::checkForCasualties(const RuleDamageType *damageType, Battl
 	}
 
 	// a vehicle whose crew is down may change hands, and its guns fall silent without a driver
-	for (const auto &captured : BattleVehicle::updateCrews(_save))
+	for (const auto &captured : BattleVehicle::updateCrews(_save, true))
 	{
 		if (captured.first->getFaction() == FACTION_PLAYER)
 		{

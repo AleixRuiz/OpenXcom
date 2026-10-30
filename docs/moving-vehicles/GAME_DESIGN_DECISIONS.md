@@ -511,6 +511,8 @@ Decided · 2026-10-30 · M2, Phase 15
 
 **Settled with it.** Silencing works through time units, so a mod's own scripts that hand turrets time units can override it.
 
+**Settled after play (2026-10-30).** At first the guns went silent whenever a vehicle had nobody at the wheel, checked after every step: on the first turn only the Chimera whose seat a soldier happened to start on had a working turret, and moving the driver to another seat silenced the turret. Now a gun goes silent at once only when its driver goes down (killed or stunned), and otherwise at the start of a turn with nobody at the wheel. A battle that starts without a driver, or a driver changing places, costs the guns nothing until then.
+
 ### GD-29 · Hijacking: take the seat once the crew is down
 
 Decided · 2026-10-30 · M2, Phase 15

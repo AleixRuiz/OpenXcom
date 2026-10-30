@@ -378,7 +378,7 @@ std::vector<BattleVehicle*> BattleVehicle::Placement::finish(SavedBattleGame *sa
 /**
  * Creates an empty vehicle, to be loaded from a save.
  */
-BattleVehicle::BattleVehicle() : _ufo(false), _faction(0), _timeUnits(0), _aiDecided(false), _tuCarry(0), _mirrored(false), _firstSetId(-1), _lastSetId(-1), _facing(-1)
+BattleVehicle::BattleVehicle() : _ufo(false), _faction(0), _timeUnits(0), _aiDecided(false), _tuCarry(0), _mirrored(false), _driven(false), _firstSetId(-1), _lastSetId(-1), _facing(-1)
 {
 }
 
@@ -391,7 +391,7 @@ BattleVehicle::BattleVehicle() : _ufo(false), _faction(0), _timeUnits(0), _aiDec
  * @param lastSetId Index after the map's last tileset in the battle.
  */
 BattleVehicle::BattleVehicle(const std::string &type, bool ufo, int faction, int firstSetId, int lastSetId) :
-	_type(type), _ufo(ufo), _faction(faction), _timeUnits(0), _aiDecided(false), _tuCarry(0), _mirrored(false), _firstSetId(firstSetId), _lastSetId(lastSetId), _facing(-1)
+	_type(type), _ufo(ufo), _faction(faction), _timeUnits(0), _aiDecided(false), _tuCarry(0), _mirrored(false), _driven(false), _firstSetId(firstSetId), _lastSetId(lastSetId), _facing(-1)
 {
 }
 
@@ -416,6 +416,7 @@ void BattleVehicle::load(const YAML::YamlNodeReader &reader, const Mod *mod)
 	reader.tryRead("timeUnits", _timeUnits);
 	reader.tryRead("tuCarry", _tuCarry);
 	reader.tryRead("mirrored", _mirrored);
+	reader.tryRead("driven", _driven);
 	reader.tryRead("position", _pos);
 	reader.tryRead("firstSetId", _firstSetId);
 	reader.tryRead("lastSetId", _lastSetId);
@@ -495,6 +496,10 @@ void BattleVehicle::save(YAML::YamlNodeWriter writer) const
 	if (_mirrored)
 	{
 		writer.write("mirrored", _mirrored);
+	}
+	if (_driven)
+	{
+		writer.write("driven", _driven);
 	}
 	writer.write("position", _pos);
 	writer.write("firstSetId", _firstSetId);
@@ -1459,13 +1464,16 @@ void BattleVehicle::keepGuns(SavedBattleGame *save) const
 }
 
 /**
- * Hands over every vehicle whose seat was taken by another side (see checkCapture), then takes
- * the time units of mounted guns left without a driver (see silenceGuns). Called after units
- * move or go down.
+ * Hands over every vehicle whose seat was taken by another side (see checkCapture). After units go
+ * down, also takes the time units of the mounted guns of every vehicle whose driver went down (see
+ * silenceGuns). A vehicle that starts the battle without a driver, or whose driver leaves the seat,
+ * keeps its guns working until a turn starts with nobody at the wheel (see SavedBattleGame::endTurn),
+ * so the crew can change places. Called after units move or go down.
  * @param save Battle save.
+ * @param casualties Did units go down?
  * @return The vehicles that changed hands, each with the side it belonged to.
  */
-std::vector<std::pair<BattleVehicle*, int> > BattleVehicle::updateCrews(SavedBattleGame *save)
+std::vector<std::pair<BattleVehicle*, int> > BattleVehicle::updateCrews(SavedBattleGame *save, bool casualties)
 {
 	std::vector<std::pair<BattleVehicle*, int> > captured;
 	for (auto *vehicle : *save->getVehicles())
@@ -1475,7 +1483,12 @@ std::vector<std::pair<BattleVehicle*, int> > BattleVehicle::updateCrews(SavedBat
 		{
 			captured.push_back(std::make_pair(vehicle, from));
 		}
-		vehicle->silenceGuns(save);
+		const bool driven = vehicle->hasDriver(save);
+		if (casualties && vehicle->_driven && !driven)
+		{
+			vehicle->silenceGuns(save);
+		}
+		vehicle->_driven = driven;
 	}
 	return captured;
 }

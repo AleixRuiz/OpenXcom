@@ -111,6 +111,8 @@ private:
 	bool _aiDecided;
 	int _tuCarry;
 	bool _mirrored;
+	// did someone on board drive it when its crew was last checked?
+	bool _driven;
 	Position _pos;
 	int _firstSetId, _lastSetId;
 	std::vector<Cell> _cells;
@@ -253,8 +255,8 @@ public:
 	int checkCapture(SavedBattleGame *save);
 	/// Brings back the mounted guns that went back to their own side when the vehicle's side's turn started.
 	void keepGuns(SavedBattleGame *save) const;
-	/// Hands over the vehicles taken this way and silences the guns without a driver.
-	static std::vector<std::pair<BattleVehicle*, int> > updateCrews(SavedBattleGame *save);
+	/// Hands over the vehicles taken this way, and silences the guns of those whose driver went down.
+	static std::vector<std::pair<BattleVehicle*, int> > updateCrews(SavedBattleGame *save, bool casualties);
 	/// Gets how many tiles the vehicle would be from a map edge at a position.
 	int getEdgeDistance(SavedBattleGame *save, Position pos, int edge) const;
 	/// Takes the vehicle off the battle through the map edge, with its side's units and the items on board.
