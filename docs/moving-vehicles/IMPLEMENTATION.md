@@ -210,7 +210,7 @@ Decided in [GD-21](GAME_DESIGN_DECISIONS.md#gd-21--running-over-is-the-players-c
 
 - [x] Builds with no new warnings.
 - [ ] Both demo mods load with no messages, and a battle save made before this phase loads (to run when the screen is free).
-- [ ] The in-game checks under "Running over" in [TESTING.md](TESTING.md).
+- [x] The in-game checks under "Running over" in [TESTING.md](TESTING.md). Played 2026-10-30.
 
 **Commit:** `Moving vehicles: vehicles run over units`
 
@@ -226,7 +226,7 @@ Decided in [GD-22](GAME_DESIGN_DECISIONS.md#gd-22--reaction-fire-against-everyon
 **Checks**
 
 - [x] Builds with no new warnings.
-- [ ] The in-game checks under "Reaction fire" in [TESTING.md](TESTING.md).
+- [ ] The in-game checks under "Reaction fire" in [TESTING.md](TESTING.md). Played 2026-10-30: roof crew and the closed hull as planned; the turrets were not seen drawing fire (open).
 
 **Commit:** `Moving vehicles: reaction fire against driving vehicles`
 
@@ -245,7 +245,7 @@ Decided in [GD-23](GAME_DESIGN_DECISIONS.md#gd-23--enemy-vehicles-come-from-ufo-
 
 - [x] Builds with no new warnings.
 - [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
-- [ ] The in-game checks under "Enemy vehicles" in [TESTING.md](TESTING.md).
+- [x] The in-game checks under "Enemy vehicles" in [TESTING.md](TESTING.md). Played 2026-10-30; two lines that later phases changed were rewritten.
 
 **Commit:** `Moving vehicles: UFO maps can be enemy vehicles`
 
@@ -266,7 +266,7 @@ Decided in [GD-24](GAME_DESIGN_DECISIONS.md#gd-24--ai-drivers-hold-advance-or-st
 
 - [x] Builds with no new warnings.
 - [ ] Both demo mods load with no messages.
-- [ ] The in-game checks under "AI drivers" in [TESTING.md](TESTING.md).
+- [ ] The in-game checks under "AI drivers" in [TESTING.md](TESTING.md). Played 2026-10-30: all but reaction fire against the enemy Chimera's crew (open, as under "Reaction fire").
 
 **Commit:** `Moving vehicles: AI units drive vehicles`
 
@@ -291,7 +291,7 @@ Layers 1 and 2 of [GD-17](GAME_DESIGN_DECISIONS.md#gd-17--skilled-and-dedicated-
 
 - [x] Builds with no new warnings.
 - [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
-- [ ] The in-game checks under "Driver skill" in [TESTING.md](TESTING.md).
+- [x] The in-game checks under "Driver skill" in [TESTING.md](TESTING.md). Played 2026-10-30.
 
 **Commit:** `Moving vehicles: skilled drivers get further`
 
@@ -312,7 +312,7 @@ Decided in [GD-27](GAME_DESIGN_DECISIONS.md#gd-27--enemy-vehicles-get-their-driv
 
 - [x] Builds with no new warnings.
 - [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
-- [ ] The in-game checks under "Enemy drivers" in [TESTING.md](TESTING.md).
+- [x] The in-game checks under "Enemy drivers" in [TESTING.md](TESTING.md). Played 2026-10-30.
 
 **Commit:** `Moving vehicles: enemy vehicles get a driver from their crew`
 
@@ -332,7 +332,7 @@ Decided in [GD-28](GAME_DESIGN_DECISIONS.md#gd-28--a-vehicles-guns-need-its-driv
 
 - [x] Builds with no new warnings.
 - [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
-- [ ] The in-game checks under "Gun crews and hijacking" in [TESTING.md](TESTING.md). First play on 2026-10-30: the capture works, but the turret went back to the traitors when the player's next turn started; fixed below.
+- [ ] The in-game checks under "Gun crews and hijacking" in [TESTING.md](TESTING.md). Played 2026-10-30: the turret went back to the traitors the turn after a capture, fixed below; everything else passed but "your own Chimera without a driver", not played yet.
 
 **Commit:** `Moving vehicles: guns need a driver, and vehicles can be hijacked` (`ae3466baf`)
 
