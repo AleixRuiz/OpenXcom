@@ -383,7 +383,7 @@ Decided in [GD-28](GAME_DESIGN_DECISIONS.md#gd-28--a-vehicles-guns-need-its-driv
 | Phase | Delivers | Playable result | Commit |
 | --- | --- | --- | --- |
 | 16. Mirror turning | `front`, `tuPerQuarterTurn`; mirrored tile parts (sprite, hit shape, wall slot); the turn step; right click in drive mode | The Chimera turns between south and east | `033d9599f` |
-| 17. Driving along the axis | [GD-31](GAME_DESIGN_DECISIONS.md#gd-31--drives-turn-the-vehicle-toward-where-it-goes): `axisLocked`, `reverseCost`; routes over positions and facings; turns on the way; preview in the final facing; AI drivers too | The Chimera drives the way it faces | this phase's commit |
+| 17. Driving along the axis | [GD-31](GAME_DESIGN_DECISIONS.md#gd-31--drives-turn-the-vehicle-toward-where-it-goes): `axisLocked`, `reverseCost`; routes over positions and facings; turns on the way; preview in the final facing; AI drivers too | The Chimera drives the way it faces | `735be1076` |
 | 18. Per-facing maps | `facingMaps`; the art scripts; the showcase Chimera's north and west maps | The Chimera turns all the way round | `2ab7dc969` |
 
 ## Phase 16: Mirror turning
@@ -470,8 +470,8 @@ Decided in [GD-31](GAME_DESIGN_DECISIONS.md#gd-31--drives-turn-the-vehicle-towar
 **Checks**
 
 - [x] Builds with no new warnings.
-- [ ] Builds on Linux, macOS and 32-bit Windows on GitHub.
+- [x] Builds on Linux (GCC), macOS (Clang) and 32-bit Windows on GitHub, with no warnings in our code (2026-10-31), with the fixes for guns, upper floors and the hull gun.
 - [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
 - [x] The in-game checks under "Driving along the axis" in [TESTING.md](TESTING.md), played 2026-10-31 with the fixes for turrets on the first turn, upper floors and the hull gun.
 
-**Commit:** `Moving vehicles: vehicles that can turn drive along their axis`
+**Commit:** `Moving vehicles: vehicles that can turn drive along their axis` (`735be1076`)
