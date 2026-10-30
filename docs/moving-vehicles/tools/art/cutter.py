@@ -121,9 +121,12 @@ def pieces(tiles, terrain, sx, sy, sz):
     return out
 
 
-def cut(draft_path, facing_from, facing_to, terrain, tiles, group, lofts, colours, sz):
+def cut(draft_path, facing_from, facing_to, terrain, tiles, group, lofts, colours, sz,
+        take=lambda p: True, shape=lambda p: True):
     """Cuts a painted view onto one vehicle. Returns its parts: dicts with the original part, where it goes
-    (turned, in the vehicle's box), its new hit shape layers and its 32 x 40 sprite."""
+    (turned, in the vehicle's box), its new hit shape layers and its 32 x 40 sprite. Only the parts `shape`
+    accepts make the outline the painting is fitted to (the parts it shows), and only those `take` accepts
+    get its pixels (the others keep empty sprites, to be cut from another painting)."""
     k = ((facing_to - facing_from) % 8) // 2
     x0 = min(p[0] for p in group)
     y0 = min(p[1] for p in group)
@@ -158,6 +161,8 @@ def cut(draft_path, facing_from, facing_to, terrain, tiles, group, lofts, colour
     owner = [-1] * (wx * wy * wz)
     for pid in sorted(range(len(parts)), key=lambda i: parts[i]['slot'] == OBJECT):
         p = parts[pid]
+        if not shape(p):
+            continue
         for layer, rows in enumerate(p['layers']):
             for vy in range(16):
                 if not rows[vy]:
@@ -220,12 +225,16 @@ def cut(draft_path, facing_from, facing_to, terrain, tiles, group, lofts, colour
                 continue
             u, v = cx0 + i + u0, cy0 + j + v0
             pid = nearest[j * tw + i]
+            if pid < 0 or not take(parts[pid]):
+                continue
             fu, fv = frame_origin(parts[pid])
             fx, fy = u - fu, v - fv
             if not (0 <= fx < 32 and 0 <= fy < 40):
                 # outside its part's sprite: the closest part whose sprite reaches here
                 best = None
                 for q, p in enumerate(parts):
+                    if not take(p):
+                        continue
                     qu, qv = frame_origin(p)
                     if 0 <= u - qu < 32 and 0 <= v - qv < 40:
                         d = abs(p['x'] - parts[pid]['x']) + abs(p['y'] - parts[pid]['y']) + abs(p['z'] - parts[pid]['z'])
@@ -240,34 +249,35 @@ def cut(draft_path, facing_from, facing_to, terrain, tiles, group, lofts, colour
             parts[pid]['sprite'][fy * 32 + fx] = c
             parts[pid]['painted'] += 1
 
-    # parts the view doesn't show keep their own sprite: a floor turned round exactly, walls mirrored
-    # when they change sides, anything else as it was
-    hidden = 0
-    for p in parts:
-        if p['painted']:
-            continue
-        hidden += 1
-        src = p['pck'][p['rec']['frames'][0]] if p['rec']['frames'][0] < len(p['pck']) else [0] * 1280
-        yoff = p['rec']['yoffset']
-        moved = [0] * 1280
+    # parts the view doesn't show stay empty: their old art faces the wrong way and would be drawn over
+    # the painting (see turned_original for the one exception, floors)
+    hidden = sum(1 for p in parts if take(p) and not p['painted'])
+    return parts, (nW, nL), {'stray': stray, 'hidden': hidden, 'painted': sum(1 for p in parts if p['painted'])}
+
+
+def turned_original(p):
+    """A part's own sprite, turned with it. Exact only for a floor turned half round (its diamond turned
+    over); anything else is mirrored at best, so it is only used for floors."""
+    src = p['pck'][p['rec']['frames'][0]] if p['rec']['frames'][0] < len(p['pck']) else [0] * 1280
+    yoff = p['rec']['yoffset']
+    moved = [0] * 1280
+    for j in range(40):
+        for i in range(32):
+            if 0 <= j + yoff < 40:
+                moved[j * 32 + i] = src[(j + yoff) * 32 + i]
+    if p['k'] == 2:
+        out = [0] * 1280
         for j in range(40):
             for i in range(32):
-                if j + yoff < 40:
-                    moved[j * 32 + i] = src[(j + yoff) * 32 + i] if 0 <= j + yoff else 0
-        if p['slot'] == FLOOR and p['k'] == 2:
-            out = [0] * 1280
-            for j in range(40):
-                for i in range(32):
-                    c = moved[j * 32 + i]
-                    if c and j >= 24:
-                        out[(63 - j) * 32 + 31 - i] = c
-                    elif c:
-                        out[j * 32 + i] = c
-            moved = out
-        elif p['slot'] != p['from'][3] or p['k'] % 2:
-            moved = [moved[j * 32 + 31 - i] for j in range(40) for i in range(32)]
-        p['sprite'] = moved
-    return parts, (nW, nL), {'stray': stray, 'hidden': hidden, 'painted': sum(1 for p in parts if p['painted'])}
+                c = moved[j * 32 + i]
+                if c and j >= 24:
+                    out[(63 - j) * 32 + 31 - i] = c
+                elif c:
+                    out[j * 32 + i] = c
+        return out
+    if p['k'] % 2:
+        return [moved[j * 32 + 31 - i] for j in range(40) for i in range(32)]
+    return moved
 
 
 # --- writing the game files ---

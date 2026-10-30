@@ -75,9 +75,14 @@ def log():
     return json.load(open(LOG)) if os.path.exists(LOG) else []
 
 
+def used(entries=None):
+    return sum(1 for e in (log() if entries is None else entries) if e['files'])
+
+
 def draft(name, prompt, images):
     entries = log()
-    if len(entries) >= LIMIT:
+    # only images actually made count (a refused or failed call makes none and costs nothing)
+    if used(entries) >= LIMIT:
         print('limit reached, not sending')
         return []
     parts = []

@@ -2200,6 +2200,26 @@ BattleVehicle::MoveResult BattleVehicle::turnDrawn(SavedBattleGame *save, int fa
 		cells[i].owned |= 1 << slot;
 		parts[i * O_MAX + slot] = part.lost ? PartRef() : part.art[art];
 	}
+	// every tile of the vehicle's own layout stays covered, turned with it, even where the turn leaves it no
+	// part (a wall turned onto the next tile): a mounted gun may stand there, and must stay held (GD-19)
+	for (const auto &old : oldCells)
+	{
+		const Position own = unturnTile(old.offset, _baseSize.x, _baseSize.y, oldQuarters, oldMirrored);
+		if (own.x < 0 || own.y < 0 || own.x >= _baseSize.x || own.y >= _baseSize.y)
+		{
+			// a wall turned past the layout's edge: it comes back with its part
+			continue;
+		}
+		const Position at = turnTile(own, _baseSize.x, _baseSize.y, quarters, mirrored);
+		if (std::none_of(cells.begin(), cells.end(), [&](const Cell &cell) { return cell.offset == at; }))
+		{
+			Cell cell;
+			cell.offset = at;
+			cell.owned = 1 << O_OBJECT;
+			cells.push_back(cell);
+			parts.resize(cells.size() * O_MAX);
+		}
+	}
 	_cells = cells;
 	_mirrored = mirrored;
 	buildLookup();

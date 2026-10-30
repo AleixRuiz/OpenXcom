@@ -384,7 +384,7 @@ Decided in [GD-28](GAME_DESIGN_DECISIONS.md#gd-28--a-vehicles-guns-need-its-driv
 | --- | --- | --- | --- |
 | 16. Mirror turning | `front`, `tuPerQuarterTurn`; mirrored tile parts (sprite, hit shape, wall slot); the turn step; right click in drive mode | The Chimera turns between south and east | `033d9599f` |
 | 17. Turning on the way | Settles [GD-31](GAME_DESIGN_DECISIONS.md#gd-31--drives-turn-the-vehicle-toward-where-it-goes); drives and AI drivers turn first, the preview shows it | The Chimera faces where it drives | |
-| 18. Per-facing maps | `facingMaps`; the art scripts; the showcase Chimera's north and west maps | The Chimera turns all the way round | this phase's commit |
+| 18. Per-facing maps | `facingMaps`; the art scripts; the showcase Chimera's north and west maps | The Chimera turns all the way round | `2ab7dc969` |
 
 ## Phase 16: Mirror turning
 
@@ -434,9 +434,18 @@ Decided in [GD-32](GAME_DESIGN_DECISIONS.md#gd-32--up-to-four-drawn-facings-mirr
 
 **Checks**
 
-- [ ] Builds with no new warnings.
-- [ ] Builds on Linux, macOS and 32-bit Windows on GitHub.
+- [x] Builds with no new warnings.
+- [x] Builds on Linux (GCC), macOS (Clang) and 32-bit Windows on GitHub, with no warnings in our code (2026-10-30).
 - [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
 - [ ] The in-game checks under "Four facings" in [TESTING.md](TESTING.md).
 
-**Commit:** `Moving vehicles: vehicles drawn in more facings turn all the way round`
+**Commit:** `Moving vehicles: vehicles drawn in more facings turn all the way round` (`2ab7dc969`)
+
+### Fixes after testing
+
+Played on 2026-10-30: the Chimera turns all the way round, but it looked rough, and it left its hull gun behind.
+
+- **Rough look.** With a unit inside, the camera shows the vehicle without its roof, and the first cut reused old, mirrored art for what the painting didn't show. Each facing now has a second, roofless painting for its ground level; parts no painting shows stay empty, and the floor inside keeps its own art turned round (`c0350cda1`, art tools only).
+- **Hull gun left behind.** The new layout was built from the vehicle's parts only. The hull gun's tile holds just a wall, which a half turn moves to the next tile, so the gun's tile was no longer covered and the gun stopped being mounted ([GD-19](GAME_DESIGN_DECISIONS.md#gd-19--mounted-guns-are-held-by-their-vehicle)). `turnDrawn` now keeps every tile of the vehicle's own layout covered, turned with it.
+
+**Commit:** `Moving vehicles: drawn facings keep every tile the vehicle covers`
