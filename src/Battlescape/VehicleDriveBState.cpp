@@ -38,9 +38,10 @@ namespace OpenXcom
  * @param action Action with the driver as actor (ignoreSpottedEnemies: don't stop for newly spotted enemies).
  * @param vehicle The vehicle to drive.
  * @param path Vehicle positions after each step.
+ * @param turnTo Facing to turn the vehicle to before the first step, or -1 not to turn.
  */
-VehicleDriveBState::VehicleDriveBState(BattlescapeGame *parent, BattleAction action, BattleVehicle *vehicle, const std::vector<Position> &path) :
-	BattleState(parent, action), _vehicle(vehicle), _path(path), _step(0), _spotted(0), _cancelled(false)
+VehicleDriveBState::VehicleDriveBState(BattlescapeGame *parent, BattleAction action, BattleVehicle *vehicle, const std::vector<Position> &path, int turnTo) :
+	BattleState(parent, action), _vehicle(vehicle), _path(path), _step(0), _spotted(0), _cancelled(false), _turnTo(turnTo)
 {
 }
 
@@ -121,7 +122,7 @@ void VehicleDriveBState::runOver(const std::vector<BattleUnit*> &victims, Positi
 		_parent->popState();
 		return;
 	}
-	_parent->statePushBack(new VehicleDriveBState(_parent, _action, _vehicle, std::vector<Position>(_path.begin() + _step, _path.end())));
+	_parent->statePushBack(new VehicleDriveBState(_parent, _action, _vehicle, std::vector<Position>(_path.begin() + _step, _path.end()), _turnTo));
 	_parent->popState();
 }
 
@@ -158,24 +159,27 @@ bool VehicleDriveBState::checkReactionFire()
 }
 
 /**
- * Drives one step. Like a walking unit, the vehicle stops when the driver or the vehicle runs out
- * of time units, when something blocks the way, when the crew spots a new enemy, or when someone
- * on board is fired upon. Units in the way are run over first (see runOver).
+ * Drives one step, or turns the vehicle first if the drive starts with a turn, which goes like a
+ * step. Like a walking unit, the vehicle stops when the driver or the vehicle runs out of time
+ * units, when something blocks the way, when the crew spots a new enemy, or when someone on board
+ * is fired upon. Units in the way are run over first (see runOver).
  */
 void VehicleDriveBState::think()
 {
 	SavedBattleGame *save = _parent->getSave();
 	BattleUnit *driver = _action.actor;
-	if (_cancelled || _step >= _path.size() || !driver || !_vehicle->canDrive(save, driver))
+	if (_cancelled || (_turnTo == -1 && _step >= _path.size()) || !driver || !_vehicle->canDrive(save, driver))
 	{
 		_parent->popState();
 		return;
 	}
 
-	const Position delta = _path[_step] - _vehicle->getPosition();
+	const bool turning = _turnTo != -1;
+	const Position delta = turning ? Position(0, 0, 0) : _path[_step] - _vehicle->getPosition();
 	// the driver's skill makes the step cheaper or dearer, fractions carrying over to the next step
 	int carry = _vehicle->getTuCarry();
-	const int cost = _vehicle->getStepCost(save->getMod(), delta, _vehicle->getDriverBonus(save, driver), carry);
+	const int bonus = _vehicle->getDriverBonus(save, driver);
+	const int cost = turning ? _vehicle->getTurnCost(save->getMod(), _turnTo, bonus, carry) : _vehicle->getStepCost(save->getMod(), delta, bonus, carry);
 	if (_vehicle->getTimeUnits() < cost)
 	{
 		// another driver wouldn't help either
@@ -192,7 +196,7 @@ void VehicleDriveBState::think()
 
 	const int level = _vehicle->getPosition().z;
 	std::vector<BattleUnit*> victims;
-	const BattleVehicle::MoveResult result = _vehicle->move(save, delta, victims);
+	const BattleVehicle::MoveResult result = turning ? _vehicle->turn(save, _turnTo, victims) : _vehicle->move(save, delta, victims);
 	if (result == BattleVehicle::MOVE_RUN_OVER)
 	{
 		runOver(victims, delta, cost, carry);
@@ -208,7 +212,14 @@ void VehicleDriveBState::think()
 	driver->spendTimeUnits(cost);
 	_vehicle->spendTimeUnits(cost);
 	_vehicle->setTuCarry(carry);
-	++_step;
+	if (turning)
+	{
+		_turnTo = -1;
+	}
+	else
+	{
+		++_step;
+	}
 
 	TileEngine *tileEngine = save->getTileEngine();
 	tileEngine->calculateLighting(LL_AMBIENT, TileEngine::invalid, 0, true);

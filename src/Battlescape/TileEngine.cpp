@@ -4574,8 +4574,10 @@ VoxelType TileEngine::voxelCheck(Position voxel, BattleUnit *excludeUnit, bool e
 			continue;
 		if (mp != 0)
 		{
-			int x = 15 - voxel.x%16;
-			int y = voxel.y%16;
+			// a part drawn mirrored, on a turned vehicle, has its hit shape transposed
+			const bool flipped = tile->isFlipped(tp);
+			int x = 15 - (flipped ? voxel.y : voxel.x)%16;
+			int y = (flipped ? voxel.x : voxel.y)%16;
 			int idx = (mp->getLoftID((voxel.z%24)/2)*16) + y;
 			if (_voxelData->at(idx) & (1 << x))
 			{

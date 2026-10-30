@@ -99,6 +99,7 @@ private:
 	int _timeUnits;
 	bool _aiDecided;
 	int _tuCarry;
+	bool _mirrored;
 	Position _pos;
 	int _firstSetId, _lastSetId;
 	std::vector<Cell> _cells;
@@ -121,7 +122,7 @@ private:
 	/// Gets the map data reference of a tile part.
 	static PartRef getPart(const Tile *tile, TilePart part);
 	/// Sets the map data of a tile part.
-	static void setPart(SavedBattleGame *save, Tile *tile, TilePart part, PartRef ref);
+	static void setPart(SavedBattleGame *save, Tile *tile, TilePart part, PartRef ref, bool flipped = false);
 	/// Gets the map data of a part reference.
 	static const MapData *getMapData(SavedBattleGame *save, PartRef ref);
 	/// Gets a terrain part as if the vehicle were not on the map.
@@ -148,6 +149,10 @@ private:
 	void lift(SavedBattleGame *save, std::vector<PartRef> &carried, std::vector<char> &discovered) const;
 	/// Sets the vehicle down at a position, remembering the terrain under it.
 	void place(SavedBattleGame *save, Position pos, const std::vector<PartRef> &carried, const std::vector<char> &discovered);
+	/// Remembers what lies on the map under the vehicle's layout as the terrain under it, while it is lifted.
+	void readUnder(SavedBattleGame *save);
+	/// Mirrors the vehicle's layout along its diagonal.
+	void mirrorLayout(std::vector<PartRef> &carried);
 	/// Does the vehicle's side know where a unit is?
 	bool knowsOf(const BattleUnit *unit) const;
 	/// Decides what a unit in the way does to the vehicle when it gets there.
@@ -242,6 +247,20 @@ public:
 	void setTuCarry(int carry) { _tuCarry = carry; }
 	/// Moves the vehicle by one step, with everything on board, onto the ground there.
 	MoveResult move(SavedBattleGame *save, Position delta, std::vector<BattleUnit*> &victims);
+	/// Mirrors a direction along the map's diagonal.
+	static int mirrorDirection(int direction);
+	/// Is the vehicle's layout mirrored from its map?
+	bool isMirrored() const { return _mirrored; }
+	/// Gets the direction the vehicle's front points to now, or -1 if it can't turn.
+	int getFacing(const Mod *mod) const;
+	/// Gets the facing the vehicle takes when turned toward a direction.
+	int getFacingToward(const Mod *mod, int direction) const;
+	/// Gets the time unit cost of turning the vehicle to a facing, for a driver with a skill bonus.
+	int getTurnCost(const Mod *mod, int facing, int bonus, int &carry) const;
+	/// Turns the vehicle to a facing, with everything on board, round its middle.
+	MoveResult turn(SavedBattleGame *save, int facing, std::vector<BattleUnit*> &victims);
+	/// Draws the vehicle's parts mirrored again after a battle is loaded.
+	void flipParts(SavedBattleGame *save) const;
 	/// Finds the steps that take the vehicle to a new place, following the ground.
 	bool findPath(SavedBattleGame *save, Position target, std::vector<Position> &path, std::string &error) const;
 	/// Finds every place the vehicle can drive to with some time units.

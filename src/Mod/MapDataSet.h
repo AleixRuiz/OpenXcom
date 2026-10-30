@@ -26,6 +26,7 @@ namespace OpenXcom
 {
 
 class MapData;
+class Surface;
 class SurfaceSet;
 
 /**
@@ -40,6 +41,7 @@ private:
 	std::string _name;
 	std::vector<MapData*> _objects;
 	SurfaceSet *_surfaceSet;
+	std::vector<Surface*> _flippedFrames;
 	bool _loaded;
 	static MapData *_blankTile;
 	static MapData *_scorchedTile;
@@ -58,6 +60,8 @@ public:
 	MapData *getObject(size_t i);
 	/// Gets the surfaces in this dataset.
 	SurfaceSet *getSurfaceset() const;
+	/// Gets a frame drawn mirrored left to right, for the parts of a turned vehicle.
+	Surface *getFlippedFrame(int i);
 	/// Loads the objects from an MCD file.
 	void loadData(MCDPatch *patch, bool validate = true);
 	///	Unloads to free memory.

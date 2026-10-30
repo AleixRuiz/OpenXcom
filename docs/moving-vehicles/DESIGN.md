@@ -203,6 +203,17 @@ ufos:
 
 A vanilla UFO could make its navigators the pilots with `driverRanks: [4]`.
 
+### Ruleset reference (M3)
+
+Keys M3 adds, as each phase is built. All are optional, and leaving them out keeps the M2 behaviour: a vehicle without `front` never turns.
+
+| Key | Type | Default | Meaning |
+| --- | --- | --- | --- |
+| `front` | 0, 2, 4 or 6 | none | The direction the front of the vehicle's map points to (0 north, 2 east, 4 south, 6 west). A vehicle with `front` can turn. It turns between the two facings its art shows (south and east, or north and west) by mirroring its map; turned toward a facing its art can't show, it lines up with it back first. |
+| `tuPerQuarterTurn` | integer | 2 × `tuPerTile` | Time units per quarter turn, paid by both the vehicle and its driver, made cheaper or dearer by the driver's skill as steps are. |
+
+In drive mode, a right click turns the vehicle toward the clicked tile. A turn needs room for the turned vehicle, and crushes and runs over like a step.
+
 ## Driving and controls
 
 Any crew member standing on a driver seat can drive, using a drive mode they switch on and off, so the same soldier can drive, then climb out and fight. This replaces the prototype's spawned skull unit.

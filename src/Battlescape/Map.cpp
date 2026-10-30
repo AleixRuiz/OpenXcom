@@ -1330,7 +1330,9 @@ void Map::drawTerrain(Surface *surface)
 							{
 								if (ghostParts[part])
 								{
-									tmpSurface = ghostParts[part]->getDataset()->getSurfaceset()->getFrame(ghostParts[part]->getSprite(0));
+									MapDataSet *dataset = ghostParts[part]->getDataset();
+									const int frame = ghostParts[part]->getSprite(0);
+									tmpSurface = driveVehicle->isMirrored() ? dataset->getFlippedFrame(frame) : dataset->getSurfaceset()->getFrame(frame);
 									if (tmpSurface)
 									{
 										Surface::blitRaw(surface, tmpSurface, screenPosition.x, screenPosition.y - ghostParts[part]->getYOffset(), tileShade, true, _nvColor);

@@ -34,7 +34,7 @@ namespace OpenXcom
  * anyone on board can drive, nothing is crushed, units block it, and the vehicle's time
  * units are set from its cost per tile once the rule is loaded.
  */
-RuleBattleVehicle::RuleBattleVehicle() : _gunCrew(GUNS_NEED_DRIVER), _split(SPLIT_CONNECTED), _tuPerTile(4), _timeUnits(-1), _crushArmor(0),
+RuleBattleVehicle::RuleBattleVehicle() : _gunCrew(GUNS_NEED_DRIVER), _split(SPLIT_CONNECTED), _tuPerTile(4), _timeUnits(-1), _crushArmor(0), _front(-1), _tuPerQuarterTurn(-1),
 	_runOverDamage(0), _runOverDamageType(DT_MELEE), _aiKeepDistance(6), _aiExit(-1), _driverReactionsZeroPoint(-1), _driverReactionsRange(-1),
 	_runOverDamageRule(nullptr)
 {
@@ -56,6 +56,8 @@ void RuleBattleVehicle::load(const YAML::YamlNodeReader &node)
 	node.tryRead("tuPerTile", _tuPerTile);
 	node.tryRead("timeUnits", _timeUnits);
 	node.tryRead("crushArmor", _crushArmor);
+	node.tryRead("front", _front);
+	node.tryRead("tuPerQuarterTurn", _tuPerQuarterTurn);
 	node.tryRead("runOverDamage", _runOverDamage);
 	node.tryRead("runOverDamageType", _runOverDamageType);
 	node.tryRead("aiKeepDistance", _aiKeepDistance);
@@ -150,6 +152,15 @@ void RuleBattleVehicle::afterLoad(const Mod *mod, const std::string &type, RuleT
 	{
 		// no limit given: a few straight tiles' worth, so no vehicle drives without a limit by accident
 		_timeUnits = DEFAULT_TILES_PER_TURN * _tuPerTile;
+	}
+	if (mod->checkForSoftError(_front != -1 && (_front < 0 || _front > 6 || _front % 2 != 0), type, "battleVehicle: front must be 0, 2, 4 or 6.", LOG_ERROR))
+	{
+		_front = -1;
+	}
+	if (_tuPerQuarterTurn < 0)
+	{
+		// a quarter turn of a vehicle sweeps about as much ground as two steps
+		_tuPerQuarterTurn = 2 * _tuPerTile;
 	}
 
 	std::vector<MapBlock*> noBlocks;

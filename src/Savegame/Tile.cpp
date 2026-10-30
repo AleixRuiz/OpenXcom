@@ -725,12 +725,26 @@ void Tile::updateSprite(TilePart part)
 {
 	if (_objects[part])
 	{
-		_currentSurface[part] = _objects[part]->getDataset()->getSurfaceset()->getFrame(_objects[part]->getSprite(_objectsCache[part].currentFrame));
+		MapDataSet *dataset = _objects[part]->getDataset();
+		const int frame = _objects[part]->getSprite(_objectsCache[part].currentFrame);
+		_currentSurface[part] = _objectsCache[part].isFlipped ? dataset->getFlippedFrame(frame) : dataset->getSurfaceset()->getFrame(frame);
 	}
 	else
 	{
 		_currentSurface[part] = nullptr;
 	}
+}
+
+/**
+ * Sets whether a tile part is drawn mirrored left to right, with its hit shape transposed: the
+ * parts of a vehicle turned by mirroring its map. Not saved; vehicles set it again after loading.
+ * @param part The tile part.
+ * @param flipped Is it drawn mirrored?
+ */
+void Tile::setFlipped(TilePart part, bool flipped)
+{
+	_objectsCache[part].isFlipped = flipped;
+	updateSprite(part);
 }
 
 /**
