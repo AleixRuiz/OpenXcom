@@ -49,6 +49,7 @@ The game takes `-user <folder>` and `-cfg <folder>` on the command line, so a te
 - [x] Items lying on the vehicle's floors ride along; a soldier standing outside next to it stays behind.
 - [x] Fences, bushes and other light terrain in the way are crushed and stay destroyed after the vehicle passes.
 - [x] Heavy walls stop the route search, or the drive with "Terrain is in the way!".
+- [ ] Drive a Chimera into a building with an upper storey (a farm barn): the upper floor where its roof passes breaks and leaves a hole when it drives on; a floor too strong to crush stops it. (Added 2026-10-30: the floor melted into the roof.)
 - [ ] Click so the vehicle would end on a soldier: "A unit is in the way!"; on another vehicle: "Another vehicle is in the way!". A soldier on the route makes it go around.
 - [ ] An enemy the player can't see doesn't change the route: driving into it stops the vehicle with "A unit is in the way!".
 - [x] Each straight step costs the driver `tuPerTile` time units, each diagonal step half as much again; the drive stops when they run out ("Not Enough Time Units!").

@@ -1087,6 +1087,22 @@ BattleVehicle::MoveResult BattleVehicle::checkPlace(SavedBattleGame *save, Posit
 				victims.push_back(unit);
 			}
 		}
+		// a floor on one of the vehicle's upper levels (a building's upper storey) is in its way like a wall;
+		// one over hill ground is the hill's own top, left alone
+		if ((cell.owned & (1 << O_FLOOR)) && !isLowest(cell))
+		{
+			const MapData *floor = getTerrain(save, p, O_FLOOR);
+			const MapData *below = getTerrain(save, p - Position(0, 0, 1), O_OBJECT);
+			const bool hillTop = below && (isSolid(below) || below->getTerrainLevel() <= -Position::TileZ);
+			if (floor && !hillTop)
+			{
+				if (!canCrush(floor, save, crushArmor))
+				{
+					return MOVE_BLOCKED_TERRAIN;
+				}
+				toCrush.push_back(std::make_pair(tile, O_FLOOR));
+			}
+		}
 		for (int part = O_WESTWALL; part < O_MAX; ++part)
 		{
 			if (!inside[i] && !(cell.owned & (1 << part)))
@@ -1747,8 +1763,14 @@ BattleVehicle::MoveResult BattleVehicle::move(SavedBattleGame *save, Position de
 	}
 	for (const auto &tilePart : toCrush)
 	{
-		for (int i = 0; i < 8 && isSolid(tilePart.first->getMapData(tilePart.second)); ++i)
+		// walls and objects are crushed until they no longer block, floors until nothing is left of them
+		for (int i = 0; i < 8; ++i)
 		{
+			const MapData *md = tilePart.first->getMapData(tilePart.second);
+			if (!md || (tilePart.second != O_FLOOR && !isSolid(md)))
+			{
+				break;
+			}
 			tilePart.first->destroy(tilePart.second, TILE);
 		}
 	}
@@ -2009,8 +2031,14 @@ BattleVehicle::MoveResult BattleVehicle::turn(SavedBattleGame *save, int facing,
 	}
 	for (const auto &tilePart : toCrush)
 	{
-		for (int i = 0; i < 8 && isSolid(tilePart.first->getMapData(tilePart.second)); ++i)
+		// walls and objects are crushed until they no longer block, floors until nothing is left of them
+		for (int i = 0; i < 8; ++i)
 		{
+			const MapData *md = tilePart.first->getMapData(tilePart.second);
+			if (!md || (tilePart.second != O_FLOOR && !isSolid(md)))
+			{
+				break;
+			}
 			tilePart.first->destroy(tilePart.second, TILE);
 		}
 	}
@@ -2265,8 +2293,14 @@ BattleVehicle::MoveResult BattleVehicle::turnDrawn(SavedBattleGame *save, int fa
 	}
 	for (const auto &tilePart : toCrush)
 	{
-		for (int i = 0; i < 8 && isSolid(tilePart.first->getMapData(tilePart.second)); ++i)
+		// walls and objects are crushed until they no longer block, floors until nothing is left of them
+		for (int i = 0; i < 8; ++i)
 		{
+			const MapData *md = tilePart.first->getMapData(tilePart.second);
+			if (!md || (tilePart.second != O_FLOOR && !isSolid(md)))
+			{
+				break;
+			}
 			tilePart.first->destroy(tilePart.second, TILE);
 		}
 	}

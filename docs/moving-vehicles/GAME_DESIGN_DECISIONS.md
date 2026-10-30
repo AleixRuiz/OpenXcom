@@ -50,6 +50,7 @@ Why moving vehicles plays the way it does. Each entry records a game design choi
 | [GD-30](#gd-30--turning-is-a-step-and-mirroring-is-free-art) | Turning is a step, and mirroring is free art | Decided | M3, Phase 16 |
 | [GD-31](#gd-31--drives-turn-the-vehicle-toward-where-it-goes) | Drives turn the vehicle toward where it goes | Decided | M3, Phase 17 |
 | [GD-32](#gd-32--up-to-four-drawn-facings-mirroring-fills-the-gaps) | Up to four drawn facings, mirroring fills the gaps | Decided | M3, Phase 18 |
+| [GD-33](#gd-33--upper-floors-in-a-vehicles-way-are-crushed-or-block-it) | Upper floors in a vehicle's way are crushed or block it | Decided | M3, fix after play |
 
 ## Decisions
 
@@ -600,3 +601,13 @@ Decided · 2026-10-30 · M3, Phase 18 · the user's call
 - **A facing map is the whole craft or UFO map turned,** so a map with several vehicles (three Chimeras) needs one facing map, not one per vehicle.
 - **Destroyed parts stay destroyed:** a part gone in the facing a vehicle has when it turns is gone in every facing.
 - **The inside is painted too.** With a unit inside, the camera shows the vehicle's level without its roof. The first try reused the old sprites of the parts the painting didn't show, mirrored: in play the walls faced the wrong way, were missing or showed over the hull. Now each drawn facing has two paintings: the full view for the roof, and the view with the roof taken off for the ground level (hull sides and the inside). Parts neither painting shows stay empty, except the floor inside, which keeps its own art turned round (exact for a half turn).
+
+### GD-33 · Upper floors in a vehicle's way are crushed or block it
+
+Decided · 2026-10-30 · found in play: a Chimera driven into a barn
+
+**Problem.** A vehicle taller than one level (the Chimera's roof is on the level above its troop bay) drove into a building with an upper storey, and the storey's floor didn't break: the vehicle took the floor's place and gave it back when it left, so its roof looked melted into the floor.
+
+**Decision.** A floor on one of the vehicle's upper levels is in its way like a wall: crushed if its armor is up to `crushArmor` (all of it, leaving a hole when the vehicle leaves), otherwise it blocks the vehicle. The floor the vehicle stands on, and a floor over hill ground (the hill's own top, GD-18), are left alone.
+
+**Why.** The vehicle physically passes through that floor; a wooden barn floor gives way, a concrete one stops it, as walls do.

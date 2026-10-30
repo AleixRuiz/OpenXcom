@@ -251,6 +251,7 @@ A step is allowed only when every tile of the vehicle's new footprint is free, c
 | A unit of the driver's side | Blocked |
 | An enemy or civilian unit | Run over if `runOverDamage` > 0, else blocked; a survivor stops the vehicle ("rammed"). The player's route only runs over units under the place clicked ([GD-21](GAME_DESIGN_DECISIONS.md#gd-21--running-over-is-the-players-choice-ai-drivers-dont-hesitate)) |
 | Solid terrain with armor up to `crushArmor` | Crushed, along with whatever it turns into when destroyed |
+| A floor on one of the vehicle's upper levels (a building's upper storey) | Crushed like a wall if its armor is up to `crushArmor`, leaving a hole; otherwise blocked ([GD-33](GAME_DESIGN_DECISIONS.md#gd-33--upper-floors-in-a-vehicles-way-are-crushed-or-block-it)) |
 | Solid terrain that is indestructible (armor 255), explosive, a lift, an exit, a start tile or a mission objective | Blocked |
 | Raised ground on the vehicle's level (slopes, bumps) | Hidden under the vehicle while it stands there |
 | Ground of the level above (a hilltop, or ground filling the tile) | The vehicle climbs onto it if its middle stays over ground; otherwise blocked. Never crushed |
