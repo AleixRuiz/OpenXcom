@@ -47,6 +47,9 @@ Why moving vehicles plays the way it does. Each entry records a game design choi
 | [GD-27](#gd-27--enemy-vehicles-get-their-driver-from-the-deployed-crew) | Enemy vehicles get their driver from the deployed crew | Decided | M2, Phase 14 |
 | [GD-28](#gd-28--a-vehicles-guns-need-its-driver-unless-the-vehicle-says-otherwise) | A vehicle's guns need its driver, unless the vehicle says otherwise | Decided | M2, Phase 15 |
 | [GD-29](#gd-29--hijacking-take-the-seat-once-the-crew-is-down) | Hijacking: take the seat once the crew is down | Decided | M2, Phase 15 |
+| [GD-30](#gd-30--turning-is-a-step-and-mirroring-is-free-art) | Turning is a step, and mirroring is free art | Decided | M3, Phase 16 |
+| [GD-31](#gd-31--drives-turn-the-vehicle-toward-where-it-goes) | Drives turn the vehicle toward where it goes | Proposed | M3, Phase 17 |
+| [GD-32](#gd-32--up-to-four-drawn-facings-mirroring-fills-the-gaps) | Up to four drawn facings, mirroring fills the gaps | Decided | M3, Phase 18 |
 
 ## Decisions
 
@@ -534,3 +537,50 @@ Decided · 2026-10-30 · M2, Phase 15
 - The guns stay with the vehicle for good. Converted as mind control does, they went back to their old side when the captor's next turn started, so the player never used them. Now, whenever the vehicle's side starts a turn, its mounted guns that went back come over again, with their time units.
 - A gun another side mind-controls right now stays theirs until their control ends, then comes back to the vehicle's side. If the old side mind-controls a captured gun, the gun comes back when the vehicle's side starts its next turn, one turn sooner than a mind-controlled soldier would.
 - The message says when the vehicle is ready: "Vehicle captured! Ready next turn."
+
+### GD-30 · Turning is a step, and mirroring is free art
+
+Decided · 2026-10-30 · M3, Phase 16 · details [GD-15](#gd-15--turning-only-to-facings-the-art-can-show)
+
+**Decision.**
+
+- **Opt-in.** A vehicle turns only if its `battleVehicle` block sets `front`, the direction its map's front points to (0 north, 2 east, 4 south, 6 west). Without it the vehicle never turns, exactly as in M1 and M2.
+- **A turn is a step.** The vehicle is lifted, its layout turned round its middle, checked and set down, all or nothing. It crushes and runs over like a step, is blocked like one, and draws reaction fire like one.
+- **Cost.** `tuPerQuarterTurn` per quarter turn (default twice `tuPerTile`), paid by the driver and the vehicle.
+- **Mirroring.** Turning between south and east (or north and west) transposes the map along its diagonal:
+    - each part is drawn flipped left to right;
+    - its hit shape is transposed;
+    - west and north walls swap places.
+- **What turns with it.** Units and items on board move with their tiles and turn by the same mirror. Driver seats and route nodes follow too.
+- **The tiles remember.** A tile part remembers that it is drawn mirrored: one bit per tile part, not saved. Vehicles set it again when a battle is loaded, from their own saved facing.
+- **Controls (Phase 16).** In drive mode, a right click turns the vehicle toward the clicked tile, as a right click turns a unit; if a route preview is showing, the right click removes it first, as before. Toward a facing its art can't show, the vehicle lines up with that direction, facing the other way.
+
+**Why.** Treating a turn as a step reuses everything a step already does: fitting, crushing, running over, reaction fire, time units, all or nothing. A bit per tile part costs nothing per frame (the sprite is picked when the part changes) and keeps drawing and hit tests in the engine's own code. Not saving it keeps the save format as it is.
+
+**Turned down.**
+
+- The vehicle keeping its own list of mirrored parts, with tiles untouched: every drawing and hit test would have to ask the vehicles. It stays the fallback if OXCE prefers it (an open question for the maintainers).
+- Turning for free, or as part of the next step: a quarter turn of a long vehicle sweeps a lot of ground, and should cost and be checked like a move.
+
+**Settled with it.** Directional big walls on a turning vehicle aren't turned, since their direction belongs to the shared tile definition. No vehicle tileset we know uses them.
+
+### GD-31 · Drives turn the vehicle toward where it goes
+
+Proposed · 2026-10-30 · M3, Phase 17 · settled after mirror turning (Phase 16) has been played
+
+**Proposal.** A drive first turns the vehicle to face its main direction of travel, when it can face that way and has room, then drives as now. A vehicle that can't face that way (no art for its back) lines up with it and drives in reverse. The route preview shows the turn and its cost, and AI drivers turn the same way. Turning by hand (right click) stays, for parking a vehicle the way the player wants.
+
+**Why proposed, not decided.** Whether turning on its own feels right, and whether it should be skipped when it costs more than it's worth, is best judged once turning has been played.
+
+### GD-32 · Up to four drawn facings, mirroring fills the gaps
+
+Decided · 2026-10-30 · M3, Phase 18 · the user's call
+
+**Decision.**
+
+- **`facingMaps`** gives a vehicle a map for each other facing it is drawn in, up to all four. Four drawn maps are the most a vehicle can show, and the showcase Chimera gets all four.
+- **Each map has the same layout** turned to its facing, so units, items and damage carry over tile by tile.
+- **A missing facing is mirrored from its partner:** east from south and south from east, west from north and north from west.
+- **No back:** a vehicle with neither north nor west art can't face away from the camera. Asked to, it lines up with that direction and drives in reverse.
+
+**Why.** Mirroring swaps the two faces seen from the same side, so it can stand in for a missing drawing on that side, but it can never show a back that was never drawn (GD-15). Taking every drawn map a mod has, and mirroring only to fill gaps, gives the best look the art allows. The usual craft, drawn facing the camera only, still turns between its two facings.

@@ -299,7 +299,7 @@ Decided in [GD-25](GAME_DESIGN_DECISIONS.md#gd-25--convoys-drive-for-the-map-edg
 - [x] Builds with no new warnings.
 - [x] Builds on Linux (GCC), macOS (Clang) and 32-bit Windows on GitHub, with no warnings in our code (2026-10-30).
 - [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
-- [ ] The in-game checks under "Convoy" in [TESTING.md](TESTING.md).
+- [x] The in-game checks under "Convoy" in [TESTING.md](TESTING.md), played 2026-10-30.
 
 **Commit:** `Moving vehicles: convoys drive for the map edge` (`0064f27ba`)
 
@@ -375,3 +375,40 @@ Decided in [GD-28](GAME_DESIGN_DECISIONS.md#gd-28--a-vehicles-guns-need-its-driv
 - [x] The captured turret stays yours and fires on the turns after the capture (played 2026-10-30).
 
 **Commit:** `Moving vehicles: a captured vehicle keeps its guns` (`ec84ebb27`)
+
+# M3: Turning and flying
+
+[M3](M3.md) continues the phase numbering on the same branch, with the same rules for every phase. Turning comes first; flying gets its phases once turning has been played. A vehicle without `front` never turns.
+
+| Phase | Delivers | Playable result | Commit |
+| --- | --- | --- | --- |
+| 16. Mirror turning | `front`, `tuPerQuarterTurn`; mirrored tile parts (sprite, hit shape, wall slot); the turn step; right click in drive mode | The Chimera turns between south and east | this phase's commit |
+| 17. Turning on the way | Settles [GD-31](GAME_DESIGN_DECISIONS.md#gd-31--drives-turn-the-vehicle-toward-where-it-goes); drives and AI drivers turn first, the preview shows it | The Chimera faces where it drives | |
+| 18. Per-facing maps | `facingMaps`; the art scripts; the showcase Chimera's north and west maps | The Chimera turns all the way round | |
+
+## Phase 16: Mirror turning
+
+Decided in [GD-30](GAME_DESIGN_DECISIONS.md#gd-30--turning-is-a-step-and-mirroring-is-free-art) and [GD-15](GAME_DESIGN_DECISIONS.md#gd-15--turning-only-to-facings-the-art-can-show).
+
+**Approach**
+
+- `RuleBattleVehicle` reads `front` (0, 2, 4 or 6; none means the vehicle doesn't turn) and `tuPerQuarterTurn` (default twice `tuPerTile`).
+- `Tile` keeps one more bit per tile part, `flipped`, set through `setMapData`. `Tile::updateSprite` takes a flipped part's frame from `MapDataSet::getFlippedFrame`, which mirrors frames once and keeps them. `TileEngine::voxelCheck` reads a flipped part's hit shape with x and y swapped.
+- `BattleVehicle` keeps its facing and whether its layout is mirrored, and saves both.
+- `BattleVehicle::turn` is a step with a mirrored layout:
+    - the cells and the parts each carries are transposed round the vehicle's middle, west and north walls swapping;
+    - the turned vehicle is checked with `checkPlace` and set down with its parts flipped;
+    - units, items, seats and route nodes on board move to their mirrored tiles, and units turn by the same mirror.
+- After a battle is loaded, vehicles flip their parts again.
+- `VehicleDriveBState` can start with a turn, so a turn runs over, pays and draws reaction fire like a step.
+- `BattlescapeGame`: a right click in drive mode turns the vehicle toward the clicked tile, after removing a route preview if one shows.
+- Demo mods: `front` on the Chimeras, the Baneblade, the traitor convoy and the Skyranger.
+
+**Checks**
+
+- [ ] Builds with no new warnings.
+- [ ] Builds on Linux, macOS and 32-bit Windows on GitHub.
+- [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
+- [ ] The in-game checks under "Mirror turning" in [TESTING.md](TESTING.md).
+
+**Commit:** `Moving vehicles: vehicles turn by mirroring their map`
