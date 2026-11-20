@@ -475,3 +475,20 @@ Decided in [GD-31](GAME_DESIGN_DECISIONS.md#gd-31--drives-turn-the-vehicle-towar
 - [x] The in-game checks under "Driving along the axis" in [TESTING.md](TESTING.md), played 2026-10-31 with the fixes for turrets on the first turn, upper floors and the hull gun.
 
 **Commit:** `Moving vehicles: vehicles that can turn drive along their axis` (`735be1076`)
+
+# Before the pitch
+
+What the forum post still needs (listed 2026-11-20). Flying moved after the pitch (`e362baf1e`).
+
+- [ ] **Vanilla pass.** The vanilla demo mod and its Skyranger showcase load with no messages, and the checks under "Vanilla showcase" in [TESTING.md](TESTING.md) pass. The OXCE maintainers try vanilla first.
+- [ ] A vanilla battle without vehicles plays and saves as before, with no `vehicles` key in the save.
+- [ ] A battle save made by plain OXCE opens.
+- [ ] TESTING.md and the phase checks ticked where played; lines still open say why.
+- [ ] A review of the whole branch, its findings fixed.
+- [ ] A short vanilla video next to the Rosigma one.
+- [ ] A build to try (a release on the fork), if the owner wants one.
+- [ ] The forum post, with the questions for the maintainers and a note that the work was made with AI-assisted tools.
+
+**Demo:** the vanilla mod gets a Skyranger showcase battle (a big farm in daylight with sectoids in the fields), and the Skyranger crushes armor up to 40, the walls of vanilla farms and town houses.
+
+**Commit:** `Demo mods: a Skyranger showcase battle for vanilla`

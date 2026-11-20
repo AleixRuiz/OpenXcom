@@ -1,0 +1,61 @@
+# The Skyranger showcase: a New Battle mission, last in the list, on a big farm. The Skyranger lands on
+# the west side and taxis on its landing gear: drive it through fences, crops and barns, turn it, and run
+# down the sectoids out in the fields between it and a scout UFO landed on the east side. Always daylight,
+# so the whole map reads on video.
+alienDeployments:
+  - type: STR_MV_SKYRANGER_SHOWCASE
+    customUfo: STR_SMALL_SCOUT
+    race: STR_SECTOID
+    terrains: [CULTA]
+    script: MV_SKYRANGER_SHOWCASE
+    width: 60  # the Skyranger is 10 x 20 tiles: it needs 20 x 20 to turn round
+    length: 60
+    height: 4
+    shade: 0
+    briefing:
+      title: STR_MV_SKYRANGER_SHOWCASE
+      desc: STR_MV_SKYRANGER_SHOWCASE_BRIEFING
+    data:
+      - alienRank: 5  # soldiers out in the fields
+        lowQty: 8
+        highQty: 8
+        dQty: 0
+        percentageOutsideUfo: 100
+        itemSets:
+          - [STR_PLASMA_PISTOL, STR_PLASMA_PISTOL_CLIP]
+          - [STR_PLASMA_PISTOL, STR_PLASMA_PISTOL_CLIP]
+          - [STR_PLASMA_PISTOL, STR_PLASMA_PISTOL_CLIP]
+      - alienRank: 4  # the navigator stays in the UFO
+        lowQty: 1
+        highQty: 1
+        dQty: 0
+        percentageOutsideUfo: 0
+        itemSets:
+          - [STR_PLASMA_PISTOL, STR_PLASMA_PISTOL_CLIP]
+          - [STR_PLASMA_PISTOL, STR_PLASMA_PISTOL_CLIP]
+          - [STR_PLASMA_PISTOL, STR_PLASMA_PISTOL_CLIP]
+
+# In blocks of 10 tiles: the Skyranger lands on the west side, nose north, and the UFO on the east side,
+# with three blocks of farm between them.
+mapScripts:
+  - type: MV_SKYRANGER_SHOWCASE
+    commands:
+    - type: addUFO
+      rects:
+        - [5, 2, 1, 2]
+    - type: addCraft
+      rects:
+        - [1, 2, 1, 2]
+    - type: fillArea
+      blocks: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+      maxUses: [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
+
+extraStrings:
+  - type: en-US
+    strings:
+      STR_MV_SKYRANGER_SHOWCASE: "Moving vehicles: Skyranger showcase"
+      STR_MV_SKYRANGER_SHOWCASE_BRIEFING: "A small scout has landed on a farm, and its crew is out in the fields. The Skyranger came down west of it and can taxi on its landing gear: put a soldier on the front seat of the cabin and press Drive. Plough through fences, crops and barns, turn it round, and run down the sectoids in your way. Soldiers on board ride along."
+  - type: en-GB
+    strings:
+      STR_MV_SKYRANGER_SHOWCASE: "Moving vehicles: Skyranger showcase"
+      STR_MV_SKYRANGER_SHOWCASE_BRIEFING: "A small scout has landed on a farm, and its crew is out in the fields. The Skyranger came down west of it and can taxi on its landing gear: put a soldier on the front seat of the cabin and press Drive. Plough through fences, crops and barns, turn it round, and run down the sectoids in your way. Soldiers on board ride along."
