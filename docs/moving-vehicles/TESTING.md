@@ -10,6 +10,18 @@ OXCE has no automated tests (see [NOTES.md](NOTES.md)), so the MVP is checked in
 2. Copy the demo mods from [mods](mods/README.md) into your `mods` folder and enable the one you test.
 3. Start a **New Battle** (main menu) with the craft to test: the **Skyranger** with the vanilla mod, the **Chimera** or **Baneblade** with the Rosigma mod. Any ground mission works; a flat terrain makes the first drives easier.
 
+## Vanilla showcase
+
+With the vanilla demo mod (UFO Defense as the master mod), start the New Battle mission "Moving vehicles: Skyranger showcase" with the Skyranger.
+
+- [ ] The mission is last in the list, the battle starts with no messages, in daylight, the Skyranger on the west side and the UFO on the east side.
+- [ ] Put a soldier in the front row of the troop compartment, right behind the cockpit (level 1), and drive south: it moves, its wings hanging over the ground, and fences, crops and barn walls on the way are crushed, upper floors too.
+- [ ] Right click east of it in drive mode: it turns to face east, mirrored, and looks right (wings, cockpit, ramp).
+- [ ] Click a tile north or west of it: it backs up, for 150% of a step, and never turns to face that way.
+- [ ] Drive it onto a sectoid: the sectoid goes down; soldiers on board ride along.
+- [ ] The sectoids shoot at soldiers who show on board when it drives past them.
+- [ ] Save and load: the Skyranger is where it was, facing the same way.
+
 ## Scripted checks (no playing needed)
 
 The game takes `-user <folder>` and `-cfg <folder>` on the command line, so a test profile never touches your own saves or mod list, and `-load <save>` opens a save directly.
@@ -49,7 +61,7 @@ The game takes `-user <folder>` and `-cfg <folder>` on the command line, so a te
 - [x] Items lying on the vehicle's floors ride along; a soldier standing outside next to it stays behind.
 - [x] Fences, bushes and other light terrain in the way are crushed and stay destroyed after the vehicle passes.
 - [x] Heavy walls stop the route search, or the drive with "Terrain is in the way!".
-- [ ] Drive a Chimera into a building with an upper storey (a farm barn): the upper floor where its roof passes breaks and leaves a hole when it drives on; a floor too strong to crush stops it. (Added 2026-10-30: the floor melted into the roof.)
+- [x] Drive a Chimera into a building with an upper storey (a farm barn): the upper floor where its roof passes breaks and leaves a hole when it drives on; a floor too strong to crush stops it. (Added 2026-10-30: the floor melted into the roof.)
 - [ ] Click so the vehicle would end on a soldier: "A unit is in the way!"; on another vehicle: "Another vehicle is in the way!". A soldier on the route makes it go around.
 - [ ] An enemy the player can't see doesn't change the route: driving into it stops the vehicle with "A unit is in the way!".
 - [x] Each straight step costs the driver `tuPerTile` time units, each diagonal step half as much again; the drive stops when they run out ("Not Enough Time Units!").
@@ -157,7 +169,7 @@ In the convoy showcase:
 
 - [x] Kill or stun a traitor Chimera's driver: its turret stops firing at once, and doesn't fire or react in the aliens' next turns.
 - [ ] Your own Chimera: with nobody on its driver seat when your turn starts, its turrets have no time units; put a soldier on the seat and they work again from the next turn.
-- [ ] On the first turn every turret has its time units, whether or not a soldier starts on its Chimera's seat; walk the driver off the seat and back: the turret keeps its time units. (Reopened 2026-10-30: two of three turrets started silent.)
+- [x] On the first turn every turret has its time units, whether or not a soldier starts on its Chimera's seat; walk the driver off the seat and back: the turret keeps its time units. (Reopened 2026-10-30: two of three turrets started silent.)
 - [x] Step a soldier onto the seat of a traitor Chimera with infantry still inside: nothing changes.
 - [x] Clear the traitors inside (kill or stun them), then step onto the seat: "Vehicle captured! Ready next turn.". The Chimera and its turret are yours, with no time units until your next turn. The traitors may shoot at the turret now: it's yours.
 - [x] On your next turn, and the turn after, the turret is still yours: select it and fire it. (Reopened 2026-10-30, when the turret went back to the traitors; played again after the fix the same day.)
@@ -207,7 +219,7 @@ With `facings.rul` and the showcase Chimera's tiles in the Rosigma demo mod, and
 - [ ] Right click west of it: it faces west, showing its back and its left side. Right click east: it faces east (its south art mirrored). Right click south: back as it started.
 - [ ] In each facing, shots hit the hull where it is drawn, and soldiers walk in and out of the open rear door.
 - [ ] Soldiers, the roof turret and the hull gun on board stay on board and turn with it; the soldier on the seat still drives.
-- [ ] Turn half round, then drive: the hull gun comes along. (Reopened 2026-10-30: it was left behind.)
+- [x] Turn half round, then drive: the hull gun comes along. (Reopened 2026-10-30: it was left behind.)
 - [ ] Lower the camera a level: the troop bay inside looks plausible in each facing (it keeps its old art).
 - [ ] Destroy a part of the hull, then turn: it is still gone.
 - [ ] Save in each facing and load: same facing, same look.
@@ -218,12 +230,12 @@ With `facings.rul` and the showcase Chimera's tiles in the Rosigma demo mod, and
 
 With the Chimera craft (with or without `facings.rul`):
 
-- [ ] Preview a drive sideways from a Chimera (east of a south-facing one): the route turns first, the preview counts the turn's 8 time units, and the see-through vehicle stands in its final facing.
-- [ ] Drive a few tiles straight back: it backs up, each step costing half as much again; drive far behind it with drawn facings on: it turns round instead.
-- [ ] Without `facings.rul`, drive north from a south-facing Chimera: it backs up at the normal cost (it can't face north).
-- [ ] Diagonal steps within 45 degrees of its axis are allowed; it never slides sideways.
-- [ ] Where there is no room to turn, the route goes another way, or says there is none.
-- [ ] The driver's seat ends on the clicked tile, whatever facing the drive ends in.
-- [ ] The traitor convoy still drives east, and turns where it must to get round things.
-- [ ] Set `axisLocked: false` on the Chimera in the demo mod: it slides sideways again, as before.
-- [ ] A battle save made before this phase opens.
+- [x] Preview a drive sideways from a Chimera (east of a south-facing one): the route turns first, the preview counts the turn's 8 time units, and the see-through vehicle stands in its final facing.
+- [x] Drive a few tiles straight back: it backs up, each step costing half as much again; drive far behind it with drawn facings on: it turns round instead.
+- [x] Without `facings.rul`, drive north from a south-facing Chimera: it backs up at the normal cost (it can't face north).
+- [x] Diagonal steps within 45 degrees of its axis are allowed; it never slides sideways.
+- [x] Where there is no room to turn, the route goes another way, or says there is none.
+- [x] The driver's seat ends on the clicked tile, whatever facing the drive ends in.
+- [x] The traitor convoy still drives east, and turns where it must to get round things.
+- [x] Set `axisLocked: false` on the Chimera in the demo mod: it slides sideways again, as before.
+- [x] A battle save made before this phase opens.

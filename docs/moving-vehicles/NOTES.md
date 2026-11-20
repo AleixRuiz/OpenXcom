@@ -25,6 +25,7 @@ From the [OpenXcom coding style](https://www.ufopaedia.org/index.php/Coding_Styl
 
 | Date | Finding | What it changes |
 | --- | --- | --- |
+| 2026-11-20 | The vanilla Skyranger map (`PLANE`) has its ramp at the north end, so its nose points south. Its cockpit tiles can't be walked on, and its wings are two levels above the ground with nothing under them. | The vanilla demo faces south with its seats in the front row behind the cockpit, and GD-18 lets high parts hang. |
 | 2026-10-30 | A vehicle's map has two looks: with a unit inside, the camera stays on its level and hides the level above, so the troop bay shows without its roof. Rosigma's Chimera is built that way: the ground level holds the hull sides and the inside, the roof is the level above. | Drawn facings need a roofless painting as well as the full one. |
 | 2026-10-30 | Nano Banana Pro can be unavailable for half an hour or more ("high demand", HTTP 503); refused calls make no image and cost nothing. | The drafting script retries, then falls back to Nano Banana 2. |
 | 2026-10-30 | A MAP file stores each tile part in one byte, an index into the terrain's tilesets in order; OXCE has no wider map format. The Rosigma Chimera craft's five tilesets already use 220 of the 256 numbers. | A facing map lists its own tilesets (GD-32). |

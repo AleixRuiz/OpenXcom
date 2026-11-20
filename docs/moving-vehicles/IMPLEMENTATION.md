@@ -1,6 +1,6 @@
 # Moving Vehicles — Implementation plan
 
-Last updated 2026-10-29 · Aleix Ruiz Sorribes
+Last updated 2026-11-20 · Aleix Ruiz Sorribes
 
 The [MVP](MVP.md) (Phases 1 to 7) and [M2](M2.md) (Phases 8 to 15) are built in phases on the `moving-vehicles` branch. Each phase builds cleanly and lands as its own commit (pushed to the fork), so the history reads as a series of reviewable steps that can be rolled back one by one. Findings and ideas met on the way go to [NOTES.md](NOTES.md); the in-game checks are collected in [TESTING.md](TESTING.md).
 
@@ -376,14 +376,14 @@ Decided in [GD-28](GAME_DESIGN_DECISIONS.md#gd-28--a-vehicles-guns-need-its-driv
 
 **Commit:** `Moving vehicles: a captured vehicle keeps its guns` (`ec84ebb27`)
 
-# M3: Turning and flying
+# M3: Turning
 
-[M3](M3.md) continues the phase numbering on the same branch, with the same rules for every phase. Turning comes first; flying gets its phases once turning has been played. A vehicle without `front` never turns.
+[M3](M3.md) continues the phase numbering on the same branch, with the same rules for every phase. Flying was planned here too, and moved after the pitch on 2026-11-20 ([upstream strategy](DESIGN.md#upstream-strategy)). A vehicle without `front` never turns.
 
 | Phase | Delivers | Playable result | Commit |
 | --- | --- | --- | --- |
 | 16. Mirror turning | `front`, `tuPerQuarterTurn`; mirrored tile parts (sprite, hit shape, wall slot); the turn step; right click in drive mode | The Chimera turns between south and east | `033d9599f` |
-| 17. Driving along the axis | [GD-31](GAME_DESIGN_DECISIONS.md#gd-31--drives-turn-the-vehicle-toward-where-it-goes): `axisLocked`, `reverseCost`; routes over positions and facings; turns on the way; preview in the final facing; AI drivers too | The Chimera drives the way it faces | this phase's commit |
+| 17. Driving along the axis | [GD-31](GAME_DESIGN_DECISIONS.md#gd-31--drives-turn-the-vehicle-toward-where-it-goes): `axisLocked`, `reverseCost`; routes over positions and facings; turns on the way; preview in the final facing; AI drivers too | The Chimera drives the way it faces | `735be1076` |
 | 18. Per-facing maps | `facingMaps`; the art scripts; the showcase Chimera's north and west maps | The Chimera turns all the way round | `2ab7dc969` |
 
 ## Phase 16: Mirror turning
@@ -470,8 +470,34 @@ Decided in [GD-31](GAME_DESIGN_DECISIONS.md#gd-31--drives-turn-the-vehicle-towar
 **Checks**
 
 - [x] Builds with no new warnings.
-- [ ] Builds on Linux, macOS and 32-bit Windows on GitHub.
+- [x] Builds on Linux (GCC), macOS (Clang) and 32-bit Windows on GitHub, with no warnings in our code (2026-10-31), with the fixes for guns, upper floors and the hull gun.
 - [ ] Both demo mods load with no messages, and a battle save made before this phase loads.
-- [ ] The in-game checks under "Driving along the axis" in [TESTING.md](TESTING.md).
+- [x] The in-game checks under "Driving along the axis" in [TESTING.md](TESTING.md), played 2026-10-31 with the fixes for turrets on the first turn, upper floors and the hull gun.
 
-**Commit:** `Moving vehicles: vehicles that can turn drive along their axis`
+**Commit:** `Moving vehicles: vehicles that can turn drive along their axis` (`735be1076`)
+
+# Before the pitch
+
+What the forum post still needs (listed 2026-11-20). Flying moved after the pitch (`e362baf1e`).
+
+- [ ] **Vanilla pass.** The vanilla demo mod and its Skyranger showcase load with no messages, and the checks under "Vanilla showcase" in [TESTING.md](TESTING.md) pass. The OXCE maintainers try vanilla first.
+- [ ] A vanilla battle without vehicles plays and saves as before, with no `vehicles` key in the save.
+- [ ] A battle save made by plain OXCE opens.
+- [ ] TESTING.md and the phase checks ticked where played; lines still open say why.
+- [ ] A review of the whole branch, its findings fixed.
+- [ ] A short vanilla video next to the Rosigma one.
+- [ ] A build to try (a release on the fork), if the owner wants one.
+- [ ] The forum post, with the questions for the maintainers and a note that the work was made with AI-assisted tools.
+
+**Demo:** the vanilla mod gets a Skyranger showcase battle (a big farm in daylight with sectoids in the fields), and the Skyranger crushes armor up to 40, the walls of vanilla farms and town houses.
+
+**Commit:** `Demo mods: a Skyranger showcase battle for vanilla` (`ef88c8ea2`)
+
+### Fixes from the vanilla pass
+
+Played on 2026-11-20: the Skyranger didn't move at all ("The ground is too steep for the vehicle!" wherever the player clicked), and its seat was at the top of the ramp.
+
+- **Wings.** The hill rule ([GD-18](GAME_DESIGN_DECISIONS.md#gd-18--ground-vehicles-rest-on-the-highest-ground-under-them)) looked for ground at most a level under every column's lowest tile, and found none under the wings, two levels up. `findLevel` now lets a column above the vehicle's lowest level hang when there is no ground near it.
+- **Demo.** The Skyranger's nose points south (`front: 4`), and its seats are the front row of the troop compartment, right behind the cockpit.
+
+**Commit:** `Moving vehicles: parts high up in a vehicle hang over the ground`
