@@ -1,6 +1,6 @@
 # Moving Vehicles — Implementation plan
 
-Last updated 2026-10-29 · Aleix Ruiz Sorribes
+Last updated 2026-11-20 · Aleix Ruiz Sorribes
 
 The [MVP](MVP.md) (Phases 1 to 7) and [M2](M2.md) (Phases 8 to 15) are built in phases on the `moving-vehicles` branch. Each phase builds cleanly and lands as its own commit (pushed to the fork), so the history reads as a series of reviewable steps that can be rolled back one by one. Findings and ideas met on the way go to [NOTES.md](NOTES.md); the in-game checks are collected in [TESTING.md](TESTING.md).
 
@@ -376,9 +376,9 @@ Decided in [GD-28](GAME_DESIGN_DECISIONS.md#gd-28--a-vehicles-guns-need-its-driv
 
 **Commit:** `Moving vehicles: a captured vehicle keeps its guns` (`ec84ebb27`)
 
-# M3: Turning and flying
+# M3: Turning
 
-[M3](M3.md) continues the phase numbering on the same branch, with the same rules for every phase. Turning comes first; flying gets its phases once turning has been played. A vehicle without `front` never turns.
+[M3](M3.md) continues the phase numbering on the same branch, with the same rules for every phase. Flying was planned here too, and moved after the pitch on 2026-11-20 ([upstream strategy](DESIGN.md#upstream-strategy)). A vehicle without `front` never turns.
 
 | Phase | Delivers | Playable result | Commit |
 | --- | --- | --- | --- |
