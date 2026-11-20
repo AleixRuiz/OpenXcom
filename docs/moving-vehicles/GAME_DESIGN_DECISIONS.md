@@ -268,7 +268,7 @@ Under GD-11 a vehicle stayed on its level. Raised ground under it was already hi
 
 - **What is ground.** Floors; raised parts units walk on (slopes, forest hills); and solid parts filling their tile up to the next level with a floor on top (mountain rock). A part that fills its tile is the ground of the level above. Other solid parts (crates, sandbags, walls) stay obstacles, crushed or blocking as before ([GD-08](#gd-08--light-terrain-is-crushed-special-terrain-always-blocks)). Ground is never crushed.
 - **Its level.** For each column of its footprint, take the ground under the vehicle's lowest tile there, and put the vehicle on the level of the highest. Raised ground on its own level is hidden under it while it stands there and comes back when it leaves; lower ground is bridged, as under a landed Skyranger's body. Measuring under the lowest tile means a Skyranger stands on its landing gear, not on its belly.
-- **One level per step**, and no part of it over ground two levels or more below it.
+- **One level per step**, and no part of its lowest level over ground two levels or more below it (settled after play, below).
 - **Its middle needs ground.** The ground under its middle must be less than a level below it, so it can't climb where its middle would hang, and a long vehicle can't climb a hill that rises a level in less than about half its length.
 - **Coming off a ledge.** Where its middle would hang, it tips over instead and comes down a level, its back end standing in the ledge (hidden under it). It can drive on away from the ledge but never further into higher ground, so it can't climb a cliff that way. It can also come down slopes it couldn't climb.
 - **Climbing costs more.** A step that climbs a level costs half as much again; a diagonal climb costs 2.25 times `tuPerTile`. Coming down costs the usual.
@@ -283,6 +283,8 @@ Under GD-11 a vehicle stayed on its level. Raised ground under it was already hi
 - Sit on the ground under its middle, as units do: on a ramp of two or three tiles its front would be buried in the hilltop, hiding the next level's floor and any units on it.
 - Tilting vehicles, or a map per slope: art nobody has.
 - Vehicles in sections that follow the ground separately: a vehicle is one map with an interior, and splitting it breaks the interior.
+
+**Settled after play (2026-11-20).** The vanilla Skyranger couldn't move at all: its wings are two levels above its landing gear with nothing under them, and the rule counted them as parts over ground two levels below. The rule now holds for the vehicle's lowest level only. Parts higher up in the vehicle, like a craft's wings, hang over whatever is under them, and still rest on ground that rises to meet them.
 
 **Settled with it.**
 

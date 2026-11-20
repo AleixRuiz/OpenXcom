@@ -894,6 +894,7 @@ int BattleVehicle::countBuried(SavedBattleGame *save, Position pos) const
  * comes down one level per step at most. Its middle must be over ground less than a level below it,
  * so it can't climb where its middle would hang; at a ledge it tips over instead and comes down a
  * level, with one end standing in the ledge, and it can drive away from the ledge but not into it.
+ * Parts high up in the vehicle with no ground near them, like a craft's wings, just hang.
  * @param save Battle save.
  * @param x X of the vehicle's lowest corner.
  * @param y Y of the vehicle's lowest corner.
@@ -909,6 +910,11 @@ int BattleVehicle::findLevel(SavedBattleGame *save, int x, int y, int fromZ, int
 		const int ground = getGroundHeight(save, Position(x + column.x, y + column.y, fromZ + column.z));
 		if (ground == NO_GROUND)
 		{
+			if (column.z > 0)
+			{
+				// nothing under a part high up in the vehicle: it hangs over whatever is there
+				continue;
+			}
 			return -1;
 		}
 		// a column whose lowest tile is higher up in the vehicle (a craft's belly) can stand on higher ground

@@ -1,5 +1,5 @@
-# The Skyranger taxis on its landing gear during the battle. A soldier on the front tile of the cabin
-# (level 1, the raised troop compartment) switches on drive mode with the Drive button
+# The Skyranger taxis on its landing gear during the battle. A soldier in the front row of the
+# troop compartment (level 1, right behind the cockpit) switches on drive mode with the Drive button
 # or the drive hotkey (D), then clicks where to go: the first click previews the route,
 # the second drives. Fences, crops, trees and the walls of farms and town houses (armor up
 # to 40) are crushed on the way; big rocks and UFO hulls stop it.
@@ -8,8 +8,8 @@
 crafts:
   - type: STR_SKYRANGER
     battleVehicle:
-      driverSeats: [[4, 9, 1]]
-      front: 0  # the nose points north; turns west by mirroring (a right click in drive mode)
+      driverSeats: [[4, 15, 1], [5, 15, 1]]  # the cockpit itself can't be walked on
+      front: 4  # the nose points south (the ramp is at the north end); turns east by mirroring (a right click in drive mode)
       tuPerTile: 4
       timeUnits: 40
       crushArmor: 40

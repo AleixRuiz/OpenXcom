@@ -35,7 +35,7 @@ alienDeployments:
           - [STR_PLASMA_PISTOL, STR_PLASMA_PISTOL_CLIP]
           - [STR_PLASMA_PISTOL, STR_PLASMA_PISTOL_CLIP]
 
-# In blocks of 10 tiles: the Skyranger lands on the west side, nose north, and the UFO on the east side,
+# In blocks of 10 tiles: the Skyranger lands on the west side, nose south, and the UFO on the east side,
 # with three blocks of farm between them.
 mapScripts:
   - type: MV_SKYRANGER_SHOWCASE
@@ -54,8 +54,8 @@ extraStrings:
   - type: en-US
     strings:
       STR_MV_SKYRANGER_SHOWCASE: "Moving vehicles: Skyranger showcase"
-      STR_MV_SKYRANGER_SHOWCASE_BRIEFING: "A small scout has landed on a farm, and its crew is out in the fields. The Skyranger came down west of it and can taxi on its landing gear: put a soldier on the front seat of the cabin and press Drive. Plough through fences, crops and barns, turn it round, and run down the sectoids in your way. Soldiers on board ride along."
+      STR_MV_SKYRANGER_SHOWCASE_BRIEFING: "A small scout has landed on a farm, and its crew is out in the fields. The Skyranger came down west of it and can taxi on its landing gear: put a soldier in the front row, right behind the cockpit, and press Drive. Plough through fences, crops and barns, turn it toward the UFO, and run down the sectoids in your way. Soldiers on board ride along."
   - type: en-GB
     strings:
       STR_MV_SKYRANGER_SHOWCASE: "Moving vehicles: Skyranger showcase"
-      STR_MV_SKYRANGER_SHOWCASE_BRIEFING: "A small scout has landed on a farm, and its crew is out in the fields. The Skyranger came down west of it and can taxi on its landing gear: put a soldier on the front seat of the cabin and press Drive. Plough through fences, crops and barns, turn it round, and run down the sectoids in your way. Soldiers on board ride along."
+      STR_MV_SKYRANGER_SHOWCASE_BRIEFING: "A small scout has landed on a farm, and its crew is out in the fields. The Skyranger came down west of it and can taxi on its landing gear: put a soldier in the front row, right behind the cockpit, and press Drive. Plough through fences, crops and barns, turn it toward the UFO, and run down the sectoids in your way. Soldiers on board ride along."

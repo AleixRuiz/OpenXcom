@@ -491,4 +491,13 @@ What the forum post still needs (listed 2026-11-20). Flying moved after the pitc
 
 **Demo:** the vanilla mod gets a Skyranger showcase battle (a big farm in daylight with sectoids in the fields), and the Skyranger crushes armor up to 40, the walls of vanilla farms and town houses.
 
-**Commit:** `Demo mods: a Skyranger showcase battle for vanilla`
+**Commit:** `Demo mods: a Skyranger showcase battle for vanilla` (`ef88c8ea2`)
+
+### Fixes from the vanilla pass
+
+Played on 2026-11-20: the Skyranger didn't move at all ("The ground is too steep for the vehicle!" wherever the player clicked), and its seat was at the top of the ramp.
+
+- **Wings.** The hill rule ([GD-18](GAME_DESIGN_DECISIONS.md#gd-18--ground-vehicles-rest-on-the-highest-ground-under-them)) looked for ground at most a level under every column's lowest tile, and found none under the wings, two levels up. `findLevel` now lets a column above the vehicle's lowest level hang when there is no ground near it.
+- **Demo.** The Skyranger's nose points south (`front: 4`), and its seats are the front row of the troop compartment, right behind the cockpit.
+
+**Commit:** `Moving vehicles: parts high up in a vehicle hang over the ground`

@@ -15,9 +15,9 @@ OXCE has no automated tests (see [NOTES.md](NOTES.md)), so the MVP is checked in
 With the vanilla demo mod (UFO Defense as the master mod), start the New Battle mission "Moving vehicles: Skyranger showcase" with the Skyranger.
 
 - [ ] The mission is last in the list, the battle starts with no messages, in daylight, the Skyranger on the west side and the UFO on the east side.
-- [ ] Put a soldier on the front tile of the cabin (level 1) and drive north: fences, crops and barn walls on the way are crushed, upper floors too.
-- [ ] Right click west of it in drive mode: it turns to face west, mirrored, and looks right (wings, cabin, ramp).
-- [ ] Click a tile south or east of it: it backs up, for 150% of a step, and never turns to face that way.
+- [ ] Put a soldier in the front row of the troop compartment, right behind the cockpit (level 1), and drive south: it moves, its wings hanging over the ground, and fences, crops and barn walls on the way are crushed, upper floors too.
+- [ ] Right click east of it in drive mode: it turns to face east, mirrored, and looks right (wings, cockpit, ramp).
+- [ ] Click a tile north or west of it: it backs up, for 150% of a step, and never turns to face that way.
 - [ ] Drive it onto a sectoid: the sectoid goes down; soldiers on board ride along.
 - [ ] The sectoids shoot at soldiers who show on board when it drives past them.
 - [ ] Save and load: the Skyranger is where it was, facing the same way.
