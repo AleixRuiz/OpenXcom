@@ -505,5 +505,6 @@ Played on 2026-11-20: the Skyranger didn't move at all ("The ground is too steep
 Played again on 2026-11-21: fences and hedges under the Skyranger's body stayed standing as it drove over them.
 
 - **Belly.** Only the Skyranger's ramp and landing legs are on the ground level; its body is a level up, and the tiles under it weren't in its way. Now the walls, objects and units on the ground under a floor or object of the vehicle with nothing of it below are in its way ([GD-34](GAME_DESIGN_DECISIONS.md#gd-34--what-stands-under-a-vehicles-belly-is-in-its-way)). `checkPlace` takes what of the vehicle each cell holds (its floor, an object; `getFill`) instead of only whether it has its floor, so a wall alone at the vehicle's edge doesn't sweep the tile under it.
+- **Rosigma.** The Chimera's own map has no raised belly. Its drawn north and west maps have one roof tile per APC with nothing painted under it, but the tile under it stays covered by the APC's own layout, so nothing changes. The Baneblade's four sponson tiles, a level up at its sides, now sweep the ground under them.
 
 **Commit:** `Moving vehicles: what stands under a craft's belly is in its way`
