@@ -500,4 +500,10 @@ Played on 2026-11-20: the Skyranger didn't move at all ("The ground is too steep
 - **Wings.** The hill rule ([GD-18](GAME_DESIGN_DECISIONS.md#gd-18--ground-vehicles-rest-on-the-highest-ground-under-them)) looked for ground at most a level under every column's lowest tile, and found none under the wings, two levels up. `findLevel` now lets a column above the vehicle's lowest level hang when there is no ground near it.
 - **Demo.** The Skyranger's nose points south (`front: 4`), and its seats are the front row of the troop compartment, right behind the cockpit.
 
-**Commit:** `Moving vehicles: parts high up in a vehicle hang over the ground`
+**Commit:** `Moving vehicles: parts high up in a vehicle hang over the ground` (`eb8a4dbf9`)
+
+Played again on 2026-11-21: fences and hedges under the Skyranger's body stayed standing as it drove over them.
+
+- **Belly.** Only the Skyranger's ramp and landing legs are on the ground level; its body is a level up, and the tiles under it weren't in its way. Now the walls, objects and units on the ground under a floor or object of the vehicle with nothing of it below are in its way ([GD-34](GAME_DESIGN_DECISIONS.md#gd-34--what-stands-under-a-vehicles-belly-is-in-its-way)). `checkPlace` takes what of the vehicle each cell holds (its floor, an object; `getFill`) instead of only whether it has its floor, so a wall alone at the vehicle's edge doesn't sweep the tile under it.
+
+**Commit:** `Moving vehicles: what stands under a craft's belly is in its way`

@@ -1050,11 +1050,13 @@ BattleVehicle::UnitInWay BattleVehicle::judgeUnit(SavedBattleGame *save, const B
 /**
  * Checks whether the vehicle can be set down at a position, judging the terrain as if the vehicle
  * were not on the map. Inside the vehicle (where it has a floor) any solid terrain is in the way;
- * at its edges only the parts it would replace. Ground is never crushed: raised ground on the
- * vehicle's level is hidden under it, and a hill only where the vehicle came off a ledge.
+ * at its edges only the parts it would replace. Under a floor or object of the vehicle that rests
+ * on the ground a level below it (a craft's belly on its landing gear), what stands on that ground
+ * is in the way too. Ground is never crushed: raised ground on the vehicle's level is hidden under
+ * it, and a hill only where the vehicle came off a ledge.
  * @param save Battle save.
  * @param pos New vehicle position.
- * @param inside For each cell, does the vehicle have its floor there?
+ * @param inside For each cell, what of the vehicle it holds (see getFill).
  * @param passengers Units that move with the vehicle.
  * @param crushArmor Strongest armor the vehicle crushes.
  * @param judge Decides what each unit in the way does to the vehicle (passengers are never in the way).
@@ -1066,6 +1068,21 @@ BattleVehicle::MoveResult BattleVehicle::checkPlace(SavedBattleGame *save, Posit
 {
 	toCrush.clear();
 	victims.clear();
+	// a unit on a tile in the way is run over or blocks the vehicle; passengers move with it
+	auto unitBlocks = [&](const Tile *tile)
+	{
+		BattleUnit *unit = tile->getUnit();
+		if (!unit || std::find(passengers.begin(), passengers.end(), unit) != passengers.end())
+		{
+			return false;
+		}
+		const UnitInWay inWay = judge(unit);
+		if (inWay == UNIT_RUN_OVER && std::find(victims.begin(), victims.end(), unit) == victims.end())
+		{
+			victims.push_back(unit);
+		}
+		return inWay == UNIT_BLOCKS;
+	};
 	for (size_t i = 0; i < _cells.size(); ++i)
 	{
 		const Cell &cell = _cells[i];
@@ -1082,18 +1099,9 @@ BattleVehicle::MoveResult BattleVehicle::checkPlace(SavedBattleGame *save, Posit
 				return MOVE_BLOCKED_VEHICLE;
 			}
 		}
-		BattleUnit *unit = tile->getUnit();
-		if (unit && std::find(passengers.begin(), passengers.end(), unit) == passengers.end())
+		if (unitBlocks(tile))
 		{
-			const UnitInWay inWay = judge(unit);
-			if (inWay == UNIT_BLOCKS)
-			{
-				return MOVE_BLOCKED_UNIT;
-			}
-			if (inWay == UNIT_RUN_OVER && std::find(victims.begin(), victims.end(), unit) == victims.end())
-			{
-				victims.push_back(unit);
-			}
+			return MOVE_BLOCKED_UNIT;
 		}
 		// a floor on one of the vehicle's upper levels (a building's upper storey) is in its way like a wall;
 		// one over hill ground is the hill's own top, left alone
@@ -1113,7 +1121,7 @@ BattleVehicle::MoveResult BattleVehicle::checkPlace(SavedBattleGame *save, Posit
 		}
 		for (int part = O_WESTWALL; part < O_MAX; ++part)
 		{
-			if (!inside[i] && !(cell.owned & (1 << part)))
+			if (!(inside[i] & FILL_FLOOR) && !(cell.owned & (1 << part)))
 			{
 				continue;
 			}
@@ -1136,6 +1144,30 @@ BattleVehicle::MoveResult BattleVehicle::checkPlace(SavedBattleGame *save, Posit
 				return MOVE_BLOCKED_TERRAIN;
 			}
 			toCrush.push_back(std::make_pair(tile, (TilePart)part));
+		}
+		// a floor or object high up in the vehicle with ground a level below it (a craft's belly): the fences,
+		// bushes and units on that ground are in its way; slopes are ground it rests on
+		const Position below = p - Position(0, 0, 1);
+		if (inside[i] && cell.offset.z > 0 && isLowest(cell) && getGroundRaise(save, below) >= 0)
+		{
+			Tile *gap = save->getTile(below);
+			if (unitBlocks(gap))
+			{
+				return MOVE_BLOCKED_UNIT;
+			}
+			for (int part = O_WESTWALL; part < O_MAX; ++part)
+			{
+				const MapData *md = getTerrain(save, below, (TilePart)part);
+				if (!isSolid(md) || (part == O_OBJECT && isGround(save, below, md)))
+				{
+					continue;
+				}
+				if (!canCrush(md, save, crushArmor))
+				{
+					return MOVE_BLOCKED_TERRAIN;
+				}
+				toCrush.push_back(std::make_pair(gap, (TilePart)part));
+			}
 		}
 	}
 	return MOVE_OK;
@@ -1161,6 +1193,31 @@ bool BattleVehicle::isOnBoard(SavedBattleGame *save, Position pos) const
 	const int i = getCellIndex(pos);
 	const Tile *tile = save->getTile(pos);
 	return i != -1 && tile && (_cells[i].owned & (1 << O_FLOOR)) && isOwnSet(getPart(tile, O_FLOOR).setId);
+}
+
+/**
+ * Gets what of the vehicle a cell holds, from the vehicle's parts.
+ * @param parts The vehicle's parts, O_MAX for each cell.
+ * @param i Index of the cell.
+ * @return FILL_FLOOR where it has its floor, FILL_OBJECT where it has an object, both or neither.
+ */
+char BattleVehicle::getFill(const std::vector<PartRef> &parts, size_t i)
+{
+	return (char)((parts[i * O_MAX + O_FLOOR].id != -1 ? FILL_FLOOR : 0) | (parts[i * O_MAX + O_OBJECT].id != -1 ? FILL_OBJECT : 0));
+}
+
+/**
+ * Gets what of the vehicle a cell holds, from the map, while the vehicle is on it.
+ * @param save Battle save.
+ * @param i Index of the cell.
+ * @return FILL_FLOOR where it has its floor, FILL_OBJECT where it has an object, both or neither.
+ */
+char BattleVehicle::getFill(SavedBattleGame *save, size_t i) const
+{
+	const Position p = _pos + _cells[i].offset;
+	const Tile *tile = save->getTile(p);
+	const bool object = tile && (_cells[i].owned & (1 << O_OBJECT)) && isOwnSet(getPart(tile, O_OBJECT).setId);
+	return (char)((isOnBoard(save, p) ? FILL_FLOOR : 0) | (object ? FILL_OBJECT : 0));
 }
 
 /**
@@ -1760,7 +1817,7 @@ BattleVehicle::MoveResult BattleVehicle::move(SavedBattleGame *save, Position de
 	std::vector<char> inside(_cells.size(), 0);
 	for (size_t i = 0; i < _cells.size(); ++i)
 	{
-		inside[i] = carried[i * O_MAX + O_FLOOR].id != -1;
+		inside[i] = getFill(carried, i);
 	}
 	std::vector<std::pair<Tile*, TilePart> > toCrush;
 	const MoveResult result = checkPlace(save, newPos, inside, passengers, getCrushArmor(save->getMod()), [&](const BattleUnit *unit) { return judgeUnit(save, unit); }, toCrush, victims);
@@ -2031,7 +2088,7 @@ BattleVehicle::MoveResult BattleVehicle::turn(SavedBattleGame *save, int facing,
 	std::vector<char> inside(_cells.size(), 0);
 	for (size_t i = 0; i < _cells.size(); ++i)
 	{
-		inside[i] = carried[i * O_MAX + O_FLOOR].id != -1;
+		inside[i] = getFill(carried, i);
 	}
 	mirrorLayout(carried);
 	readUnder(save);
@@ -2291,7 +2348,7 @@ BattleVehicle::MoveResult BattleVehicle::turnDrawn(SavedBattleGame *save, int fa
 	std::vector<char> inside(_cells.size(), 0);
 	for (size_t i = 0; i < _cells.size(); ++i)
 	{
-		inside[i] = parts[i * O_MAX + O_FLOOR].id != -1;
+		inside[i] = getFill(parts, i);
 	}
 	const std::vector<char> seen(_cells.size(), wasDiscovered ? 1 : 0);
 
@@ -2607,7 +2664,7 @@ bool BattleVehicle::search(SavedBattleGame *save, const Position *target, int bu
 	std::vector<char> inside(_cells.size(), 0);
 	for (size_t i = 0; i < _cells.size(); ++i)
 	{
-		inside[i] = isOnBoard(save, _pos + _cells[i].offset);
+		inside[i] = getFill(save, i);
 	}
 	const int width = save->getMapSizeX(), length = save->getMapSizeY(), height = save->getMapSizeZ();
 
@@ -2924,7 +2981,7 @@ Position BattleVehicle::mapOffset(const Mod *mod, Position offset, int fromFacin
  * judges terrain by this vehicle, and shows the parts it would have.
  * @param save Battle save.
  * @param facing The facing.
- * @param inside Gets, for each of the copy's tiles, whether it has its floor there.
+ * @param inside Gets, for each of the copy's tiles, what of the vehicle it holds (see getFill).
  * @return The copy.
  */
 BattleVehicle BattleVehicle::layoutFor(SavedBattleGame *save, int facing, std::vector<char> &inside) const
@@ -2936,7 +2993,7 @@ BattleVehicle BattleVehicle::layoutFor(SavedBattleGame *save, int facing, std::v
 	for (size_t i = 0; i < _cells.size(); ++i)
 	{
 		const Position p = _pos + _cells[i].offset;
-		inside[i] = isOnBoard(save, p);
+		inside[i] = getFill(save, i);
 		const Tile *tile = save->getTile(p);
 		for (int part = O_FLOOR; part < O_MAX && tile; ++part)
 		{
@@ -3006,7 +3063,7 @@ BattleVehicle BattleVehicle::layoutFor(SavedBattleGame *save, int facing, std::v
 	inside.assign(copy._cells.size(), 0);
 	for (size_t i = 0; i < copy._cells.size(); ++i)
 	{
-		inside[i] = copy._ghostArt[i * O_MAX + O_FLOOR].id != -1;
+		inside[i] = getFill(copy._ghostArt, i);
 	}
 	copy._facing = facing;
 	copy._mirrored = mirrored;

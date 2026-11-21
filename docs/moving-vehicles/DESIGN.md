@@ -263,13 +263,13 @@ A step is allowed only when every tile of the vehicle's new footprint is free, c
 
 **Planning a route.** The route search goes around the units the vehicle's side knows of: its own units and, for the player, every unit on screen, as when planning a walk ([GD-20](GAME_DESIGN_DECISIONS.md#gd-20--the-route-search-only-knows-the-units-its-side-knows)). Any other unit stops the drive when the vehicle reaches it ("A unit is in the way!"). When the clicked place can't take the vehicle, the message names what is in the way.
 
-**Where terrain counts as solid.** Inside the vehicle (tiles with its floor), any wall or object in the way blocks or is crushed. At its edges, only the parts the vehicle itself would occupy count, so it can drive alongside a fence.
+**Where terrain counts as solid.** Inside the vehicle (tiles with its floor), any wall or object in the way blocks or is crushed. At its edges, only the parts the vehicle itself would occupy count, so it can drive alongside a fence. Under a craft's belly (a floor or object of the vehicle with nothing of it below and ground a level below), the walls, objects and units on that ground are in the way too ([GD-34](GAME_DESIGN_DECISIONS.md#gd-34--what-stands-under-a-vehicles-belly-is-in-its-way)).
 
 **Levels.** A ground vehicle rests on the highest ground under it ([GD-18](GAME_DESIGN_DECISIONS.md#gd-18--ground-vehicles-rest-on-the-highest-ground-under-them)):
 
 - Ground is floors, raised parts units walk on, and solid parts filling their tile with a floor on top (hill rock). A part filling its tile is the ground of the level above. Other solid parts are obstacles, as above.
 - Raised ground on the vehicle's own level is hidden under it; lower ground is bridged, as under a landed Skyranger; the next level's ground lifts it. Each column counts from the vehicle's lowest tile in it, so a craft stands on its landing gear.
-- It climbs or comes down one level per step, and no part of it may be over ground two levels or more below it.
+- It climbs or comes down one level per step, and no part of its lowest level may be over ground two levels or more below it. Parts higher up with no ground near them, like a craft's wings, hang over whatever is under them.
 - The ground under its middle must be less than a level below it, so it can't climb where its middle would hang. At a ledge it tips over and comes down a level, its back end standing in the ledge; it can then drive away from the ledge, never further into higher ground.
 
 A flying vehicle (`fly: true`, M3) climbs or descends one level per step, and needs the same free footprint to land.

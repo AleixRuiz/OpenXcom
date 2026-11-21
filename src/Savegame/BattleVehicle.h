@@ -147,6 +147,12 @@ private:
 	int getCellIndex(Position pos) const;
 	/// Is a cell the vehicle's lowest tile in its column?
 	bool isLowest(const Cell &cell) const;
+	/// What of the vehicle a cell holds, as checkPlace takes it.
+	enum CellFill { FILL_FLOOR = 1, FILL_OBJECT = 2 };
+	/// Gets what of the vehicle a cell holds, from the vehicle's parts.
+	static char getFill(const std::vector<PartRef> &parts, size_t i);
+	/// Gets what of the vehicle a cell holds, from the map.
+	char getFill(SavedBattleGame *save, size_t i) const;
 	/// Gets the map data reference of a tile part.
 	static PartRef getPart(const Tile *tile, TilePart part);
 	/// Sets the map data of a tile part.

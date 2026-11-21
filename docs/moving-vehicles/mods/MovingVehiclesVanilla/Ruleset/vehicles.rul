@@ -1,8 +1,8 @@
 # The Skyranger taxis on its landing gear during the battle. A soldier in the front row of the
 # troop compartment (level 1, right behind the cockpit) switches on drive mode with the Drive button
 # or the drive hotkey (D), then clicks where to go: the first click previews the route,
-# the second drives. Fences, crops, trees and the walls of farms and town houses (armor up
-# to 40) are crushed on the way; big rocks and UFO hulls stop it.
+# the second drives. Fences, hedges, trees and the walls of farms and town houses (armor up
+# to 40) are crushed on the way, under its body too; big rocks and UFO hulls stop it.
 # It moves up to 10 tiles a turn (40 time units), whoever drives. Driven onto an alien,
 # it hits it for 100 melee damage: a sectoid goes down, a muton may stop it (rammed).
 crafts:

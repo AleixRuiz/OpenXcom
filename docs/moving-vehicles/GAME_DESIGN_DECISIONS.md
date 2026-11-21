@@ -1,6 +1,6 @@
 # Moving Vehicles — Game design decisions
 
-Last updated 2026-10-29 · Aleix Ruiz Sorribes
+Last updated 2026-11-21 · Aleix Ruiz Sorribes
 
 Why moving vehicles plays the way it does. Each entry records a game design choice, why we made it, what we turned down, and what would make us look at it again, so later revisions and forum discussions start from the reasons and not only from the result.
 
@@ -51,6 +51,7 @@ Why moving vehicles plays the way it does. Each entry records a game design choi
 | [GD-31](#gd-31--drives-turn-the-vehicle-toward-where-it-goes) | Drives turn the vehicle toward where it goes | Decided | M3, Phase 17 |
 | [GD-32](#gd-32--up-to-four-drawn-facings-mirroring-fills-the-gaps) | Up to four drawn facings, mirroring fills the gaps | Decided | M3, Phase 18 |
 | [GD-33](#gd-33--upper-floors-in-a-vehicles-way-are-crushed-or-block-it) | Upper floors in a vehicle's way are crushed or block it | Decided | M3, fix after play |
+| [GD-34](#gd-34--what-stands-under-a-vehicles-belly-is-in-its-way) | What stands under a vehicle's belly is in its way | Decided | Vanilla pass, fix after play |
 
 ## Decisions
 
@@ -613,3 +614,26 @@ Decided · 2026-10-30 · found in play: a Chimera driven into a barn
 **Decision.** A floor on one of the vehicle's upper levels is in its way like a wall: crushed if its armor is up to `crushArmor` (all of it, leaving a hole when the vehicle leaves), otherwise it blocks the vehicle. The floor the vehicle stands on, and a floor over hill ground (the hill's own top, GD-18), are left alone.
 
 **Why.** The vehicle physically passes through that floor; a wooden barn floor gives way, a concrete one stops it, as walls do.
+
+### GD-34 · What stands under a vehicle's belly is in its way
+
+Decided · 2026-11-21 · found in play: the vanilla Skyranger taxiing across a farm
+
+**Problem.** The Skyranger's body is a level above the ground, on its landing gear; only its ramp and legs are on the ground level. The tiles under its body weren't in its way: it slid over the fences, hedges and sectoids there and left them standing, as if it hovered.
+
+**Decision.** Under a floor or object of the vehicle with nothing of the vehicle below it and ground a level below (a craft's belly), the walls, objects and units on that ground are in its way, as on the vehicle's own tiles: weak terrain is crushed, strong terrain blocks it, enemies are run over and its own side blocks it.
+
+- Slopes and hills there are ground the belly rests on, never crushed.
+- Parts with no ground a level below them, like wings over open fields, still hang over what is there ([GD-18](#gd-18--ground-vehicles-rest-on-the-highest-ground-under-them)).
+- A wall standing alone at the vehicle's edge doesn't reach down: the tile under it is outside the vehicle.
+- Parts units walk through (crops) aren't in the way, under the belly or anywhere else.
+
+**Why.** A taxiing craft's belly and gear sweep the ground under it; a fence there can't survive. The rule follows from the map, so any vehicle built over a gap gets it without a ruleset key.
+
+**Turned down.**
+
+- A ruleset key to switch it on: every craft on landing gear wants it, and no vehicle seen so far wants it off.
+- Everything under the vehicle down to the ground: wings two levels up would mow down the trees and walls they clear.
+- The vehicle's whole bounding box: a craft's outline isn't a rectangle, and the tiles beside its nose would be swept too.
+
+**Revisit when.** A vehicle needs to pass over low terrain without touching it (a hovercraft, a raised walker).
